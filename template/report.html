@@ -100,14 +100,51 @@
     <div id="jsGrid"></div>
 
     <script>
+    var db = {
+        loadData: function(filter) {
+            return this.TestsSummary;
+        },
+
+        insertItem: function(ts) {
+            this.TestsSummary.push(ts);
+        },
+
+        updateItem: function(ts) { },
+
+        deleteItem: function(ts) {
+            var i = $.inArray(ts, this.TestsSummary); // index
+            this.TestsSummary.splice(i, 1);
+        }
+
+    };
+
+    window.db = db;
+
+
+    db.Result = [
+        { Name: "PASS", Id: 0 },
+        { Name: "FAIL", Id: 1 },
+        { Name: "SKIP", Id: 2 },
+    ];
+
+    db.TestsSummary = [
+        {"TestName":"TestDownloadOnly/group/v1.11.10","Duration":"0.590000","Result":"fail","Events":""},
+        {"TestName":"TestDownloadOnly/group/v1.17.0","Duration":"0.140000","Result":"pass","Events":""},
+        {"TestName":"TestDownloadOnly/group/v1.17.0#01","Duration":"0.140000","Result":"pass","Events":""},
+        {"TestName":"TestDownloadOnly/group/ExpectedDefaultDriver","Duration":"0.000000","Result":"skip","Events":""},
+        {"TestName":"TestDownloadOnly/group/DeleteAll","Duration":"5.120000","Result":"pass","Events":""},
+];
+
+
+
         $(function() {
 
             $("#jsGrid").jsGrid({
                 height: "70%",
                 width: "100%",
                 filtering: true,
-                editing: true,
-                inserting: true,
+                editing: false,
+                inserting: false,
                 sorting: true,
                 paging: true,
                 autoload: true,
@@ -116,12 +153,10 @@
                 deleteConfirm: "Do you really want to delete the client?",
                 controller: db,
                 fields: [
-                    { name: "Name", type: "text", width: 150 },
-                    { name: "Age", type: "number", width: 50 },
-                    { name: "Address", type: "text", width: 200 },
-                    { name: "Country", type: "select", items: db.countries, valueField: "Id", textField: "Name" },
-                    { name: "Married", type: "checkbox", title: "Is Married", sorting: false },
-                    { type: "control" }
+                    { name: "TestName", type: "text", width: 150 },
+                    { name: "Duration", type: "text", width: 50 },
+                    { name: "Result", type: "text", items: db.Results, valueField: "Id", textField: "Name" },
+                    { name: "Events", type: "text", width: 150},
                 ]
             });
 
