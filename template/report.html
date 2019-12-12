@@ -100,7 +100,7 @@
 </head>
 
 <body>
-    <h1>Basic Scenario</h1>
+    <h1>Test Result Summary</h1>
     <div id="jsGrid"></div>
 
     <script>
@@ -166,6 +166,8 @@
                         sorter: "number",   // uses sorter for numbers
                         align: "center",     // center text alignment
                         autosearch: true,
+                        itemTemplate: function(value) {
+                            return parseFloat(value).toFixed(2) + "s"; }
                     },
                     {
                         name: "Result",
