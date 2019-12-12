@@ -1,113 +1,168 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
+	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"strings"
 	"text/template"
+	"time"
 
 	rice "github.com/GeertJohan/go.rice"
-	"github.com/jstemmer/go-junit-report/parser"
 )
 
-type Results map[string][]*GoTestOutput
-
-type GoTestOutput struct {
-	PackageName string `json:"package_name"`
-	TestName    string `json:"test_name"`
-	Time        int    `json:"time"`
-	Output      string `json:"output"`
-}
-type TestSummary struct {
-	TotalTests int     `json:"total_tests"`
-	Results    Results `json:"results"`
-}
-
-const (
-	PASS = "pass"
-	FAIL = "fail"
-	SKIP = "skip"
-	ALL  = "all"
+var (
+	inPath  = flag.String("in", "", "path to JSON input file")
+	outPath = flag.String("out", "", "path to HTML output file")
 )
 
-var jsonTestKeys = map[parser.Result]string{
-	parser.PASS: PASS,
-	parser.FAIL: FAIL,
-	parser.SKIP: SKIP,
+type TestEvent struct {
+	Time    time.Time // encodes as an RFC3339-format string
+	Action  string
+	Package string
+	Test    string
+	Elapsed float64 // seconds
+	Output  string
+
+	EmbeddedLog []string
+}
+
+type TestGroup struct {
+	Test     string
+	Hidden   bool
+	Status   string
+	Start    time.Time
+	End      time.Time
+	Duration float64
+	Events   []TestEvent
+}
+
+// parseJSON is a very forgiving JSON parser.
+func parseJSON(path string) ([]TestEvent, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	events := []TestEvent{}
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		// Go's -json output is line-by-line JSON events
+		b := scanner.Bytes()
+		if b[0] == '{' {
+			ev := TestEvent{}
+			err = json.Unmarshal(b, &ev)
+			if err != nil {
+				continue
+			}
+			events = append(events, ev)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return events, err
+}
+
+// group events by their test name
+func processEvents(evs []TestEvent) []TestGroup {
+	gm := map[string]int{}
+	groups := []TestGroup{}
+	for _, e := range evs {
+		if e.Test == "" {
+			continue
+		}
+		index, ok := gm[e.Test]
+		if !ok {
+			index = len(groups)
+			groups = append(groups, TestGroup{
+				Test:  e.Test,
+				Start: e.Time,
+			})
+			gm[e.Test] = index
+		}
+		groups[index].Events = append(groups[index].Events, e)
+		groups[index].Status = e.Action
+	}
+
+	// Hide ancestors
+	for k, v := range gm {
+		for k2 := range gm {
+			if strings.HasPrefix(k2, fmt.Sprintf("%s/", k)) {
+				groups[v].Hidden = true
+			}
+		}
+	}
+
+	return groups
+}
+
+func generateHTML(groups []TestGroup) ([]byte, error) {
+	for _, g := range groups {
+		g.Duration = g.Events[len(g.Events)-1].Elapsed
+	}
+	t, err := template.New("out").Parse(rice.MustFindBox("template").MustString("report.html"))
+	if err != nil {
+		return nil, err
+	}
+
+	type content struct {
+		TestName string
+		Duration string
+		Result   string
+		Events   string
+	}
+
+	var contents []content
+	for _, g := range groups {
+		d := fmt.Sprintf("%f", g.Events[len(g.Events)-1].Elapsed)
+		if !g.Hidden {
+			contents = append(contents, content{TestName: g.Test, Duration: d, Result: g.Status})
+		}
+	}
+
+	json, err := json.Marshal(contents)
+	if err != nil {
+		log.Fatalf("json marshal %v", json)
+	}
+
+	if err := ioutil.WriteFile("j.json", json, 0644); err != nil {
+		panic(fmt.Sprintf("write: %v", err))
+	}
+
+	var b bytes.Buffer
+	if err := t.ExecuteTemplate(&b, "out", string(json)); err != nil {
+		return nil, err
+	}
+	return b.Bytes(), nil
 }
 
 func main() {
-	out, err := os.Open("./testdata/minikube-logs.txt")
+	flag.Parse()
+	if *inPath == "" {
+		panic("must provide path to JSON input file")
+	}
+	if *outPath == "" {
+		panic("must provide path to HTML output file")
+	}
+
+	events, err := parseJSON(*inPath)
 	if err != nil {
-		log.Fatal(err)
+		panic(fmt.Sprintf("json: %v", err))
 	}
-	xmlR, err := parser.Parse(out, "") // xml report
+	groups := processEvents(events)
+	html, err := generateHTML(groups)
 	if err != nil {
-		log.Fatal(err)
+		panic(fmt.Sprintf("html: %v", err))
 	}
-
-	totalTests := 0
-	results := Results{
-		ALL:  []*GoTestOutput{},
-		PASS: []*GoTestOutput{},
-		FAIL: []*GoTestOutput{},
-		SKIP: []*GoTestOutput{},
+	if err := ioutil.WriteFile(*outPath, html, 0644); err != nil {
+		panic(fmt.Sprintf("write: %v", err))
 	}
-	for _, pkg := range xmlR.Packages {
-		fmt.Println("------------------")
-		fmt.Println(pkg.Name)
-		fmt.Println(pkg.Duration)
-		for _, t := range pkg.Tests {
-			key := jsonTestKeys[t.Result]
-			fmt.Printf("\nt.Name=%s , t.Result=%s, t.Time=%d\n", t.Name, key, t.Time)
-			jsonTest := &GoTestOutput{
-				PackageName: pkg.Name,
-				TestName:    t.Name,
-				Time:        t.Time,
-				Output:      strings.Join(t.Output, "\n"),
-			}
-			results[key] = append(results[key], jsonTest)
-			results[ALL] = append(results[ALL], jsonTest)
-			totalTests += 1
-		}
-		fmt.Println("------------------")
-	}
-
-	summary := &TestSummary{
-		TotalTests: totalTests,
-		Results:    results,
-	}
-
-	html, err := generateHTML(summary)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = ioutil.WriteFile("output.html", []byte(html), 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-}
-
-func generateHTML(summary *TestSummary) (string, error) {
-	templateBox := rice.MustFindBox("template")
-	t, err := template.New("report").Parse(templateBox.MustString("report.html"))
-	if err != nil {
-		return "", err
-	}
-
-	type templateData struct {
-		Summary *TestSummary
-	}
-	buf := bytes.Buffer{}
-	err = t.Execute(&buf, &templateData{Summary: summary})
-	if err != nil {
-		return "", err
-	}
-
-	return buf.String(), nil
 }
