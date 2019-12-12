@@ -11,6 +11,12 @@
             box-sizing: border-box;
         }
 
+        .mylogs {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
+        }
         html {
             height: 100%;
         }
@@ -174,12 +180,19 @@
                         type: "text",
                         items: db.ValidResults,
                         valueField: "Id",
-                        textField: "Name"
+                        textField: "Name",
+                        cellRenderer: function(item, value){
+                            return $("<td>").addClass("my-row-custom-class").append(item); 
+                        }                        
                     },
                     {
                         name: "Events",
                         type: "text",
-                        width: 150
+                        width: 150,
+                        cellRenderer: function(item, value){
+                            return $("<td>").addClass("mylogs").append(item); 
+                        }                        
+
                     },
                 ]
             });
