@@ -3,7 +3,7 @@
 
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>jsGrid - Basic Scenario</title>
+    <title>Test Result Summary : GOPOGH</title>
     <style>
         * {
             margin: 0;
@@ -107,10 +107,18 @@
 
 <body>
     <h1>Test Result Summary</h1>
-    <div id="jsGrid"></div>
+    <h1> Failed: </h1>
+    <div id="Failed">
+    </div>
+    <h1> Passed: </h1>
+    <div id="Passed">
+    </div>
+    <h1> Skipped: </h1>
+    <div id="Skipped">
+    </div>
 
     <script>
-        var db = {
+        var dbfailed = {
             loadData: function (filter) {
                 return $.grep(this.TestsSummary, function (ts) {
                     return (!filter.TestName.toLowerCase() || ts.TestName.toLowerCase().indexOf(filter.TestName.toLowerCase()) > -1)
@@ -133,21 +141,21 @@
 
         };
 
-        window.db = db;
+        window.dbfailed = dbfailed;
 
 
-        db.ValidResult = [
+        dbfailed.ValidResult = [
             { Name: "PASS", Id: 0 },
             { Name: "FAIL", Id: 1 },
             { Name: "SKIP", Id: 2 },
         ];
 
-        db.TestsSummary = {{ .}};
+        dbfailed.TestsSummary = {{ .}};
 
 
         $(function () {
 
-            $("#jsGrid").jsGrid({
+            $("#Failed").jsGrid({
                 height: "80%",
                 width: "100%",
                 filtering: true,
@@ -159,7 +167,7 @@
                 pageSize: 15,
                 pageButtonCount: 5,
                 deleteConfirm: "Do you really want to delete the client?",
-                controller: db,
+                controller: dbfailed,
                 ignoreCase: true,
                 fields: [
                     { name: "TestName", 
@@ -178,7 +186,7 @@
                     {
                         name: "Result",
                         type: "text",
-                        items: db.ValidResults,
+                        items: dbfailed.ValidResults,
                         valueField: "Id",
                         textField: "Name",
                         cellRenderer: function(item, value){
