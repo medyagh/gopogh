@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>jsGrid - Basic Scenario</title>
     <style>
-            * {
+        * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -51,7 +52,9 @@
             color: #258faf;
         }
 
-        input, button, select {
+        input,
+        button,
+        select {
             font-family: 'Helvetica Neue Light', 'Open Sans', Helvetica;
             font-weight: 300;
             font-size: 14px;
@@ -92,52 +95,54 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script src="db.js"></script>
     <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.css" />
-    <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid-theme.min.css" />     
+    <link type="text/css" rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid-theme.min.css" />
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.js"></script>
 </head>
+
 <body>
     <h1>Basic Scenario</h1>
     <div id="jsGrid"></div>
 
     <script>
-    var db = {
-        loadData: function(filter) {
-            return this.TestsSummary;
-        },
+        var db = {
+            loadData: function (filter) {
+                return this.TestsSummary;
+            },
 
-        insertItem: function(ts) {
-            this.TestsSummary.push(ts);
-        },
+            insertItem: function (ts) {
+                this.TestsSummary.push(ts);
+            },
 
-        updateItem: function(ts) { },
+            updateItem: function (ts) { },
 
-        deleteItem: function(ts) {
-            var i = $.inArray(ts, this.TestsSummary); // index
-            this.TestsSummary.splice(i, 1);
-        }
+            deleteItem: function (ts) {
+                var i = $.inArray(ts, this.TestsSummary); // index
+                this.TestsSummary.splice(i, 1);
+            }
 
-    };
+        };
 
-    window.db = db;
-
-
-    db.Result = [
-        { Name: "PASS", Id: 0 },
-        { Name: "FAIL", Id: 1 },
-        { Name: "SKIP", Id: 2 },
-    ];
-
-    db.TestsSummary = [
-        {"TestName":"TestDownloadOnly/group/v1.11.10","Duration":"0.590000","Result":"fail","Events":""},
-        {"TestName":"TestDownloadOnly/group/v1.17.0","Duration":"0.140000","Result":"pass","Events":""},
-        {"TestName":"TestDownloadOnly/group/v1.17.0#01","Duration":"0.140000","Result":"pass","Events":""},
-        {"TestName":"TestDownloadOnly/group/ExpectedDefaultDriver","Duration":"0.000000","Result":"skip","Events":""},
-        {"TestName":"TestDownloadOnly/group/DeleteAll","Duration":"5.120000","Result":"pass","Events":""},
-];
+        window.db = db;
 
 
+        db.Result = [
+            { Name: "PASS", Id: 0 },
+            { Name: "FAIL", Id: 1 },
+            { Name: "SKIP", Id: 2 },
+        ];
 
-        $(function() {
+        db.TestsSummary = [
+            { "TestName": "TestDownloadOnly/group/v1.11.10", "Duration": "0.590000", "Result": "fail", "Events": "" },
+            { "TestName": "TestDownloadOnly/group/v1.17.0", "Duration": "0.140000", "Result": "pass", "Events": "" },
+            { "TestName": "TestDownloadOnly/group/v1.17.0#01", "Duration": "0.140000", "Result": "pass", "Events": "" },
+            { "TestName": "TestDownloadOnly/group/ExpectedDefaultDriver", "Duration": "0.000000", "Result": "skip", "Events": "" },
+            { "TestName": "TestDownloadOnly/group/DeleteAll", "Duration": "5.120000", "Result": "pass", "Events": "" },
+        ];
+
+
+
+        $(function () {
 
             $("#jsGrid").jsGrid({
                 height: "70%",
@@ -156,11 +161,12 @@
                     { name: "TestName", type: "text", width: 150 },
                     { name: "Duration", type: "text", width: 50 },
                     { name: "Result", type: "text", items: db.Results, valueField: "Id", textField: "Name" },
-                    { name: "Events", type: "text", width: 150},
+                    { name: "Events", type: "text", width: 150 },
                 ]
             });
 
         });
     </script>
 </body>
+
 </html>
