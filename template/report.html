@@ -105,9 +105,13 @@
 
     <script>
         var db = {
-            loadData: function (filter) {
-                return this.TestsSummary;
-            },
+            loadData: function(filter) {
+            return $.grep(this.TestsSummary, function(ts) {
+                return (!filter.TestName || ts.TestName.indexOf(filter.TestName) > -1)
+                    && (!filter.Duration || ts.Duration.indexOf(filter.Duration) > -1)                 
+                    && (!filter.Result || ts.Result.indexOf(filter.Result) > -1);
+            });
+        },
 
             insertItem: function (ts) {
                 this.TestsSummary.push(ts);
