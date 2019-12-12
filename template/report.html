@@ -93,7 +93,6 @@
 
     <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,600,400' rel='stylesheet' type='text/css'>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    <script src="db.js"></script>
     <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.css" />
     <link type="text/css" rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid-theme.min.css" />
@@ -132,14 +131,7 @@
             { Name: "SKIP", Id: 2 },
         ];
 
-        db.TestsSummary = [
-            { "TestName": "TestDownloadOnly/group/v1.11.10", "Duration": "0.590000", "Result": "fail", "Events": "" },
-            { "TestName": "TestDownloadOnly/group/v1.17.0", "Duration": "0.140000", "Result": "pass", "Events": "" },
-            { "TestName": "TestDownloadOnly/group/v1.17.0#01", "Duration": "0.140000", "Result": "pass", "Events": "" },
-            { "TestName": "TestDownloadOnly/group/ExpectedDefaultDriver", "Duration": "0.000000", "Result": "skip", "Events": "" },
-            { "TestName": "TestDownloadOnly/group/DeleteAll", "Duration": "5.120000", "Result": "pass", "Events": "" },
-        ];
-
+        db.TestsSummary = {{ . }};
 
 
         $(function () {
