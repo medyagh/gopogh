@@ -107,9 +107,9 @@
         var db = {
             loadData: function(filter) {
             return $.grep(this.TestsSummary, function(ts) {
-                return (!filter.TestName || ts.TestName.indexOf(filter.TestName) > -1)
+                return (!filter.TestName.toLowerCase() || ts.TestName.toLowerCase().indexOf(filter.TestName.toLowerCase()) > -1)
                     && (!filter.Duration || ts.Duration.indexOf(filter.Duration) > -1)                 
-                    && (!filter.Result || ts.Result.indexOf(filter.Result) > -1);
+                    && (!filter.Result.toLowerCase() || ts.Result.toLowerCase().indexOf(filter.Result.toLowerCase()) > -1);
             });
         },
 
@@ -153,6 +153,7 @@
                 pageButtonCount: 5,
                 deleteConfirm: "Do you really want to delete the client?",
                 controller: db,
+                ignoreCase: true,
                 fields: [
                     { name: "TestName", type: "text", width: 150 },
                     { name: "Duration", type: "text", width: 50 },
