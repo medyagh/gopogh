@@ -109,7 +109,8 @@
                 return $.grep(this.TestsSummary, function (ts) {
                     return (!filter.TestName.toLowerCase() || ts.TestName.toLowerCase().indexOf(filter.TestName.toLowerCase()) > -1)
                         && (!filter.Duration || ts.Duration.indexOf(filter.Duration) > -1)
-                        && (!filter.Result.toLowerCase() || ts.Result.toLowerCase().indexOf(filter.Result.toLowerCase()) > -1);
+                        && (!filter.Result.toLowerCase() || ts.Result.toLowerCase().indexOf(filter.Result.toLowerCase()) > -1)
+                        && (!filter.Events.toLowerCase() || ts.Events.toLowerCase().indexOf(filter.Events.toLowerCase()) > -1);
                 });
             },
 
@@ -141,7 +142,7 @@
         $(function () {
 
             $("#jsGrid").jsGrid({
-                height: "70%",
+                height: "80%",
                 width: "100%",
                 filtering: true,
                 editing: false,

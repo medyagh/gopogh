@@ -29,8 +29,12 @@ func GenerateHTML(groups []models.TestGroup) ([]byte, error) {
 	var contents []content
 	for _, g := range groups {
 		d := fmt.Sprintf("%f", g.Events[len(g.Events)-1].Elapsed)
+		logs := ""
+		for _, l := range g.Events {
+			logs = logs + "\n" + l.Output
+		}
 		if !g.Hidden {
-			contents = append(contents, content{TestName: g.Test, Duration: d, Result: g.Status})
+			contents = append(contents, content{TestName: g.Test, Duration: d, Result: g.Status, Events: logs})
 		}
 	}
 
