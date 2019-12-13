@@ -12,6 +12,14 @@
     </style>
 
     <style type="text/css">
+    
+        .mylogs {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 10px;
+        }
+
         h5 {
             font-weight: 900;
         }
@@ -241,28 +249,25 @@
                     <div class="mdl-card mdl-cell mdl-cell--12-col hidden-section">
                         {{if eq $r "pass"}}
                             <div class="mdl-card__title mdl-color--green-500 mdl-color-text--white test-section-header">
-                                <h2 class="mdl-card__title-text">Test Passes« ({{ len $.Pass }}/{{ $.TotalTests }})</h2>
+                                <h2 class="mdl-card__title-text">Passed « ({{ len $.Pass }}/{{ $.TotalTests }})</h2>
                             </div>
                         {{end}}
                         {{if eq $r "fail"}}
                             <div class="mdl-card__title mdl-color--red-500 mdl-color-text--white test-section-header">
-                                <h2 class="mdl-card__title-text">Test Passes« ({{ len $.Fail }}/{{ $.TotalTests }})</h2>
+                                <h2 class="mdl-card__title-text">Failed « ({{ len $.Fail }}/{{ $.TotalTests }})</h2>
                             </div>
                         {{end}}
                         {{if eq $r "skip"}}
                         <div class="mdl-card__title mdl-color--grey-500 mdl-color-text--white test-section-header">
-                                <h2 class="mdl-card__title-text">Test Passes« ({{ len $.Skip }}/{{ $.TotalTests }})</h2>
+                                <h2 class="mdl-card__title-text">Skipped « ({{ len $.Skip }}/{{ $.TotalTests }})</h2>
                             </div>
                         {{end}}
 
 
                         <div class="mdl-card__supporting-text mdl-grid mdl-grid--no-spacing test-results">
                             <div class="section__text mdl-cell mdl-cell--10-col-desktop mdl-cell--6-col-tablet mdl-cell--3-col-phone">
-                                <pre>
-                                    <!-- TODO: prepend jsgird name to it -->
-                                <div id="{{$r}}"> 
+                                <div id="jsGrid{{$r}}"> 
                                 </div>
-                                </pre> 
                             </div>
                         </div>
                     </div>
@@ -351,7 +356,7 @@
         
             
                     $(function () {
-                        $("#{{$r}}").jsGrid({
+                        $("#jsGrid{{$r}}").jsGrid({
                             height: "500px",
                             width: "100%",
                             filtering: true,
@@ -361,6 +366,7 @@
                             paging: true,
                             autoload: true,
                             pageSize: 13,
+                            heading: true,
                             pageButtonCount: 5,
                             deleteConfirm: "Do you really want to delete the client?",
                             controller: db{{$r}},
@@ -371,17 +377,19 @@
                                 {
                                     name: "Duration", 
                                     type: "number", 
-                                    width: 50,
+                                    width: 35,
                                     sorter: "number",   // uses sorter for numbers
                                     align: "center",     // center text alignment
                                     autosearch: true,
                                     itemTemplate: function(value) {
-                                        return parseFloat(value).toFixed(2) + "s"; }
+                                        var date = new Date(null);
+                                        date.setSeconds(value); // specify value for SECONDS here
+                                        return date.toISOString().substr(11, 8); }
                                 },
                                 {
                                     name: "Events",
                                     type: "text",
-                                    width: 150,
+                                    width: 20,
                                     cellRenderer: function(item, value){
                                         return $("<td>").addClass("mylogs").append(item); 
                                     }                        
