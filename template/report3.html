@@ -8510,7 +8510,7 @@
                         <div class="mdl-card__supporting-text mdl-grid mdl-grid--no-spacing test-results">
                             {{range .Pass}}
                             <h5> {{ .TestName }} ({{ .Duration }}s)</h5>
-                            <div class="window">
+                            <div class="window wd{{ mod $i 2 -}}">
                                 <div class="titlebar collapsible">
                                     <div class="buttons">
                                         <div class="close">
@@ -8551,7 +8551,7 @@
                         <div class="mdl-card__supporting-text mdl-grid mdl-grid--no-spacing test-results">
                             {{range .Skip}}
                             <h5> {{ .TestName }} ({{ .Duration }}s)</h5>
-                            <div class="window">
+                            <div class="window wd{{ mod $i 2 -}}">
                                 <div class="titlebar collapsible">
                                     <div class="buttons">
                                         <div class="close">
