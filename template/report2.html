@@ -12,7 +12,16 @@
     </style>
 
     <style type="text/css">
-    
+        #detailsDialog {
+            background-color: #000;
+            position: fixed;
+            top: 10%;
+            left: 0;
+            right: 0;
+            min-width: 100%;
+            min-height: 100%;
+            z-index:99;
+        }
         .mylogs {
             white-space: nowrap;
             overflow: hidden;
@@ -280,19 +289,16 @@
     <div id="detailsDialog">
         <form id="detailsForm">
             <div class="details-form-field">
-                <label for="TestName">Test Name:</label>
-                <input id="TestName" name="TestName" type="text" />
+                <label for="DetailTestName">Test Name:</label>
+                <input id="DetailTestName" name="DetailTestName" type="text" />
             </div>
             <div class="details-form-field">
-                <label for="Duration">Duration:</label>
-                <input id="Duration" name="Duration" type="number" />
+                <label for="DetailDuration">Duration:</label>
+                <input id="DetailDuration" name="DetailDuration" type="number" />
             </div>
             <div class="details-form-field">
-                <label for="Events">Events:</label>
-                <input id="Events" name="Events" type="text" />
-            </div>
-            <div class="details-form-field">
-                <button type="submit" id="save">Save</button>
+                <label for="DetailEvents">Events:</label>
+                <input id="DetailEvents" name="DetailEvents" type="text" size=20000 />
             </div>
         </form>
     </div>
@@ -392,6 +398,9 @@
                             pageButtonCount: 5,
                             deleteConfirm: "Do you really want to delete the client?",
                             controller: db{{$r}},
+                            rowClick: function(args) {
+                                showDetailsDialog("Edit", args.item);
+                            },
                             fields: [
                                 { name: "TestName", 
                                 type: "text", 
@@ -428,12 +437,19 @@
 
                 $("#detailsDialog").dialog({
                     autoOpen: false,
-                    width: 400,
+                    width: 800,
                     close: function() {
                         console.log("closing details dialog");
                     }
                 });
 
+                var showDetailsDialog = function(dialogType, c) {
+                    $("#DetailTestName").val(c.TestName);
+                    $("#DetailDuration").val(c.Duration);
+                    $("#DetailEvents").val(c.Events);
+                    $("#detailsDialog").dialog("option", "title", dialogType + " Client")
+                        .dialog("open");
+                };
 
                     }); // function cloze
                 </script>
