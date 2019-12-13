@@ -107,18 +107,15 @@
 
 <body>
     <h1>Test Result Summary</h1>
-    <h1> Failed: </h1>
-    <div id="Failed">
+    {{range $i, $r := .ResultTypes}}
+    <h1> {{$r}}: </h1>
+    <div id="{{$r}}">
     </div>
-    <h1> Passed: </h1>
-    <div id="Passed">
-    </div>
-    <h1> Skipped: </h1>
-    <div id="Skipped">
-    </div>
+    {{end}}
 
-    <script>
-        var dbfailed = {
+
+<script>
+        var dbfail = {
             loadData: function (filter) {
                 return $.grep(this.TestsSummary, function (ts) {
                     return (!filter.TestName.toLowerCase() || ts.TestName.toLowerCase().indexOf(filter.TestName.toLowerCase()) > -1)
@@ -141,21 +138,21 @@
 
         };
 
-        window.dbfailed = dbfailed;
+        window.dbfail = dbfail;
 
 
-        dbfailed.ValidResult = [
+        dbfail.ValidResult = [
             { Name: "PASS", Id: 0 },
-            { Name: "FAIL", Id: 1 },
+            { Name: "fail", Id: 1 },
             { Name: "SKIP", Id: 2 },
         ];
 
-        dbfailed.TestsSummary = {{ .}};
+        dbfail.TestsSummary = {{ .Fail }};
 
 
         $(function () {
 
-            $("#Failed").jsGrid({
+            $("#fail").jsGrid({
                 height: "80%",
                 width: "100%",
                 filtering: true,
@@ -167,7 +164,7 @@
                 pageSize: 15,
                 pageButtonCount: 5,
                 deleteConfirm: "Do you really want to delete the client?",
-                controller: dbfailed,
+                controller: dbfail,
                 ignoreCase: true,
                 fields: [
                     { name: "TestName", 
@@ -186,7 +183,7 @@
                     {
                         name: "Result",
                         type: "text",
-                        items: dbfailed.ValidResults,
+                        items: dbfail.ValidResults,
                         valueField: "Id",
                         textField: "Name",
                         cellRenderer: function(item, value){

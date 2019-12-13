@@ -19,14 +19,16 @@ func GenerateHTML(groups []models.TestGroup) ([]byte, error) {
 		return nil, err
 	}
 
-	type content struct {
+	type testRow struct {
 		TestName string
 		Duration string
 		Result   string
 		Events   string
 	}
 
-	var contents []content
+	var passedTests []testRow
+	var failedTests []testRow
+	var skippedTests []testRow
 	for _, g := range groups {
 		d := fmt.Sprintf("%f", g.Events[len(g.Events)-1].Elapsed)
 		logs := ""
@@ -34,12 +36,29 @@ func GenerateHTML(groups []models.TestGroup) ([]byte, error) {
 			logs = logs + "\n" + l.Output
 		}
 		if !g.Hidden {
-			contents = append(contents, content{TestName: g.Test, Duration: d, Result: g.Status, Events: logs})
+			if g.Status == "pass" {
+				passedTests = append(passedTests, testRow{TestName: g.Test, Duration: d, Result: g.Status, Events: logs})
+			}
+			if g.Status == "fail" {
+				failedTests = append(failedTests, testRow{TestName: g.Test, Duration: d, Result: g.Status, Events: logs})
+			}
+			if g.Status == "skip" {
+				skippedTests = append(skippedTests, testRow{TestName: g.Test, Duration: d, Result: g.Status, Events: logs})
+			}
+
 		}
 	}
 
+	type content struct {
+		Pass        []testRow
+		Fail        []testRow
+		Skip        []testRow
+		ResultTypes []string
+	}
+
+	c := &content{Pass: passedTests, Fail: failedTests, Skip: skippedTests, ResultTypes: []string{"pass", "fail", "skip"}}
 	var b bytes.Buffer
-	if err := t.ExecuteTemplate(&b, "out", contents); err != nil {
+	if err := t.ExecuteTemplate(&b, "out", c); err != nil {
 		return nil, err
 	}
 	return b.Bytes(), nil
