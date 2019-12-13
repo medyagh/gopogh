@@ -17,6 +17,8 @@
             text-overflow: ellipsis;
             max-width: 200px;
         }
+
+        
         html {
             height: 100%;
         }
@@ -28,6 +30,7 @@
             font-family: 'Helvetica Neue Light', 'Open Sans', Helvetica;
             font-size: 14px;
             font-weight: 300;
+            align-items: center;
         }
 
         h1 {
@@ -120,7 +123,6 @@
                     return $.grep(this.TestsSummary, function (ts) {
                         return (!filter.TestName.toLowerCase() || ts.TestName.toLowerCase().indexOf(filter.TestName.toLowerCase()) > -1)
                             && (!filter.Duration || ts.Duration.indexOf(filter.Duration) > -1)
-                            && (!filter.Result.toLowerCase() || ts.Result.toLowerCase().indexOf(filter.Result.toLowerCase()) > -1)
                             && (!filter.Events.toLowerCase() || ts.Events.toLowerCase().indexOf(filter.Events.toLowerCase()) > -1);
                     });
                 },
@@ -174,11 +176,10 @@
                     sorting: true,
                     paging: true,
                     autoload: true,
-                    pageSize: 15,
+                    pageSize: 13,
                     pageButtonCount: 5,
                     deleteConfirm: "Do you really want to delete the client?",
                     controller: db{{$r}},
-                    ignoreCase: true,
                     fields: [
                         { name: "TestName", 
                         type: "text", 
@@ -192,16 +193,6 @@
                             autosearch: true,
                             itemTemplate: function(value) {
                                 return parseFloat(value).toFixed(2) + "s"; }
-                        },
-                        {
-                            name: "Result",
-                            type: "text",
-                            items: db{{$r}}.ValidResults,
-                            valueField: "Id",
-                            textField: "Name",
-                            cellRenderer: function(item, value){
-                                return $("<td>").addClass("my-custom-result-class").append(item); 
-                            }                        
                         },
                         {
                             name: "Events",
