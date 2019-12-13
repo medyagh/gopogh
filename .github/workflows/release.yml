@@ -24,7 +24,7 @@ jobs:
     - name: build
       run: make cross
     - name: run test
-      run: make test
+      run: make test-ci
       - name: "Upload Linux"
       uses: actions/upload-artifact@v1
       with:

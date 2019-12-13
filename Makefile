@@ -7,8 +7,8 @@ LDFLAGS=-ldflags "-X main.Version=${VERSION} -X main.Build=${BUILD}"
 generate_json:
 	go tool test2json -t < ./testdata/minikube-logs.txt > ./testdata/minikube-logs.json
 
-.PHONY: test
-test: build
+.PHONY: test-ci
+test-ci: build
 	rm output.html || true
 	${BINARY}-linux-amd64 -in testdata/minikube-logs.json -out output.html
 
