@@ -10,9 +10,6 @@ import (
 
 // GenerateHTML geneates summerized html report
 func GenerateHTML(groups []models.TestGroup) ([]byte, error) {
-	for _, g := range groups {
-		g.Duration = g.Events[len(g.Events)-1].Elapsed
-	}
 	t, err := template.New("out").Parse(rice.MustFindBox("../template").MustString("report3.html"))
 	if err != nil {
 		return nil, err
@@ -22,6 +19,7 @@ func GenerateHTML(groups []models.TestGroup) ([]byte, error) {
 	var failedTests []models.TestGroup
 	var skippedTests []models.TestGroup
 	for _, g := range groups {
+		g.Duration = g.Events[len(g.Events)-1].Elapsed
 		if !g.Hidden {
 			if g.Status == "pass" {
 				passedTests = append(passedTests, g)

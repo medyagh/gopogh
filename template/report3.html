@@ -211,14 +211,8 @@
             white-space: -o-pre-wrap;    /* Opera 7 */
             word-wrap: break-word;       /* Internet Explorer 5.5+ */
             padding: 5px;
-        }
-
-        .local-run {
             font-family: monospace;
-            margin-top: 5px;
-            width: 100%;
-            border: none;
-            padding: 5px;
+
         }
     </style>
 </head>
@@ -242,7 +236,7 @@
                     <div class="mdl-card__supporting-text mdl-grid mdl-grid--no-spacing test-results">
                         {{range .Fail}}
                         <div class="section__text mdl-cell mdl-cell--10-col-desktop mdl-cell--6-col-tablet mdl-cell--3-col-phone">
-                            <h5>{{ .TestName }} ({{ .Duration }})</h5>
+                            <h5 class="collapsible">{{ .TestName }} ({{ .Duration }})</h5>
                             <div class="mdl-color--blue-grey-700 mdl-color-text--white">
                             {{range .Events}}
                                 <pre>{{ .Output }}</pre>
@@ -311,25 +305,23 @@
             link.parentNode.classList.toggle('hidden-section');
         });
     });
-
-    var localRunText = document.querySelector('.local-run');
-
-    localRunText.addEventListener('click', function(event) {
-        this.select();
-
-        try {
-            var successful = document.execCommand('copy');
-            if (successful) {
-                var copySuccess = document.querySelector('.copy-success');
-                copySuccess.classList.add('mdl-snackbar--active');
-                setTimeout(function() {
-                    copySuccess.classList.remove('mdl-snackbar--active');
-                }, 1500);
-            }
-        } catch (err) {
-            console.log('Oops, unable to copy');
-        }
-    });
 </script>
+
+<script>
+    var coll = document.getElementsByClassName("collapsible");
+    var i;
+    
+    for (i = 0; i < coll.length; i++) {
+      coll[i].addEventListener("click", function() {
+        this.classList.toggle("active");
+        var content = this.nextElementSibling;
+        if (content.style.display === "block") {
+          content.style.display = "none";
+        } else {
+          content.style.display = "block";
+        }
+      });
+    }
+    </script>
 </body>
 </html>
