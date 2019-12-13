@@ -15,7 +15,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 200px;
+            max-width: 10px;
         }
 
         
@@ -94,7 +94,18 @@
 <body>
     <h1>Test Result Summary</h1>
     {{range $i, $r := .ResultTypes}}
-    <h1> {{$r}}: </h1>
+    <h1> {{$r}}:
+        {{if eq $r "pass"}}
+            {{ len $.Pass }}/{{ $.TotalTests }}
+        {{end}}
+        {{if eq $r "fail"}}
+            {{ len $.Fail }}/{{ $.TotalTests }}        
+        {{end}}
+
+        {{if eq $r "skip"}}
+            {{ len $.Skip }}/{{ $.TotalTests }}        
+        {{end}}
+    </h1>
     <div id="{{$r}}">
     </div>
     {{end}}
@@ -128,7 +139,7 @@
     
             db{{$r}}.ValidResult = [
                 { Name: "PASS", Id: 0 },
-                { Name: "fail", Id: 1 },
+                { Name: "FAIL", Id: 1 },
                 { Name: "SKIP", Id: 2 },
             ];
     

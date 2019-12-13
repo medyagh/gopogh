@@ -14,7 +14,7 @@ func GenerateHTML(groups []models.TestGroup) ([]byte, error) {
 	for _, g := range groups {
 		g.Duration = g.Events[len(g.Events)-1].Elapsed
 	}
-	t, err := template.New("out").Parse(rice.MustFindBox("../template").MustString("report.html"))
+	t, err := template.New("out").Parse(rice.MustFindBox("../template").MustString("report2.html"))
 	if err != nil {
 		return nil, err
 	}
@@ -54,8 +54,10 @@ func GenerateHTML(groups []models.TestGroup) ([]byte, error) {
 		Fail        []testRow
 		Skip        []testRow
 		ResultTypes []template.JS
+		TotalTests  int
 	}
-	c := &content{Pass: passedTests, Fail: failedTests, Skip: skippedTests, ResultTypes: []template.JS{"pass", "fail", "skip"}}
+	testsNumber := len(passedTests) + len(failedTests) + len(skippedTests)
+	c := &content{Pass: passedTests, Fail: failedTests, Skip: skippedTests, ResultTypes: []template.JS{"fail", "pass", "skip"}, TotalTests: testsNumber}
 	var b bytes.Buffer
 	if err := t.ExecuteTemplate(&b, "out", c); err != nil {
 		return nil, err
