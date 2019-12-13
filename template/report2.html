@@ -288,24 +288,24 @@
         });
     });
 
-    var localRunText = document.querySelector('.local-run');
+    // var localRunText = document.querySelector('.local-run');
 
-    localRunText.addEventListener('click', function(event) {
-        this.select();
+    // localRunText.addEventListener('click', function(event) {
+    //     this.select();
 
-        try {
-            var successful = document.execCommand('copy');
-            if (successful) {
-                var copySuccess = document.querySelector('.copy-success');
-                copySuccess.classList.add('mdl-snackbar--active');
-                setTimeout(function() {
-                    copySuccess.classList.remove('mdl-snackbar--active');
-                }, 1500);
-            }
-        } catch (err) {
-            console.log('Oops, unable to copy');
-        }
-    });
+    //     try {
+    //         var successful = document.execCommand('copy');
+    //         if (successful) {
+    //             var copySuccess = document.querySelector('.copy-success');
+    //             copySuccess.classList.add('mdl-snackbar--active');
+    //             setTimeout(function() {
+    //                 copySuccess.classList.remove('mdl-snackbar--active');
+    //             }, 1500);
+    //         }
+    //     } catch (err) {
+    //         console.log('Oops, unable to copy');
+    //     }
+    // });
 </script>
 {{range $i, $r := .ResultTypes}}
                 <script>
@@ -357,7 +357,7 @@
             
                     $(function () {
                         $("#jsGrid{{$r}}").jsGrid({
-                            height: "500px",
+                            height: "800px",
                             width: "100%",
                             filtering: true,
                             editing: false,
@@ -365,7 +365,7 @@
                             sorting: true,
                             paging: true,
                             autoload: true,
-                            pageSize: 13,
+                            pageSize: 30,
                             heading: true,
                             pageButtonCount: 5,
                             deleteConfirm: "Do you really want to delete the client?",
@@ -384,15 +384,21 @@
                                     itemTemplate: function(value) {
                                         var date = new Date(null);
                                         date.setSeconds(value); // specify value for SECONDS here
-                                        return date.toISOString().substr(11, 8); }
+                                        if (value < 3600) {
+                                            return date.toISOString().substr(11, 8); }
+                                        }
+                                        
                                 },
                                 {
                                     name: "Events",
                                     type: "text",
                                     width: 20,
-                                    cellRenderer: function(item, value){
-                                        return $("<td>").addClass("mylogs").append(item); 
-                                    }                        
+                                    itemTemplate: function(value) {
+                                       return $("<pre>").addClass("mylogs").append(Array(value + 1).join("&#9733;"));
+                                    }
+                                    // cellRenderer: function(item, value){
+                                    //     return $("<tr>").addClass("mylogs").append(item); 
+                                    // }                        
             
                                 },
                             ]
