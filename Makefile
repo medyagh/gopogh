@@ -1,4 +1,3 @@
-.PHONY: build
 BINARY=gopogh
 VERSION=`git fetch;git describe --tags > /dev/null 2>&1`
 BUILD=`date +%FT%T%z`
@@ -7,10 +6,13 @@ LDFLAGS=-ldflags "-X main.Version=${VERSION} -X main.Build=${BUILD}"
 generate_json:
 	go tool test2json -t < ./testdata/minikube-logs.txt > ./testdata/minikube-logs.json
 
-.PHONY: test-ci
-test-ci: build
+build: 
+	CGO_ENABLED=0 go build ${LDFLAGS} -o ${BINARY}
+
+.PHONY: test
+test: build
 	rm output.html || true
-	${BINARY}-linux-amd64 -in testdata/minikube-logs.json -out output.html
+	./${BINARY} -in testdata/minikube-logs.json -out output.html
 
 .PHONY: cross
 cross: ${BINARY}-linux-amd64 ${BINARY}-darwin-amd64 ${BINARY}.exe
