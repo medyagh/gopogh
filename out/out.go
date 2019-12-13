@@ -53,10 +53,9 @@ func GenerateHTML(groups []models.TestGroup) ([]byte, error) {
 		Pass        []testRow
 		Fail        []testRow
 		Skip        []testRow
-		ResultTypes []string
+		ResultTypes []template.JS
 	}
-
-	c := &content{Pass: passedTests, Fail: failedTests, Skip: skippedTests, ResultTypes: []string{"pass", "fail", "skip"}}
+	c := &content{Pass: passedTests, Fail: failedTests, Skip: skippedTests, ResultTypes: []template.JS{"pass", "fail", "skip"}}
 	var b bytes.Buffer
 	if err := t.ExecuteTemplate(&b, "out", c); err != nil {
 		return nil, err

@@ -113,97 +113,115 @@
     </div>
     {{end}}
 
+    {{range $i, $r := .ResultTypes}}
+        <script>
+            var db{{$r}} = {
+                loadData: function (filter) {
+                    return $.grep(this.TestsSummary, function (ts) {
+                        return (!filter.TestName.toLowerCase() || ts.TestName.toLowerCase().indexOf(filter.TestName.toLowerCase()) > -1)
+                            && (!filter.Duration || ts.Duration.indexOf(filter.Duration) > -1)
+                            && (!filter.Result.toLowerCase() || ts.Result.toLowerCase().indexOf(filter.Result.toLowerCase()) > -1)
+                            && (!filter.Events.toLowerCase() || ts.Events.toLowerCase().indexOf(filter.Events.toLowerCase()) > -1);
+                    });
+                },
+    
+                insertItem: function (ts) {
+                    this.TestsSummary.push(ts);
+                },
+    
+                updateItem: function (ts) { },
+    
+                deleteItem: function (ts) {
+                    var i = $.inArray(ts, this.TestsSummary); // index
+                    this.TestsSummary.splice(i, 1);
+                }
+    
+            };
+    
+            window.db{{$r}} = db{{$r}};
+    
+    
+            db{{$r}}.ValidResult = [
+                { Name: "PASS", Id: 0 },
+                { Name: "fail", Id: 1 },
+                { Name: "SKIP", Id: 2 },
+            ];
+    
 
-<script>
-        var dbfail = {
-            loadData: function (filter) {
-                return $.grep(this.TestsSummary, function (ts) {
-                    return (!filter.TestName.toLowerCase() || ts.TestName.toLowerCase().indexOf(filter.TestName.toLowerCase()) > -1)
-                        && (!filter.Duration || ts.Duration.indexOf(filter.Duration) > -1)
-                        && (!filter.Result.toLowerCase() || ts.Result.toLowerCase().indexOf(filter.Result.toLowerCase()) > -1)
-                        && (!filter.Events.toLowerCase() || ts.Events.toLowerCase().indexOf(filter.Events.toLowerCase()) > -1);
+            {{if eq $r "pass"}}
+                db{{$r}}.TestsSummary = {{ $.Pass }};
+            {{end}}
+
+            {{if eq $r "fail"}}
+                db{{$r}}.TestsSummary = {{ $.Fail }};
+            {{end}}
+
+            {{if eq $r "skip"}}
+                db{{$r}}.TestsSummary = {{ $.Skip }};
+            {{end}}
+
+
+    
+    
+            $(function () {
+    
+                $("#{{$r}}").jsGrid({
+                    height: "80%",
+                    width: "100%",
+                    filtering: true,
+                    editing: false,
+                    inserting: false,
+                    sorting: true,
+                    paging: true,
+                    autoload: true,
+                    pageSize: 15,
+                    pageButtonCount: 5,
+                    deleteConfirm: "Do you really want to delete the client?",
+                    controller: db{{$r}},
+                    ignoreCase: true,
+                    fields: [
+                        { name: "TestName", 
+                        type: "text", 
+                        width: 150 },
+                        {
+                            name: "Duration", 
+                            type: "number", 
+                            width: 50,
+                            sorter: "number",   // uses sorter for numbers
+                            align: "center",     // center text alignment
+                            autosearch: true,
+                            itemTemplate: function(value) {
+                                return parseFloat(value).toFixed(2) + "s"; }
+                        },
+                        {
+                            name: "Result",
+                            type: "text",
+                            items: db{{$r}}.ValidResults,
+                            valueField: "Id",
+                            textField: "Name",
+                            cellRenderer: function(item, value){
+                                return $("<td>").addClass("my-custom-result-class").append(item); 
+                            }                        
+                        },
+                        {
+                            name: "Events",
+                            type: "text",
+                            width: 150,
+                            cellRenderer: function(item, value){
+                                return $("<td>").addClass("mylogs").append(item); 
+                            }                        
+    
+                        },
+                    ]
                 });
-            },
-
-            insertItem: function (ts) {
-                this.TestsSummary.push(ts);
-            },
-
-            updateItem: function (ts) { },
-
-            deleteItem: function (ts) {
-                var i = $.inArray(ts, this.TestsSummary); // index
-                this.TestsSummary.splice(i, 1);
-            }
-
-        };
-
-        window.dbfail = dbfail;
-
-
-        dbfail.ValidResult = [
-            { Name: "PASS", Id: 0 },
-            { Name: "fail", Id: 1 },
-            { Name: "SKIP", Id: 2 },
-        ];
-
-        dbfail.TestsSummary = {{ .Fail }};
-
-
-        $(function () {
-
-            $("#fail").jsGrid({
-                height: "80%",
-                width: "100%",
-                filtering: true,
-                editing: false,
-                inserting: false,
-                sorting: true,
-                paging: true,
-                autoload: true,
-                pageSize: 15,
-                pageButtonCount: 5,
-                deleteConfirm: "Do you really want to delete the client?",
-                controller: dbfail,
-                ignoreCase: true,
-                fields: [
-                    { name: "TestName", 
-                    type: "text", 
-                    width: 150 },
-                    {
-                        name: "Duration", 
-                        type: "number", 
-                        width: 50,
-                        sorter: "number",   // uses sorter for numbers
-                        align: "center",     // center text alignment
-                        autosearch: true,
-                        itemTemplate: function(value) {
-                            return parseFloat(value).toFixed(2) + "s"; }
-                    },
-                    {
-                        name: "Result",
-                        type: "text",
-                        items: dbfail.ValidResults,
-                        valueField: "Id",
-                        textField: "Name",
-                        cellRenderer: function(item, value){
-                            return $("<td>").addClass("my-custom-result-class").append(item); 
-                        }                        
-                    },
-                    {
-                        name: "Events",
-                        type: "text",
-                        width: 150,
-                        cellRenderer: function(item, value){
-                            return $("<td>").addClass("mylogs").append(item); 
-                        }                        
-
-                    },
-                ]
+    
             });
+        </script>
+    
+    {{end}}
 
-        });
-    </script>
+
+
 </body>
 
 </html>
