@@ -1,43 +1,53 @@
-name: Go
 on:
   push:
-    branches:    
-      - master         
-    tags:        
-      - v0.*           
-jobs:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
+name: Create Release
+jobs:
   build:
-    name: Build & Test & Release
+    name: Create Release
     runs-on: ubuntu-latest
     steps:
-    - name: Set up Go 1.13
+      - name: Checkout code
+        uses: actions/checkout@master
+      - name: Set up Go 1.13
       uses: actions/setup-go@v1
       with:
         go-version: 1.13
       id: go
-    - name: Check out code 
-      uses: actions/checkout@v1
-    - name: Get the version
-      id: get_version
-      run: echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d / -f 3)
-    - name: run test
-      run: make test
-    - name: build
-      run: make cross
+    - name: Test
+      run: make test 
     - name: "Upload Linux"
       uses: actions/upload-artifact@v1
       with:
-        name: "gopogh-linux-amd64-${{ steps.get_version.outputs.VERSION }}"
+        name: "gopogh-linux-amd64-${{ github.ref }}"
         path: ./gopogh-linux-amd64
     - name: "Upload Darwin"
       uses: actions/upload-artifact@v1
       with:
-        name: "gopogh-darwin-amd64-${{ steps.get_version.outputs.VERSION }}"
+        name: "gopogh-darwin-amd64-${{ github.ref }}"
         path: ./gopogh-darwin-amd64
     - name: "Upload windows"
       uses: actions/upload-artifact@v1
       with:
-        name: "gopogh${{ steps.get_version.outputs.VERSION }}.exe"
+        name: "gopogh-${{ github.ref }}.exe"
         path: ./gopogh.exe
+    - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            Changes in this Release
+            - First Change
+            - Second Change
+          draft: false
+          prerelease: false
+    - name: build
+      run: make cross
     
