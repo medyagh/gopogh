@@ -10,7 +10,7 @@ generate_json:
 .PHONY: test
 test: build
 	rm output.html || true
-	./gopogh -in testdata/minikube-logs.json -out output.html
+	${BINARY}-linux-amd64 -in testdata/minikube-logs.json -out output.html
 
 .PHONY: cross
 cross: ${BINARY}-linux-amd64 ${BINARY}-darwin-amd64 ${BINARY}.exe

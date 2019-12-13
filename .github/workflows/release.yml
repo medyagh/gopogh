@@ -21,11 +21,11 @@ jobs:
     - name: Get the version
       id: get_version
       run: echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d / -f 3)
-    - name: run test
-      run: make test
     - name: build
       run: make cross
-    - name: "Upload Linux"
+    - name: run test
+      run: make test
+      - name: "Upload Linux"
       uses: actions/upload-artifact@v1
       with:
         name: "gopogh-linux-amd64-${{ steps.get_version.outputs.VERSION }}"
