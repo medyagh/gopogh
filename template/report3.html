@@ -8298,8 +8298,17 @@
             vertical-align: 50%;
         }
 
-        .window {
+        /* even windows */
+        .wd0 { 
             background: #fff;
+
+        }
+
+        .wd1 {
+            background: black;
+        }
+
+        .window {
             width: 95%;
             margin: auto;
             margin-top: 1vh;
@@ -8458,9 +8467,9 @@
                         </div>
 
                         <div class="mdl-card__supporting-text mdl-grid mdl-grid--no-spacing test-results">
-                            {{range .Fail}}
+                            {{range  $i, $f := .Fail}}
                             <h5> {{ .TestName }} ({{ .Duration }}s)</h5>
-                            <div class="window">
+                            <div class="window wd{{ mod $i 2 -}}">
                                 <div class="titlebar collapsible">
                                     <div class="buttons">
                                         <div class="close">

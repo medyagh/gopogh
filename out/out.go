@@ -8,9 +8,16 @@ import (
 	"github.com/medyagh/goprettyorgohome/models"
 )
 
+func mod(a, b int) int {
+	return a % b
+}
+
 // GenerateHTML geneates summerized html report
 func GenerateHTML(groups []models.TestGroup) ([]byte, error) {
-	t, err := template.New("out").Parse(rice.MustFindBox("../template").MustString("report3.html"))
+	fmap := template.FuncMap{
+		"mod": mod,
+	}
+	t, err := template.New("out").Funcs(fmap).Parse(rice.MustFindBox("../template").MustString("report3.html"))
 	if err != nil {
 		return nil, err
 	}
