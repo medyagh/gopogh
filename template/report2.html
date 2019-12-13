@@ -297,8 +297,7 @@
                 <input id="DetailDuration" name="DetailDuration" type="number" />
             </div>
             <div class="details-form-field">
-                <label for="DetailEvents">Events:</label>
-                <input id="DetailEvents" name="DetailEvents" type="text" size=20000 />
+                <pre id="DetailEvents" name="DetailEvents"> </pre>
             </div>
         </form>
     </div>
@@ -446,7 +445,7 @@
                 var showDetailsDialog = function(dialogType, c) {
                     $("#DetailTestName").val(c.TestName);
                     $("#DetailDuration").val(c.Duration);
-                    $("#DetailEvents").val(c.Events);
+                    document.getElementById('DetailEvents').innerHTML = c.Events;
                     $("#detailsDialog").dialog("option", "title", dialogType + " Client")
                         .dialog("open");
                 };
