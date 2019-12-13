@@ -51,8 +51,8 @@ func ProcessEvents(evs []models.TestEvent) []models.TestGroup {
 		if !ok {
 			index = len(groups)
 			groups = append(groups, models.TestGroup{
-				Test:  e.Test,
-				Start: e.Time,
+				TestName: e.Test,
+				Start:    e.Time,
 			})
 			gm[e.Test] = index
 		}

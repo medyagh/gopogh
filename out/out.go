@@ -2,7 +2,6 @@ package out
 
 import (
 	"bytes"
-	"fmt"
 	"html/template"
 
 	rice "github.com/GeertJohan/go.rice"
@@ -14,45 +13,33 @@ func GenerateHTML(groups []models.TestGroup) ([]byte, error) {
 	for _, g := range groups {
 		g.Duration = g.Events[len(g.Events)-1].Elapsed
 	}
-	t, err := template.New("out").Parse(rice.MustFindBox("../template").MustString("report2.html"))
+	t, err := template.New("out").Parse(rice.MustFindBox("../template").MustString("report3.html"))
 	if err != nil {
 		return nil, err
 	}
 
-	type testRow struct {
-		TestName string
-		Duration string
-		Result   string
-		Events   string
-	}
-
-	var passedTests []testRow
-	var failedTests []testRow
-	var skippedTests []testRow
+	var passedTests []models.TestGroup
+	var failedTests []models.TestGroup
+	var skippedTests []models.TestGroup
 	for _, g := range groups {
-		d := fmt.Sprintf("%f", g.Events[len(g.Events)-1].Elapsed)
-		logs := ""
-		for _, l := range g.Events {
-			logs = logs + "\n" + l.Output
-		}
 		if !g.Hidden {
 			if g.Status == "pass" {
-				passedTests = append(passedTests, testRow{TestName: g.Test, Duration: d, Result: g.Status, Events: logs})
+				passedTests = append(passedTests, g)
 			}
 			if g.Status == "fail" {
-				failedTests = append(failedTests, testRow{TestName: g.Test, Duration: d, Result: g.Status, Events: logs})
+				failedTests = append(failedTests, g)
 			}
 			if g.Status == "skip" {
-				skippedTests = append(skippedTests, testRow{TestName: g.Test, Duration: d, Result: g.Status, Events: logs})
+				skippedTests = append(skippedTests, g)
 			}
 
 		}
 	}
 
 	type content struct {
-		Pass        []testRow
-		Fail        []testRow
-		Skip        []testRow
+		Pass        []models.TestGroup
+		Fail        []models.TestGroup
+		Skip        []models.TestGroup
 		ResultTypes []template.JS
 		TotalTests  int
 	}

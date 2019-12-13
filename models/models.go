@@ -14,7 +14,7 @@ type TestEvent struct {
 }
 
 type TestGroup struct {
-	Test     string
+	TestName string
 	Hidden   bool
 	Status   string
 	Start    time.Time

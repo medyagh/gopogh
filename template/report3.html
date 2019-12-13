@@ -12,20 +12,6 @@
     </style>
 
     <style type="text/css">
-
-        .ui-widget-header,.ui-state-default, ui-button {
-            background:#b9cd6d;
-            border: 1px solid #b9cd6d;
-            color: #FFFFFF;
-            font-weight: bold;
-         }
-        .mylogs {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 10px;
-        }
-
         h5 {
             font-weight: 900;
         }
@@ -235,13 +221,6 @@
             padding: 5px;
         }
     </style>
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-        <script src="http://code.jquery.com/ui/1.12.0/jquery-ui.js"></script>
-
-        <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.css" />
-        <link type="text/css" rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid-theme.min.css" />
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.js"></script>
 </head>
 <body class="mdl-demo mdl-color--grey-100 mdl-color-text--grey-700 mdl-base">
 <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
@@ -252,50 +231,74 @@
     </header>
     <main class="mdl-layout__content">
         <div class="mdl-layout__tab-panel is-active" id="overview">
-            {{range $i, $r := .ResultTypes}}
-                <section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp">
-                    <div class="mdl-card mdl-cell mdl-cell--12-col hidden-section">
-                        {{if eq $r "pass"}}
-                            <div class="mdl-card__title mdl-color--green-500 mdl-color-text--white test-section-header">
-                                <h2 class="mdl-card__title-text">Passed « ({{ len $.Pass }}/{{ $.TotalTests }})</h2>
-                            </div>
-                        {{end}}
-                        {{if eq $r "fail"}}
-                            <div class="mdl-card__title mdl-color--red-500 mdl-color-text--white test-section-header">
-                                <h2 class="mdl-card__title-text">Failed « ({{ len $.Fail }}/{{ $.TotalTests }})</h2>
-                            </div>
-                        {{end}}
-                        {{if eq $r "skip"}}
-                        <div class="mdl-card__title mdl-color--grey-500 mdl-color-text--white test-section-header">
-                                <h2 class="mdl-card__title-text">Skipped « ({{ len $.Skip }}/{{ $.TotalTests }})</h2>
-                            </div>
-                        {{end}}
 
+            {{ if .Fail}}
+            <section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp">
+                <div class="mdl-card mdl-cell mdl-cell--12-col">
+                    <div class="mdl-card__title mdl-color--red-500 mdl-color-text--white test-section-header">
+                        <h2 class="mdl-card__title-text">Test Failures ({{ len .Fail }}/{{ .TotalTests }})</h2>
+                    </div>
 
-                        <div class="mdl-card__supporting-text mdl-grid mdl-grid--no-spacing test-results">
-                            <div class="section__text mdl-cell mdl-cell--10-col-desktop mdl-cell--6-col-tablet mdl-cell--3-col-phone">
-                                <div id="jsGrid{{$r}}"> 
-                                </div>
+                    <div class="mdl-card__supporting-text mdl-grid mdl-grid--no-spacing test-results">
+                        {{range .Fail}}
+                        <div class="section__text mdl-cell mdl-cell--10-col-desktop mdl-cell--6-col-tablet mdl-cell--3-col-phone">
+                            <h5>{{ .TestName }} ({{ .Duration }})</h5>
+                            <div class="mdl-color--blue-grey-700 mdl-color-text--white">
+                            {{range .Events}}
+                                <pre>{{ .Output }}</pre>
+                            {{end}}
                             </div>
                         </div>
+                        {{end}}
                     </div>
-                </section>
+                </div>
+            </section>
+            {{end}}
+
+            {{ if .Pass}}
+            <section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp">
+                <div class="mdl-card mdl-cell mdl-cell--12-col hidden-section">
+                    <div class="mdl-card__title mdl-color--green-500 mdl-color-text--white test-section-header">
+                        <h2 class="mdl-card__title-text">Test Passes ({{ len .Pass }}/{{ .TotalTests }})</h2>
+                    </div>
+
+                    <div class="mdl-card__supporting-text mdl-grid mdl-grid--no-spacing test-results">
+                        {{range .Pass}}
+                        <div class="section__text mdl-cell mdl-cell--10-col-desktop mdl-cell--6-col-tablet mdl-cell--3-col-phone">
+                            <h5>{{ .TestName }} ({{ .Duration }})</h5>
+                            {{range .Events}}
+                                <pre>{{ .Output }}</pre>
+                            {{end}}
+                        </div>
+                        {{end}}
+                    </div>
+                </div>
+            </section>
+            {{end}}
+
+            {{ if .Skip}}
+            <section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp">
+                <div class="mdl-card mdl-cell mdl-cell--12-col hidden-section">
+                    <div class="mdl-card__title mdl-color--grey-500 mdl-color-text--white test-section-header">
+                        <h2 class="mdl-card__title-text">Skipped Test ({{ len .Skip }}/{{ .TotalTests }})</h2>
+                    </div>
+
+                    <div class="mdl-card__supporting-text mdl-grid mdl-grid--no-spacing test-results">
+                        {{range .Skip}}
+                        <div class="section__text mdl-cell mdl-cell--10-col-desktop mdl-cell--6-col-tablet mdl-cell--3-col-phone">
+                            <h5>{{ .TestName }} ({{ .Duration }})</h5>
+                            {{range .Events}}
+                                <pre>{{ .Output }}</pre>
+                            {{end}}
+                        </div>
+                        {{end}}
+                    </div>
+                </div>
+            </section>
             {{end}}
         </div>
-    </main>
-    <div id="detailsDialog">
-        <form id="detailsForm">
-            <div class="details-form-field">
-                <label for="DetailTestName">Test Name:</label>
-                <input id="DetailTestName" name="DetailTestName" type="text" />
-            </div>
-            <div class="details-form-field">
-                <label for="DetailDuration">Duration:</label>
-                <input id="DetailDuration" name="DetailDuration" type="number" />
-            </div>
-        </form>
-    </div>
 
+    </main>
     <div class="mdl-js-snackbar mdl-snackbar copy-success" data-upgraded=",MaterialSnackbar">
         <div class="mdl-snackbar__text">Copied to clipboard</div>
     </div>
@@ -309,140 +312,24 @@
         });
     });
 
-    // var localRunText = document.querySelector('.local-run');
+    var localRunText = document.querySelector('.local-run');
 
-    // localRunText.addEventListener('click', function(event) {
-    //     this.select();
+    localRunText.addEventListener('click', function(event) {
+        this.select();
 
-    //     try {
-    //         var successful = document.execCommand('copy');
-    //         if (successful) {
-    //             var copySuccess = document.querySelector('.copy-success');
-    //             copySuccess.classList.add('mdl-snackbar--active');
-    //             setTimeout(function() {
-    //                 copySuccess.classList.remove('mdl-snackbar--active');
-    //             }, 1500);
-    //         }
-    //     } catch (err) {
-    //         console.log('Oops, unable to copy');
-    //     }
-    // });
+        try {
+            var successful = document.execCommand('copy');
+            if (successful) {
+                var copySuccess = document.querySelector('.copy-success');
+                copySuccess.classList.add('mdl-snackbar--active');
+                setTimeout(function() {
+                    copySuccess.classList.remove('mdl-snackbar--active');
+                }, 1500);
+            }
+        } catch (err) {
+            console.log('Oops, unable to copy');
+        }
+    });
 </script>
-{{range $i, $r := .ResultTypes}}
-                <script>
-                    var db{{$r}} = {
-                        loadData: function (filter) {
-                            return $.grep(this.TestsSummary, function (ts) {
-                                return (!filter.TestName.toLowerCase() || ts.TestName.toLowerCase().indexOf(filter.TestName.toLowerCase()) > -1)
-                                    && (!filter.Duration || ts.Duration.indexOf(filter.Duration) > -1)
-                                    && (!filter.Events.toLowerCase() || ts.Events.toLowerCase().indexOf(filter.Events.toLowerCase()) > -1);
-                            });
-                        },
-            
-                        insertItem: function (ts) {
-                            this.TestsSummary.push(ts);
-                        },
-            
-                        updateItem: function (ts) { },
-            
-                        deleteItem: function (ts) {
-                            var i = $.inArray(ts, this.TestsSummary); // index
-                            this.TestsSummary.splice(i, 1);
-                        }
-            
-                    };
-            
-                    window.db{{$r}} = db{{$r}};
-            
-            
-                    db{{$r}}.ValidResult = [
-                        { Name: "PASS", Id: 0 },
-                        { Name: "FAIL", Id: 1 },
-                        { Name: "SKIP", Id: 2 },
-                    ];
-            
-        
-                    {{if eq $r "pass"}}
-                        db{{$r}}.TestsSummary = {{ $.Pass }};
-                    {{end}}
-        
-                    {{if eq $r "fail"}}
-                        db{{$r}}.TestsSummary = {{ $.Fail }};
-                    {{end}}
-        
-                    {{if eq $r "skip"}}
-                        db{{$r}}.TestsSummary = {{ $.Skip }};
-                    {{end}}
-        
-        
-            
-                    $(function () {
-                        $("#jsGrid{{$r}}").jsGrid({
-                            height: "800px",
-                            width: "100%",
-                            filtering: true,
-                            editing: false,
-                            inserting: false,
-                            sorting: true,
-                            paging: true,
-                            autoload: true,
-                            pageSize: 30,
-                            heading: true,
-                            pageButtonCount: 5,
-                            deleteConfirm: "Do you really want to delete the client?",
-                            controller: db{{$r}},
-                            rowClick: function(args) {
-                                showDetailsDialog("Edit", args.item);
-                            },
-                            fields: [
-                                { name: "TestName", 
-                                type: "text", 
-                                width: 150 },
-                                {
-                                    name: "Duration", 
-                                    type: "number", 
-                                    width: 35,
-                                    sorter: "number",   // uses sorter for numbers
-                                    align: "center",     // center text alignment
-                                    autosearch: true,
-                                    itemTemplate: function(value) {
-                                        var date = new Date(null);
-                                        date.setSeconds(value); // specify value for SECONDS here
-                                        if (value < 3600) {
-                                            return date.toISOString().substr(11, 8); }
-                                        }
-                                        
-                                },
-                                {
-                                    name: "Events",
-                                    type: "text",
-                                    width: 20,
-                                    itemTemplate: function(value) {
-                                       return $("<pre>").addClass("mylogs").append(Array(value + 1).join("&#9733;"));
-                                    }
-                                    // cellRenderer: function(item, value){
-                                    //     return $("<tr>").addClass("mylogs").append(item); 
-                                    // }                        
-            
-                                },
-                            ]
-                        });
-
-                $("#detailsDialog").dialog({
-                    autoOpen: false,
-                });
-
-                var showDetailsDialog = function(dialogType, c) {
-                    $("#DetailTestName").val(c.TestName);
-                    $("#DetailDuration").val(c.Duration);
-                    document.getElementById('DetailEvents').innerHTML = c.Events;
-                    $("#detailsDialog").dialog("open").dialog("moveToTop");
-                };
-
-                    }); // function cloze
-                </script>
-
-{{end}}
-
 </body>
 </html>
