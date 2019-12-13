@@ -17,19 +17,21 @@ jobs:
         with:
           go-version: 1.13
         id: go
+      - name: Cross Platform Build
+        run: make cross
       - name: Test
         run: make test 
-      - name: "Upload Linux"
+      - name: Upload Linux
         uses: actions/upload-artifact@v1
         with:
           name: "gopogh-linux-amd64"
           path: ./gopogh-linux-amd64
-      - name: "Upload Darwin"
+      - name: Upload Darwin
         uses: actions/upload-artifact@v1
         with:
           name: "gopogh-darwin-amd64"
           path: ./gopogh-darwin-amd64
-      - name: "Upload windows"
+      - name: Upload windows
         uses: actions/upload-artifact@v1
         with:
           name: "gopogh.exe"
@@ -48,6 +50,4 @@ jobs:
               - Second Change
           draft: false
           prerelease: false
-      - name: build
-        run: make cross
     
