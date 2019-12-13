@@ -25,7 +25,7 @@ jobs:
       run: make test
     - name: build
       run: make cross
-      - name: "Upload Linux"
+    - name: "Upload Linux"
       uses: actions/upload-artifact@v1
       with:
         name: "gopogh-linux-amd64-${{ steps.get_version.outputs.VERSION }}"
