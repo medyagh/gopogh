@@ -230,6 +230,8 @@
         }
     </style>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+        <script src="http://code.jquery.com/ui/1.12.0/jquery-ui.js"></script>
+
         <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.css" />
         <link type="text/css" rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid-theme.min.css" />
@@ -275,6 +277,26 @@
             {{end}}
         </div>
     </main>
+    <div id="detailsDialog">
+        <form id="detailsForm">
+            <div class="details-form-field">
+                <label for="TestName">Test Name:</label>
+                <input id="TestName" name="TestName" type="text" />
+            </div>
+            <div class="details-form-field">
+                <label for="Duration">Duration:</label>
+                <input id="Duration" name="Duration" type="number" />
+            </div>
+            <div class="details-form-field">
+                <label for="Events">Events:</label>
+                <input id="Events" name="Events" type="text" />
+            </div>
+            <div class="details-form-field">
+                <button type="submit" id="save">Save</button>
+            </div>
+        </form>
+    </div>
+
     <div class="mdl-js-snackbar mdl-snackbar copy-success" data-upgraded=",MaterialSnackbar">
         <div class="mdl-snackbar__text">Copied to clipboard</div>
     </div>
@@ -403,8 +425,17 @@
                                 },
                             ]
                         });
-            
-                    });
+
+                $("#detailsDialog").dialog({
+                    autoOpen: false,
+                    width: 400,
+                    close: function() {
+                        console.log("closing details dialog");
+                    }
+                });
+
+
+                    }); // function cloze
                 </script>
 
 {{end}}
