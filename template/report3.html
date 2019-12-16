@@ -8348,6 +8348,16 @@
             float: left;
             line-height: 0px;
         }
+        .search_box {
+            padding-right: 13px;
+            padding-top: 3px;
+            float: right;
+            line-height: 0px;
+        }
+
+
+        @import url("//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css");
+
 
         .buttons:hover a {
             visibility: visible;
@@ -8458,8 +8468,8 @@
         </header>
         <main class="mdl-layout__content">
             <div class="mdl-layout__tab-panel is-active" id="overview">
-
                 {{ if .Fail}}
+            
                 <section id="failsection" class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp">
                     <div class="mdl-card mdl-cell mdl-cell--12-col">
                         <div class="mdl-card__title mdl-color--red-500 mdl-color-text--white test-section-header">
@@ -8468,7 +8478,20 @@
 
                         <div class="mdl-card__supporting-text mdl-grid mdl-grid--no-spacing test-results">
                             {{range  $i, $f := .Fail}}
-                            <h5> {{ .TestName }} ({{ .Duration }}s)</h5>
+                            <script>
+                                $(document).ready(function(){
+                                  $("#failsearchbox{{$i}}").on("keyup", function() {
+                                    var value = $(this).val().toLowerCase();
+                                    $("#failtestcontent{{$i}} pre").filter(function() {
+                                      $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                                    });
+                                  });
+                                });
+                                </script>
+            
+                            <h5> {{ .TestName }} ({{ .Duration }}s)
+                                
+                            </h5>
                             <div class="window wd{{ mod $i 2 -}}">
                                 <div class="titlebar collapsible">
                                     <div class="buttons">
@@ -8485,10 +8508,15 @@
                                             <!-- zoom button link -->
                                         </div>
                                     </div>
-                                    {{ .TestName }} ({{ .Duration }}s)
+                                    {{ .TestName }}
+                                    <span class="fa fa-search"></span>
+                                    <input size="10" id="failsearchbox{{$i}}" class="search_box" type="text" placeholder="🔍">
+                                    
+
+                                    
                                     <!-- window title -->
                                 </div>
-                                <div class="content">
+                                <div id="failtestcontent{{ $i }}" class="content">
                                     {{range .Events}}
                                     <pre>{{ .Output }}</pre>
                                     {{end}}
