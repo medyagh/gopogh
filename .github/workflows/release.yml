@@ -80,5 +80,12 @@ jobs:
           asset_path: ./gopogh.exe
           asset_name: gopogh.exe
           asset_content_type: application/octet-stream
-
+      - name: Publish to Docker Repository
+        uses: actions/checkout@master
+        uses: elgohr/Publish-Docker-Github-Action@master
+        with:
+          name: medyagh/gopogh
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          tag_names: true
 
