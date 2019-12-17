@@ -1,7 +1,7 @@
 BINARY=gopogh
 VERSION=`git fetch;git describe --tags > /dev/null 2>&1`
 BUILD=`date +%FT%T%z`
-LDFLAGS=-ldflags "-X main.Version=${VERSION} -X main.Build=${BUILD}"
+LDFLAGS=-ldflags "-X github.com/medyagh/gopogh/out.Version=${VERSION} -X github.com/medyagh/gopogh/out.Build=${BUILD}"
 
 generate_json:
 	go tool test2json -t < ./testdata/minikube-logs.txt > ./testdata/minikube-logs.json

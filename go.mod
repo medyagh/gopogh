@@ -1,4 +1,4 @@
-module github.com/medyagh/goprettyorgohome
+module github.com/medyagh/gopogh
 
 go 1.13
 

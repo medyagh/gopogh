@@ -5,17 +5,22 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/medyagh/goprettyorgohome/out"
-	"github.com/medyagh/goprettyorgohome/parser"
+	"github.com/medyagh/gopogh/out"
+	"github.com/medyagh/gopogh/parser"
 )
 
 var (
 	inPath  = flag.String("in", "", "path to JSON input file")
 	outPath = flag.String("out", "", "path to HTML output file")
+	version = flag.Bool("version", true, "shows version")
 )
 
 func main() {
 	flag.Parse()
+	if *version {
+		fmt.Printf("Version %s Build %s", out.Version, out.Build)
+	}
+
 	if *inPath == "" {
 		panic("must provide path to JSON input file")
 	}

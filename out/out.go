@@ -3,9 +3,15 @@ package out
 import (
 	"bytes"
 	"html/template"
+	"time"
 
 	rice "github.com/GeertJohan/go.rice"
-	"github.com/medyagh/goprettyorgohome/models"
+	"github.com/medyagh/gopogh/models"
+)
+
+var (
+	Version string // Version is gopogh version
+	Build   string // Build includes commit sha date
 )
 
 func mod(a, b int) int {
@@ -42,14 +48,17 @@ func GenerateHTML(groups []models.TestGroup) ([]byte, error) {
 	}
 
 	type content struct {
-		Pass        []models.TestGroup
-		Fail        []models.TestGroup
-		Skip        []models.TestGroup
-		ResultTypes []template.JS
-		TotalTests  int
+		Pass          []models.TestGroup
+		Fail          []models.TestGroup
+		Skip          []models.TestGroup
+		ResultTypes   []template.JS
+		TotalTests    int
+		BuildVersion  string
+		TimeGenerated time.Time
 	}
 	testsNumber := len(passedTests) + len(failedTests) + len(skippedTests)
-	c := &content{Pass: passedTests, Fail: failedTests, Skip: skippedTests, ResultTypes: []template.JS{"fail", "pass", "skip"}, TotalTests: testsNumber}
+	c := &content{Pass: passedTests, Fail: failedTests, Skip: skippedTests, ResultTypes: []template.JS{"fail", "pass", "skip"}, TotalTests: testsNumber, BuildVersion: Version + "_" + Build, TimeGenerated: time.Now()}
+
 	var b bytes.Buffer
 	if err := t.ExecuteTemplate(&b, "out", c); err != nil {
 		return nil, err
