@@ -11,63 +11,64 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style type="text/css">
         {{template "cssthing"}}
+
     </style>
     <script>
-        jQuery.fn.highlight = function(pat) {
-    function innerHighlight(node, pat) {
-    var skip = 0;
-    if (node.nodeType == 3) {
-    var pos = node.data.toUpperCase().indexOf(pat);
-    if (pos >= 0) {
-        var spannode = document.createElement('span');
-        spannode.className = 'highlight';
-        var middlebit = node.splitText(pos);
-        var endbit = middlebit.splitText(pat.length);
-        var middleclone = middlebit.cloneNode(true);
-        spannode.appendChild(middleclone);
-        middlebit.parentNode.replaceChild(spannode, middlebit);
-        skip = 1;
-    }
-    }
-    else if (node.nodeType == 1 && node.childNodes && !/(script|style)/i.test(node.tagName)) {
-    for (var i = 0; i < node.childNodes.length; ++i) {
-        i += innerHighlight(node.childNodes[i], pat);
-    }
-    }
-    return skip;
-    }
-    return this.each(function() {
-    innerHighlight(this, pat.toUpperCase());
-    });
-    };
-
-    jQuery.fn.removeHighlight = function() {
-    function newNormalize(node) {
-        for (var i = 0, children = node.childNodes, nodeCount = children.length; i < nodeCount; i++) {
-            var child = children[i];
-            if (child.nodeType == 1) {
-                newNormalize(child);
-                continue;
+        jQuery.fn.highlight = function (pat) {
+            function innerHighlight(node, pat) {
+                var skip = 0;
+                if (node.nodeType == 3) {
+                    var pos = node.data.toUpperCase().indexOf(pat);
+                    if (pos >= 0) {
+                        var spannode = document.createElement('span');
+                        spannode.className = 'highlight';
+                        var middlebit = node.splitText(pos);
+                        var endbit = middlebit.splitText(pat.length);
+                        var middleclone = middlebit.cloneNode(true);
+                        spannode.appendChild(middleclone);
+                        middlebit.parentNode.replaceChild(spannode, middlebit);
+                        skip = 1;
+                    }
+                }
+                else if (node.nodeType == 1 && node.childNodes && !/(script|style)/i.test(node.tagName)) {
+                    for (var i = 0; i < node.childNodes.length; ++i) {
+                        i += innerHighlight(node.childNodes[i], pat);
+                    }
+                }
+                return skip;
             }
-            if (child.nodeType != 3) { continue; }
-            var next = child.nextSibling;
-            if (next == null || next.nodeType != 3) { continue; }
-            var combined_text = child.nodeValue + next.nodeValue;
-            new_node = node.ownerDocument.createTextNode(combined_text);
-            node.insertBefore(new_node, child);
-            node.removeChild(child);
-            node.removeChild(next);
-            i--;
-            nodeCount--;
-        }
-    }
+            return this.each(function () {
+                innerHighlight(this, pat.toUpperCase());
+            });
+        };
 
-    return this.find("span.highlight").each(function() {
-        var thisParent = this.parentNode;
-        thisParent.replaceChild(this.firstChild, this);
-        newNormalize(thisParent);
-    }).end();
-    };
+        jQuery.fn.removeHighlight = function () {
+            function newNormalize(node) {
+                for (var i = 0, children = node.childNodes, nodeCount = children.length; i < nodeCount; i++) {
+                    var child = children[i];
+                    if (child.nodeType == 1) {
+                        newNormalize(child);
+                        continue;
+                    }
+                    if (child.nodeType != 3) { continue; }
+                    var next = child.nextSibling;
+                    if (next == null || next.nodeType != 3) { continue; }
+                    var combined_text = child.nodeValue + next.nodeValue;
+                    new_node = node.ownerDocument.createTextNode(combined_text);
+                    node.insertBefore(new_node, child);
+                    node.removeChild(child);
+                    node.removeChild(next);
+                    i--;
+                    nodeCount--;
+                }
+            }
+
+            return this.find("span.highlight").each(function () {
+                var thisParent = this.parentNode;
+                thisParent.replaceChild(this.firstChild, this);
+                newNormalize(thisParent);
+            }).end();
+        };
     </script>
 
 </head>
@@ -76,9 +77,9 @@
     <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
         <header class="mdl-layout__header mdl-layout__header--scroll mdl-color--primary">
             <div class="mdl-layout--large-screen-only mdl-layout__header-row">
-                <h3>Test Results: {{.Report.Name}} 
+                <h3>Test Results: {{.Report.Name}}
                     {{ if .Report.PR }}
-                        <a href="https://{{.Report.RepoName}}/pull/{{.Report.PR}}">{{.Report.PR}}</a>
+                    <a href="https://{{.Report.RepoName}}/pull/{{.Report.PR}}">{{.Report.PR}}</a>
                     {{ end }}
                 </h3>
                 <pre>
@@ -90,170 +91,12 @@
         </header>
         <main class="mdl-layout__content">
             <div class="mdl-layout__tab-panel is-active" id="overview">
-                <section id="failsection" class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp">
-                    <div class="mdl-card mdl-cell mdl-cell--12-col">
-                        <div class="mdl-card__title mdl-color--red-500 mdl-color-text--white test-section-header">
-                            <h2 class="mdl-card__title-text">Test Failures ({{ len .Fail }}/{{ .TotalTests }})</h2>
-                        </div>
-                        <div class="mdl-card__supporting-text mdl-grid mdl-grid--no-spacing test-results">
-                            {{ if .Fail}}
-                                    <div  id="failtableofcontent">
-                                        <ul>
-                                            {{range  $i, $f := .Fail}}            
-                                            <li><a href="#failtestwindow{{$i}}">{{ .TestName }}</a>  - {{.Duration}}</li>
-                                            {{end}}
-                                        </ul>
-                                    </div>
-                            
-                            {{range  $i, $f := .Fail}}
-                            <script type="text/javascript">
-                                $(function() {
-                                    $('#failsearchbox{{$i}}').bind('keyup change', function(ev) {
-                                        // pull in the new value
-                                        var searchTerm = $(this).val();
-                                
-                                        // remove any old highlighted terms
-                                        $('#failtestcontent{{$i}} pre').removeHighlight();
-                                
-                                        // disable highlighting if empty
-                                        if ( searchTerm ) {
-                                            // highlight the new term
-                                            $('#failtestcontent{{$i}} pre').highlight( searchTerm );
-                                        }
-                                    });
-                                });
-                                </script>
+            {{range $resultType, $results := .Results}}
+                {{range $results}}
 
-                            {{ if gt $i 0}}
-                            <div class="mdl-grid">
-                                <div class="jumpup">
-                                    <a href="#failsection"><i class="fa fa-arrow-up"></i></a>
-                                </div>
-                            </div>
-
-                            {{end}}
-                            <div id="failtestwindow{{ $i }}" class="window wd{{ mod $i 2 -}}">
-                                <div class="titlebar collapsible">
-                                    <div class="buttons">
-                                        <div class="close">
-                                            <a class="closebutton" href="#"><span><strong>x</strong></span></a>
-                                            <!-- close button link -->
-                                        </div>
-                                        <div class="minimize">
-                                            <a class="minimizebutton" href="#"><span><strong>&ndash;</strong></span></a>
-                                            <!-- minimize button link -->
-                                        </div>
-                                        <div class="zoom">
-                                            <a class="zoombutton" href="#"><span><strong>+</strong></span></a>
-                                            <!-- zoom button link -->
-                                        </div>
-
-                                    </div>
-                                    {{ .TestName }}
-                                    
-
-                                    
-                                    <!-- window title -->
-                                </div>
-                                <div>
-                                <div class="mdl-grid ">
-                                    <input size="30" id="failsearchbox{{$i}}" class="search_box" type="text" placeholder="🔍 search... ">
-
-                                </div>
-                                <div id="failtestcontent{{ $i }}" class="content">
-                                    {{range .Events}}
-                                    <pre>{{ .Output }}</pre>
-                                    {{end}}
-                                </div>
-                                </div>
-                            </div>
-                            {{end}}
-                        </div>
-                    </div>
-                </section>
                 {{end}}
-
-                {{ if .Pass}}
-                <section id="passsection" class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp">
-                    <div class="mdl-card mdl-cell mdl-cell--12-col hidden-section">
-                        <div class="mdl-card__title mdl-color--green-500 mdl-color-text--white test-section-header">
-                            <h2 class="mdl-card__title-text">Test Passes ({{ len .Pass }}/{{ .TotalTests }})</h2>
-                        </div>
-
-                        <div class="mdl-card__supporting-text mdl-grid mdl-grid--no-spacing test-results">
-                            {{range  $i, $f := .Pass}}
-                            <h5> {{ .TestName }} ({{ .Duration }}s)</h5>
-                            <div class="window wd{{ mod $i 2 -}}">
-                                <div class="titlebar collapsible">
-                                    <div class="buttons">
-                                        <div class="close">
-                                            <a class="closebutton" href="#"><span><strong>x</strong></span></a>
-                                            <!-- close button link -->
-                                        </div>
-                                        <div class="minimize">
-                                            <a class="minimizebutton" href="#"><span><strong>&ndash;</strong></span></a>
-                                            <!-- minimize button link -->
-                                        </div>
-                                        <div class="zoom">
-                                            <a class="zoombutton" href="#"><span><strong>+</strong></span></a>
-                                            <!-- zoom button link -->
-                                        </div>
-                                    </div>
-                                    {{ .TestName }} ({{ .Duration }}s)
-                                    <!-- window title -->
-                                </div>
-                                <div class="content">
-                                    {{range .Events}}
-                                    <pre>{{ .Output }}</pre>
-                                    {{end}}
-                                </div>
-                            </div>
-                            {{end}}
-                        </div>
-                    </div>
-                </section>
-                {{end}}
-
-                {{ if .Skip}}
-                <section id="skipsection" class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp">
-                    <div class="mdl-card mdl-cell mdl-cell--12-col hidden-section">
-                        <div class="mdl-card__title mdl-color--grey-500 mdl-color-text--white test-section-header">
-                            <h2 class="mdl-card__title-text">Skipped Test ({{ len .Skip }}/{{ .TotalTests }})</h2>
-                        </div>
-
-                        <div class="mdl-card__supporting-text mdl-grid mdl-grid--no-spacing test-results">
-                            {{range  $i, $f := .Skip}}
-                            <h5> {{ .TestName }} ({{ .Duration }}s)</h5>
-                            <div class="window wd{{ mod $i 2 -}}">
-                                <div class="titlebar collapsible">
-                                    <div class="buttons">
-                                        <div class="close">
-                                            <a class="closebutton" href="#"><span><strong>x</strong></span></a>
-                                            <!-- close button link -->
-                                        </div>
-                                        <div class="minimize">
-                                            <a class="minimizebutton" href="#"><span><strong>&ndash;</strong></span></a>
-                                            <!-- minimize button link -->
-                                        </div>
-                                        <div class="zoom">
-                                            <a class="zoombutton" href="#"><span><strong>+</strong></span></a>
-                                            <!-- zoom button link -->
-                                        </div>
-                                    </div>
-                                    {{ .TestName }} ({{ .Duration }}s)
-                                    <!-- window title -->
-                                </div>
-                                <div class="content">
-                                    {{range .Events}}
-                                    <pre>{{ .Output }}</pre>
-                                    {{end}}
-                                </div>
-                            </div>
-                            {{end}}
-                        </div>
-                    </div>
-                </section>
-                {{end}}            </div>
+            {{end}}
+            </div>
 
         </main>
         <div class="mdl-js-snackbar mdl-snackbar copy-success" data-upgraded=",MaterialSnackbar">
@@ -288,10 +131,10 @@
         }
     </script>
 
-<div class="mdl-mega-footer">
-Report generated on {{.CreatedOn.Format "Jan 02, 2006 15:04:05"}} 
-<br>By  <a href="https://github.com/medyagh/gopogh/">Gopogh {{.BuildVersion}} </a>
-</div>
+    <div class="mdl-mega-footer">
+        Report generated on {{.CreatedOn.Format "Jan 02, 2006 15:04:05"}}
+        <br>By <a href="https://github.com/medyagh/gopogh/">Gopogh {{.BuildVersion}} </a>
+    </div>
 </body>
 
 </html>
