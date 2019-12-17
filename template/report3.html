@@ -94,11 +94,19 @@
             {{range $resultType, $results := .Results}}
                 <section id="{{$resultType}}section" class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp">
                     <div class="mdl-card mdl-cell mdl-cell--12-col">
-                        <div class="mdl-card__title mdl-color--red-500 mdl-color-text--white test-section-header">
-                            <h2 class="mdl-card__title-text">Test {{$resultType}} ({{ len $results }}/{{ $.TotalTests }})</h2>
+                        {{if eq $resultType "pass"}}
+                            <div class="mdl-card__title mdl-color--green-500 mdl-color-text--white test-section-header">
+                        {{end}}
+                        {{if eq $resultType "fail"}}
+                            <div class="mdl-card__title mdl-color--red-500 mdl-color-text--white test-section-header">
+                        {{end}}
+                        {{if eq $resultType "skip"}}
+                        <div class="mdl-card__title mdl-color--grey-500 mdl-color-text--white test-section-header">
+                        {{end}}                        
+                        <h2 class="mdl-card__title-text">Test {{$resultType}} ({{ len $results }}/{{ $.TotalTests }})</h2>
                         </div>
                         <div class="mdl-card__supporting-text mdl-grid mdl-grid--no-spacing test-results">
-                                    <div  id="failtableofcontent">
+                                    <div  id="{{$resultType}}tableofcontent">
                                         <ul>
                                             {{range $i,$r :=$results}}
                                             <li><a href="#{{$resultType}}testwindow{{$i}}">{{ $r.TestName }}</a>  - {{$r.Duration}}</li>
@@ -124,15 +132,13 @@
                                     });
                                 });
                             </script>
-
-                            {{ if gt $i 0}}
-                            <div class="mdl-grid">
-                                <div class="jumpup">
-                                    <a href="#{{$resultType}}section"><i class="fa fa-arrow-up"></i></a>
+                                {{ if gt $i 0}}
+                                <div class="mdl-grid">
+                                    <div class="jumpup">
+                                        <a href="#{{$resultType}}section"><i class="fa fa-arrow-up"></i></a>
+                                    </div>
                                 </div>
-                            </div>
-                            {{end}}
-
+                                {{end}}
                             <div id="{{$resultType}}testwindow{{ $i }}" class="window wd{{ mod $i 2 -}}">
                                 <div class="titlebar collapsible">
                                     <div class="buttons">
@@ -148,7 +154,8 @@
                                             <a class="zoombutton" href="#"><span><strong>+</strong></span></a>
                                             <!-- zoom button link -->
                                         </div>
-                                    </div>                                
+                                    </div>            
+                                    {{ $r.TestName }} ({{ $r.Duration }}s)                    
                                     <!-- window title -->
                                 </div>
                                 <div>
