@@ -8355,6 +8355,15 @@
             line-height: 0px;
         }
 
+        .footer {
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            color: white;
+            text-align: center;
+        }
+
 
         @import url("//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css");
 
@@ -8463,7 +8472,16 @@
     <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
         <header class="mdl-layout__header mdl-layout__header--scroll mdl-color--primary">
             <div class="mdl-layout--large-screen-only mdl-layout__header-row">
-                <h3>Test Results</h3>
+                <h3>Test Results: {{.Report.Name}} 
+                    {{ if .Report.PR }}
+                        <a href="https://{{.Report.RepoName}}/pull/{{.Report.PR}}">{{.Report.PR}}</a>
+                    {{ end }}
+                </h3>
+                <pre>
+                    {{ if .Report.Details }}
+                    {{ .Report.Details }}
+                    {{ end }}
+                </pre>
             </div>
         </header>
         <main class="mdl-layout__content">
@@ -8643,8 +8661,8 @@
         }
     </script>
 
-<div id="footer">
-Report generated at {{.TimeGenerated}} 
+<div class="mdl-mega-footer">
+Report generated on {{.CreatedOn.Format "Jan 02, 2006 15:04:05"}} 
 <br>By  <a href="https://github.com/medyagh/goprettyorgohomeGenerated">Gopogh {{.BuildVersion}} </a>
 </div>
 </body>

@@ -19,7 +19,7 @@ func mod(a, b int) int {
 }
 
 // GenerateHTML geneates summerized html report
-func GenerateHTML(groups []models.TestGroup) ([]byte, error) {
+func GenerateHTML(report models.Report, groups []models.TestGroup) ([]byte, error) {
 	fmap := template.FuncMap{
 		"mod": mod,
 	}
@@ -48,16 +48,17 @@ func GenerateHTML(groups []models.TestGroup) ([]byte, error) {
 	}
 
 	type content struct {
-		Pass          []models.TestGroup
-		Fail          []models.TestGroup
-		Skip          []models.TestGroup
-		ResultTypes   []template.JS
-		TotalTests    int
-		BuildVersion  string
-		TimeGenerated time.Time
+		Pass         []models.TestGroup
+		Fail         []models.TestGroup
+		Skip         []models.TestGroup
+		ResultTypes  []template.JS
+		TotalTests   int
+		BuildVersion string
+		CreatedOn    time.Time
+		Report       models.Report
 	}
 	testsNumber := len(passedTests) + len(failedTests) + len(skippedTests)
-	c := &content{Pass: passedTests, Fail: failedTests, Skip: skippedTests, ResultTypes: []template.JS{"fail", "pass", "skip"}, TotalTests: testsNumber, BuildVersion: Version + "_" + Build, TimeGenerated: time.Now()}
+	c := &content{Pass: passedTests, Fail: failedTests, Skip: skippedTests, ResultTypes: []template.JS{"fail", "pass", "skip"}, TotalTests: testsNumber, BuildVersion: Version + "_" + Build, CreatedOn: time.Now(), Report: report}
 
 	var b bytes.Buffer
 	if err := t.ExecuteTemplate(&b, "out", c); err != nil {

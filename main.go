@@ -5,14 +5,19 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/medyagh/gopogh/models"
 	"github.com/medyagh/gopogh/out"
 	"github.com/medyagh/gopogh/parser"
 )
 
 var (
-	inPath  = flag.String("in", "", "path to JSON input file")
-	outPath = flag.String("out", "", "path to HTML output file")
-	version = flag.Bool("version", true, "shows version")
+	reportName    = flag.String("name", "", "report name ")
+	reportPR      = flag.String("pr", "", "Pull request number")
+	reportDetails = flag.String("details", "", "report details (for example test args...)")
+	reportRepo    = flag.String("repo", "", "source repo")
+	inPath        = flag.String("in", "", "path to JSON input file")
+	outPath       = flag.String("out", "", "path to HTML output file")
+	version       = flag.Bool("version", true, "shows version")
 )
 
 func main() {
@@ -33,7 +38,8 @@ func main() {
 		panic(fmt.Sprintf("json: %v", err))
 	}
 	groups := parser.ProcessEvents(events)
-	html, err := out.GenerateHTML(groups)
+	r := models.Report{Name: *reportName, Details: *reportDetails, PR: *reportPR, RepoName: *reportRepo}
+	html, err := out.GenerateHTML(r, groups)
 	if err != nil {
 		panic(fmt.Sprintf("html: %v", err))
 	}

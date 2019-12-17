@@ -1,6 +1,7 @@
 BINARY=gopogh
 VERSION=`git fetch;git describe --tags > /dev/null 2>&1`
-BUILD=`date +%FT%T%z`
+COMMIT_NO := $(shell git rev-parse HEAD 2> /dev/null || true)
+BUILD ?= $(if $(shell git status --porcelain --untracked-files=no),"${COMMIT_NO}-dirty","${COMMIT_NO}")
 LDFLAGS=-ldflags "-X github.com/medyagh/gopogh/out.Version=${VERSION} -X github.com/medyagh/gopogh/out.Build=${BUILD}"
 
 generate_json:
@@ -12,7 +13,7 @@ build:
 .PHONY: test
 test: build
 	rm output.html || true
-	./${BINARY} -in testdata/minikube-logs.json -out output.html
+	./${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/minikube-logs.json" -out "output.html" -details ""
 
 .PHONY: cross
 cross: ${BINARY}-linux-amd64 ${BINARY}-darwin-amd64 ${BINARY}.exe
