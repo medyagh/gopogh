@@ -1,9 +1,10 @@
 {{define "cssthing"}}
 
+
 a,
 a:visited {
     text-decoration: underline;
-    color: rgba(0, 0, 0, .87)
+    color: white(0, 0, 0, .87)
 }
 
 html {
