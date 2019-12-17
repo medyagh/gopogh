@@ -59,13 +59,14 @@
                                   });
                                 });
                                 </script>
-                        <div class="mdl-grid">
                             {{ if gt $i 0}}
-                            <div class="jumpup">
-                                    <a href="#failsection"><i class="fa fa-arrow-up"></i></a>
+                            <div class="mdl-grid">
+                                <div class="jumpup">
+                                    <a href="#failsection"><i class="fa fa-arrow-up"></i>Go Top</a>
+                                </div>
                             </div>
+
                             {{end}}
-                        </div>
                             <div id="failtestwindow{{ $i }}" class="window wd{{ mod $i 2 -}}">
                                 <div class="titlebar collapsible">
                                     <div class="buttons">
