@@ -9,8 +9,9 @@ docker run --mount type=bind,source="${JSON_OUT}",target=/tmp/out.json \
 
 HTML_OUT=$(pwd)/minikube-logs.html
 touch ${HTML_OUT}
+
 docker run --rm --mount type=bind,source=${JSON_OUT},target=/tmp/log.json \
                 --mount type=bind,source="${HTML_OUT}",target=/tmp/log.html \
-                -i medyagh/gopogh:v0.0.8 sh -c "/gopogh -in /tmp/log.json -out /tmp/log.html"
+                -i medyagh/gopogh:v0.0.12 sh -c "/gopogh -in /tmp/log.json -out /tmp/log.html -name KVM linux -pr 6081 -repo github.com/kubernetes/minikube"
 
 
