@@ -23,7 +23,12 @@ func GenerateHTML(report models.Report, groups []models.TestGroup) ([]byte, erro
 	fmap := template.FuncMap{
 		"mod": mod,
 	}
-	t, err := template.New("out").Funcs(fmap).Parse(rice.MustFindBox("../template").MustString("report3.html"))
+	t, err := template.New("out").Parse(rice.MustFindBox("../template").MustString("report3.css"))
+	if err != nil {
+		return nil, err
+	}
+
+	t, err = t.Funcs(fmap).Parse(rice.MustFindBox("../template").MustString("report3.html"))
 	if err != nil {
 		return nil, err
 	}
