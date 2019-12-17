@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
     <title>Test Run</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style type="text/css">
         {{template "cssthing"}}
     </style>
@@ -33,8 +33,6 @@
         </header>
         <main class="mdl-layout__content">
             <div class="mdl-layout__tab-panel is-active" id="overview">
-                {{ if .Fail}}
-            
                 <section id="failsection" class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp">
                     <div class="mdl-card mdl-cell mdl-cell--12-col">
                         <div class="mdl-card__title mdl-color--red-500 mdl-color-text--white test-section-header">
@@ -42,6 +40,18 @@
                         </div>
 
                         <div class="mdl-card__supporting-text mdl-grid mdl-grid--no-spacing test-results">
+                            {{ if .Fail}}
+                            <div class="mdl-grid">
+                                    <table  id="failtable">
+                                            {{range  $i, $f := .Fail}}            
+                                            <tr>
+                                                <td><a href="#failtestwindow{{$i}}">{{ .TestName }} </a></td>
+                                                <td>{{ .Duration}}</td>
+                                            </tr>
+                                            {{end}}
+                                    </table>
+                            </div>
+                            
                             {{range  $i, $f := .Fail}}
                             <script>
                                 $(document).ready(function(){
@@ -53,11 +63,14 @@
                                   });
                                 });
                                 </script>
-            
-                            <h5> {{ .TestName }} ({{ .Duration }}s)
-                                
-                            </h5>
-                            <div class="window wd{{ mod $i 2 -}}">
+                        <div class="mdl-grid">
+                            {{ if gt $i 0}}
+                            <div class="jumpup">
+                                    <a href="#failsection"><i class="fa fa-arrow-up"></i></a>
+                            </div>
+                            {{end}}
+                        </div>
+                            <div id="failtestwindow{{ $i }}" class="window wd{{ mod $i 2 -}}">
                                 <div class="titlebar collapsible">
                                     <div class="buttons">
                                         <div class="close">
@@ -72,10 +85,10 @@
                                             <a class="zoombutton" href="#"><span><strong>+</strong></span></a>
                                             <!-- zoom button link -->
                                         </div>
+
                                     </div>
                                     {{ .TestName }}
-                                    <span class="fa fa-search"></span>
-                                    <input size="10" id="failsearchbox{{$i}}" class="search_box" type="text" placeholder="🔍 search... ">
+                                    <input size="10" id="failsearchbox{{$i}}" class="fa fa-search search_box" type="text" placeholder="🔍 search... ">
                                     
 
                                     

@@ -1,5 +1,11 @@
 {{define "cssthing"}}
 
+a,
+a:visited {
+    text-decoration: underline;
+    color: rgba(0, 0, 0, .87)
+}
+
 html {
     color: rgba(0, 0, 0, .87)
 }
@@ -101,7 +107,8 @@ textarea {
 
     a,
     a:visited {
-        text-decoration: underline
+        text-decoration: underline;
+        color: #000 !important;
     }
 
     a[href]:after {
@@ -286,11 +293,6 @@ p {
     font-size: 14px;
     letter-spacing: 0;
     margin: 0 0 16px
-}
-
-a {
-    color: rgb(255, 64, 129);
-    font-weight: 500
 }
 
 blockquote {
@@ -8320,13 +8322,6 @@ span {
     float: left;
     line-height: 0px;
 }
-.search_box {
-    margin-right:5px;
-    padding-right: 100px;
-    padding-top: 3px;
-    float: right;
-    line-height: 0px;
-}
 
 @import url("//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css");
 
@@ -8397,6 +8392,35 @@ span {
     border: 1px solid #14ae46;
     border-radius: 50%;
     display: inline-block;
+}
+
+.search_box {
+    margin-right:5px;
+    padding-right: 100px;
+    padding-top: 3px;
+    float: right;
+    line-height: 0px;
+    background: #ffbd4c;
+    font-size: 9pt;
+    line-height: 11px;
+    margin-left: 6px;
+    width: 11px;
+    height: 11px;
+    border: 1px solid #14ae46;
+
+}
+
+
+
+.jumpup {
+    font-size: 24pt;
+    margin-left: 6px;
+    width: 30px;
+    height: 30px;
+    border: 1px solid #14ae46;
+    border-radius: 50%;
+    color:white;
+    background-color: yellow;
 }
 
 .zoom:active {
