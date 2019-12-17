@@ -8396,16 +8396,15 @@ span {
 
 .search_box {
     margin-right:5px;
-    padding-right: 100px;
+    padding-right: 10px;
     padding-top: 3px;
     float: right;
     line-height: 0px;
     background: #ffbd4c;
     font-size: 9pt;
-    line-height: 11px;
+    line-height: 16px;
     margin-left: 6px;
-    width: 11px;
-    height: 11px;
+    height: 16px;
     border: 1px solid #14ae46;
 
 }
