@@ -8299,7 +8299,7 @@ span {
     background: -o-linear-gradient(top, #ebebeb, #d5d5d5);
     background: linear-gradient(top, #ebebeb, #d5d5d5);
     color: #4d494d;
-    font-size: calc(13px + (26 - 14) * ((100vw - 300px) / (1600 - 300)));
+    font-size: calc(6px + (26 - 14) * ((100vw - 300px) / (1600 - 300)));
     line-height: 24px;
     text-align: center;
     width: 100%;
@@ -8398,7 +8398,7 @@ span {
     margin-right:5px;
     padding-right: 10px;
     padding-top: 3px;
-    background: #999;
+    background: #F8F8F8;
     font-size: 14pt;
     line-height: 24px;
     margin: 6px;

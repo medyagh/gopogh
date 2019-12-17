@@ -13,6 +13,7 @@ build:
 .PHONY: test
 test: build
 	rm output.html || true
+	go tool test2json -t < testdata/minikube-logs.txt > testdata/minikube-logs.json
 	./${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/minikube-logs.json" -out "output.html" -details ""
 
 .PHONY: cross
