@@ -8101,9 +8101,6 @@ h5 {
     max-width: 1260px;
 }
 
-.mdl-demo #features section.section--center {
-    max-width: 620px;
-}
 
 .mdl-demo section>header {
     display: flex;
@@ -8189,14 +8186,7 @@ h5 {
     background-color: white;
 }
 
-.mdl-demo #features section {
-    margin-bottom: 72px;
-}
 
-.mdl-demo #features h4,
-#features h5 {
-    margin-bottom: 16px;
-}
 
 .mdl-card {
     min-height: 0;
@@ -8291,7 +8281,7 @@ span {
 }
 
 .window {
-    width: 95%;
+    width: 97%;
     margin: auto;
     margin-top: 1vh;
     border: 1px solid #acacac;
@@ -8331,7 +8321,8 @@ span {
     line-height: 0px;
 }
 .search_box {
-    padding-right: 13px;
+    margin-right:5px;
+    padding-right: 100px;
     padding-top: 3px;
     float: right;
     line-height: 0px;
