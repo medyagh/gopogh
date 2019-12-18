@@ -3754,11 +3754,14 @@ fieldset[disabled] .mdl-checkbox .mdl-checkbox__ripple-container .mdl-ripple,
     margin-bottom: 16px
 }
 
+.mdl-mega-footer a {
+    color:gray;
+}
+
 .mdl-mega-footer--right-section a,
 .mdl-mega-footer__right-section a {
     display: block;
     margin-bottom: 16px;
-    color: inherit;
     text-decoration: none
 }
 
@@ -4928,6 +4931,13 @@ fieldset[disabled] .mdl-checkbox .mdl-checkbox__ripple-container .mdl-ripple,
         display: none
     }
 }
+.mdl-layout__header a{
+    color:white;
+}
+.mdl-layout__header a:visited{
+    color:white;
+}
+
 
 .mdl-layout__header {
     display: -webkit-flex;
