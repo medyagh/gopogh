@@ -9,9 +9,10 @@ import (
 	"github.com/medyagh/gopogh/models"
 )
 
+const Version = "v0.0.15" // Version is gopogh version
+
 var (
-	Version string // Version is gopogh version
-	Build   string // Build includes commit sha date
+	Build string //  commitsha injected during build
 )
 
 func mod(a, b int) int {
