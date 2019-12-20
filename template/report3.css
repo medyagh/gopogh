@@ -174,14 +174,14 @@ a,
 }
 
 html {
-    width: 100%;
+    width: 99%;
     height: 100%;
     -ms-touch-action: manipulation;
     touch-action: manipulation
 }
 
 body {
-    width: 100%;
+    width: 98%;
     min-height: 100%
 }
 
@@ -8283,14 +8283,16 @@ span {
     vertical-align: 50%;
 }
 
-/* even windows */
+/* even text output  windows */
 .wd0 { 
     background: #fff;
 
 }
 
+/* odd text output windows */
 .wd1 {
-    background: black;
+    background: #212121;
+    color: #fafafa;
 }
 
 .window {

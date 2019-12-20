@@ -13,7 +13,7 @@ build:
 test: build
 	rm output.html || true
 	go tool test2json -t < testdata/minikube-logs.txt > testdata/minikube-logs.json
-	./${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/minikube-logs.json" -out "output.html" -details ""
+	./${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/minikube-logs.json" -out "output.html" -details "commit f1933f44dddca618fe992688dba41b9289046169"
 
 .PHONY: cross
 cross: ${BINARY}-linux-amd64 ${BINARY}-darwin-amd64 ${BINARY}.exe

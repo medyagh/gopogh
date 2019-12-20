@@ -81,14 +81,11 @@
                 <h3>Test Report: {{.Report.Name}}
                     {{ if .Report.PR }}
                     <a href="https://{{.Report.RepoName}}/pull/{{.Report.PR}}">{{.Report.PR}}</a>
-                    {{ end }}
+                    {{ end }} 
                 </h3>
-                <pre>
-                    {{ if .Report.Details }}
-                    {{ .Report.Details }}
-                    {{ end }}
-                </pre>
+                <h6>{{ if .Report.Details }}{{ .Report.Details }}{{ end }}</h6>
             </div>
+            
         </header>
         <main class="mdl-layout__content">
             <div class="mdl-layout__tab-panel is-active" id="overview">
