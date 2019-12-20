@@ -5,19 +5,19 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/medyagh/gopogh/models"
 	"github.com/medyagh/gopogh/out"
 	"github.com/medyagh/gopogh/parser"
 )
 
 var (
-	reportName    = flag.String("name", "", "report name ")
-	reportPR      = flag.String("pr", "", "Pull request number")
-	reportDetails = flag.String("details", "", "report details (for example test args...)")
-	reportRepo    = flag.String("repo", "", "source repo")
-	inPath        = flag.String("in", "", "path to JSON input file")
-	outPath       = flag.String("out", "", "path to HTML output file")
-	version       = flag.Bool("version", false, "shows version")
+	reportName     = flag.String("name", "", "report name ")
+	reportPR       = flag.String("pr", "", "Pull request number")
+	reportDetails  = flag.String("details", "", "report details (for example test args...)")
+	reportRepo     = flag.String("repo", "", "source repo")
+	inPath         = flag.String("in", "", "path to JSON input file")
+	outPath        = flag.String("out", "", "path to HTML output file")
+	summaryOutPath = flag.String("summary", "", "path to summary output file")
+	version        = flag.Bool("version", false, "shows version")
 )
 
 func main() {
@@ -34,13 +34,15 @@ func main() {
 		panic("must provide path to HTML output file")
 	}
 
-	events, err := parser.ParseJSON(*inPath)
+	rCfg := out.ReportConfig{Name: *reportName, Details: *reportDetails, PR: *reportPR, RepoName: *reportRepo}
+
+	events, err := parser.LoadGoJSON(*inPath)
 	if err != nil {
 		panic(fmt.Sprintf("json: %v", err))
 	}
-	groups := parser.ProcessEvents(events)
-	r := models.Report{Name: *reportName, Details: *reportDetails, PR: *reportPR, RepoName: *reportRepo}
-	html, err := out.GenerateHTML(r, groups)
+
+	report := parser.GenerateDetailedReport(events)
+	html, err := out.GenerateHTML(rCfg, report)
 	if err != nil {
 		panic(fmt.Sprintf("html: %v", err))
 	}

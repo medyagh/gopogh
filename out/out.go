@@ -6,7 +6,7 @@ import (
 	"time"
 
 	rice "github.com/GeertJohan/go.rice"
-	"github.com/medyagh/gopogh/models"
+	"github.com/medyagh/gopogh/parser"
 )
 
 const Version = "v0.0.15" // Version is gopogh version
@@ -19,8 +19,16 @@ func mod(a, b int) int {
 	return a % b
 }
 
-// GenerateHTML geneates summerized html report
-func GenerateHTML(report models.Report, groups []models.TestGroup) ([]byte, error) {
+// ReportConfig holds the report details such as test name, PR number...
+type ReportConfig struct {
+	Name     string
+	Details  string
+	PR       string // pull request number
+	RepoName string // for example github repo
+}
+
+// GenerateHTML returns HTML bytes out of a report
+func GenerateHTML(cfg ReportConfig, r parser.DetailedReport) ([]byte, error) {
 	fmap := template.FuncMap{
 		"mod": mod,
 	}
@@ -34,38 +42,19 @@ func GenerateHTML(report models.Report, groups []models.TestGroup) ([]byte, erro
 		return nil, err
 	}
 
-	var passedTests []models.TestGroup
-	var failedTests []models.TestGroup
-	var skippedTests []models.TestGroup
-	for _, g := range groups {
-		g.Duration = g.Events[len(g.Events)-1].Elapsed
-		if !g.Hidden {
-			if g.Status == "pass" {
-				passedTests = append(passedTests, g)
-			}
-			if g.Status == "fail" {
-				failedTests = append(failedTests, g)
-			}
-			if g.Status == "skip" {
-				skippedTests = append(skippedTests, g)
-			}
-
-		}
-	}
-
 	type content struct {
-		Results      map[string][]models.TestGroup
+		Results      map[string][]parser.TestGroup
 		TotalTests   int
 		BuildVersion string
 		CreatedOn    time.Time
-		Report       models.Report
+		Report       ReportConfig
 	}
-	testsNumber := len(passedTests) + len(failedTests) + len(skippedTests)
-	rs := map[string][]models.TestGroup{}
-	rs["pass"] = passedTests
-	rs["fail"] = failedTests
-	rs["skip"] = skippedTests
-	c := &content{Results: rs, TotalTests: testsNumber, BuildVersion: Version + "_" + Build, CreatedOn: time.Now(), Report: report}
+	testsNumber := r.TotalTests
+	rs := map[string][]parser.TestGroup{}
+	rs["pass"] = r.PassedTests
+	rs["fail"] = r.FailedTests
+	rs["skip"] = r.SkippedTests
+	c := &content{Results: rs, TotalTests: testsNumber, BuildVersion: Version + "_" + Build, CreatedOn: time.Now(), Report: cfg}
 
 	var b bytes.Buffer
 	if err := t.ExecuteTemplate(&b, "out", c); err != nil {
