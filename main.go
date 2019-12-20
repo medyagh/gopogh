@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -17,6 +18,7 @@ var (
 	inPath         = flag.String("in", "", "path to JSON input file")
 	outPath        = flag.String("out", "", "path to HTML output file")
 	summaryOutPath = flag.String("summary", "", "path to summary output file")
+	statusOutPath  = flag.String("status", "", "path to status output file")
 	version        = flag.Bool("version", false, "shows version")
 )
 
@@ -42,6 +44,7 @@ func main() {
 	}
 
 	report := parser.GenerateDetailedReport(events)
+
 	html, err := out.GenerateHTML(rCfg, report)
 	if err != nil {
 		panic(fmt.Sprintf("html: %v", err))
@@ -49,4 +52,23 @@ func main() {
 	if err := ioutil.WriteFile(*outPath, html, 0644); err != nil {
 		panic(fmt.Sprintf("write: %v", err))
 	}
+	status := report.PessemisticStatus()
+	if *statusOutPath != "" {
+		if err := ioutil.WriteFile(*summaryOutPath, []byte(status), 0644); err != nil {
+			fmt.Printf("error writing status %v", err)
+		}
+	}
+
+	fmt.Println(status)
+
+	if *summaryOutPath != "" {
+		s, err := json.Marshal(report.Summary())
+		if err != nil {
+			fmt.Printf("error marshalizing summary: %v", err)
+		}
+		if err := ioutil.WriteFile(*summaryOutPath, s, 0644); err != nil {
+			panic(fmt.Sprintf("write: %v", err))
+		}
+	}
+
 }

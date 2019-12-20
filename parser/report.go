@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -82,4 +83,8 @@ func (d DetailedReport) Summary() SummaryReport {
 		sr.SkippedTests = append(sr.SkippedTests, TestSummary{TestName: p.TestName, Duration: p.Duration})
 	}
 	return sr
+}
+
+func (d DetailedReport) PessemisticStatus() string {
+	return fmt.Sprintf("%d / %d failures", len(d.FailedTests), d.TotalTests)
 }

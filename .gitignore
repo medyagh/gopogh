@@ -8,3 +8,4 @@ testdata/minikube-logs.json
 testdata/minikube-logs2.json 
 testdata/minikube-logs2.html
 testdata/minikube-logs2.out
+summary.json
