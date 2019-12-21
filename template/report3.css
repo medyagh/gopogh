@@ -8464,6 +8464,7 @@ h3 {
 
 .highlight {
     background-color: #fff34d;
+    color:red;
     -moz-border-radius: 5px; /* FF1+ */
     -webkit-border-radius: 5px; /* Saf3-4 */
     border-radius: 5px; /* Opera 10.5, IE 9, Saf5, Chrome */
