@@ -128,7 +128,8 @@ textarea {
     pre,
     blockquote {
         border: 1px solid #999;
-        page-break-inside: avoid
+        page-break-inside: avoid;
+
     }
 
     thead {
@@ -8289,8 +8290,10 @@ span {
 
 }
 
+/* odd windows */
 .wd1 {
     background: black;
+    color: #fff;
 }
 
 .window {

@@ -110,7 +110,7 @@
                                     <div  id="{{$resultType}}tableofcontent">
                                         <ul>
                                             {{range $i,$r :=$results}}
-                                            <li><a href="#{{$resultType}}testwindow{{$i}}">{{ $r.TestName }}</a>  - {{$r.Duration}}</li>
+                                            <li><a href="#{{$resultType}}_{{ $r.TestName }}">{{ $r.TestName }}</a>  - {{$r.Duration}}s</li>
                                             {{end}}
                                         </ul>
                                     </div>
@@ -140,7 +140,7 @@
                                     </div>
                                 </div>
                                 {{end}}
-                            <div id="{{$resultType}}testwindow{{ $i }}" class="window wd{{ mod $i 2 -}}">
+                            <div id="{{$resultType}}_{{$r.TestName}}" class="window wd{{ mod $i 2 -}}">
                                 <div class="titlebar collapsible">
                                     <div class="buttons">
                                         <div class="close">
@@ -162,7 +162,9 @@
                                 <div>
                                 <div class="mdl-grid ">
                                 <input size="23" id="{{$resultType}}searchbox{{$i}}" class="search_box" type="text" placeholder="🔍 search... ">
+                                <a id="pl_{{$resultType}}_{{$r.TestName}}" href="#{{$resultType}}_{{ $r.TestName }}"><i class="fa fa-link fa-2x"></i></a>
                                 </div>
+                                
                                 <div id="{{$resultType}}testcontent{{ $i }}" class="content">
                                             {{range $r.Events}}
                                             <pre>{{ .Output }}</pre>
