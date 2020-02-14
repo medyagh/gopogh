@@ -1,8 +1,8 @@
 BINARY=gopogh
-VERSION=`git fetch;git describe --tags > /dev/null 2>&1`
+GIT_TAG=`git fetch;git describe --tags > /dev/null 2>&1`
 COMMIT_NO := $(shell git rev-parse HEAD 2> /dev/null || true)
 BUILD ?= $(if $(shell git status --porcelain --untracked-files=no),"${COMMIT_NO}-dirty","${COMMIT_NO}")
-LDFLAGS=-ldflags "-X github.com/medyagh/gopogh/out.Version=${VERSION} -X github.com/medyagh/gopogh/out.Build=${BUILD}"
+LDFLAGS=-ldflags " -X github.com/medyagh/gopogh/out.Build=${GIT_TAG}-${BUILD}"
 
 generate_json:
 	go tool test2json -t < ./testdata/minikube-logs.txt > ./testdata/minikube-logs.json
