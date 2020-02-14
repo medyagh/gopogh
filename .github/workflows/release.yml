@@ -22,7 +22,9 @@ jobs:
           go get github.com/GeertJohan/go.rice
           go get github.com/GeertJohan/go.rice/rice
       - name: Cross Platform Build
-        run: make cross
+        run: |
+          export PATH=$PATH:$(go env GOPATH)/bin
+          make cross
       - name: Test
         run: make test 
       - name: Upload Linux
