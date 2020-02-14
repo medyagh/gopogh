@@ -10,7 +10,7 @@ import (
 )
 
 // Version is gopogh version
-const Version = "v0.0.23"
+const Version = "v0.1.0"
 
 // Build includes commit sha date
 var Build string
