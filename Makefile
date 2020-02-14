@@ -7,7 +7,11 @@ LDFLAGS=-ldflags "-X github.com/medyagh/gopogh/out.Version=${VERSION} -X github.
 generate_json:
 	go tool test2json -t < ./testdata/minikube-logs.txt > ./testdata/minikube-logs.json
 
-build: 
+embed-static: # update this after each build
+	cd out && rice embed-go
+
+.PHONY: build
+build: embed-static:
 	CGO_ENABLED=0 go build ${LDFLAGS} -o ${BINARY}
 
 .PHONY: test
@@ -17,7 +21,7 @@ test: build
 	./${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/minikube-logs.json" -out "output.html" -details ""
 
 .PHONY: cross
-cross: ${BINARY}-linux-amd64 ${BINARY}-darwin-amd64 ${BINARY}.exe
+cross: embed-static ${BINARY}-linux-amd64 ${BINARY}-darwin-amd64 ${BINARY}.exe
 
 ${BINARY}-darwin-amd64:
 	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build ${LDFLAGS} -o ${BINARY}-darwin-amd64
