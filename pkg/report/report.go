@@ -2,6 +2,7 @@ package report
 
 import (
 	"bytes"
+	"encoding/json"
 	"html/template"
 	"time"
 
@@ -19,8 +20,23 @@ func mod(a, b int) int {
 	return a % b
 }
 
-// GenerateHTML geneates summerized html report
-func GenerateHTML(report models.Report, groups []models.TestGroup) ([]byte, error) {
+// DisplayContent represents the visible reporst to the end user
+type DisplayContent struct {
+	Results      map[string][]models.TestGroup
+	TotalTests   int
+	BuildVersion string
+	CreatedOn    time.Time
+	Report       models.Report
+}
+
+// HTML returns html format
+func (c DisplayContent) JSON() ([]byte, error) {
+	return json.Marshal(c)
+}
+
+// HTML returns html format
+func (c DisplayContent) HTML() ([]byte, error) {
+
 	fmap := template.FuncMap{
 		"mod": mod,
 	}
@@ -34,6 +50,15 @@ func GenerateHTML(report models.Report, groups []models.TestGroup) ([]byte, erro
 		return nil, err
 	}
 
+	var b bytes.Buffer
+	if err := t.ExecuteTemplate(&b, "out", c); err != nil {
+		return nil, err
+	}
+	return b.Bytes(), nil
+}
+
+// generate geneates a report
+func Generate(report models.Report, groups []models.TestGroup) (DisplayContent, error) {
 	var passedTests []models.TestGroup
 	var failedTests []models.TestGroup
 	var skippedTests []models.TestGroup
@@ -53,23 +78,10 @@ func GenerateHTML(report models.Report, groups []models.TestGroup) ([]byte, erro
 		}
 	}
 
-	type content struct {
-		Results      map[string][]models.TestGroup
-		TotalTests   int
-		BuildVersion string
-		CreatedOn    time.Time
-		Report       models.Report
-	}
 	testsNumber := len(passedTests) + len(failedTests) + len(skippedTests)
 	rs := map[string][]models.TestGroup{}
 	rs["pass"] = passedTests
 	rs["fail"] = failedTests
 	rs["skip"] = skippedTests
-	c := &content{Results: rs, TotalTests: testsNumber, BuildVersion: Version + "_" + Build, CreatedOn: time.Now(), Report: report}
-
-	var b bytes.Buffer
-	if err := t.ExecuteTemplate(&b, "out", c); err != nil {
-		return nil, err
-	}
-	return b.Bytes(), nil
+	return DisplayContent{Results: rs, TotalTests: testsNumber, BuildVersion: Version + "_" + Build, CreatedOn: time.Now(), Report: report}, nil
 }

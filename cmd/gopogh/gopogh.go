@@ -42,11 +42,15 @@ func main() {
 	}
 	groups := parser.ProcessEvents(events)
 	r := models.Report{Name: *reportName, Details: *reportDetails, PR: *reportPR, RepoName: *reportRepo}
-	html, err := report.GenerateHTML(r, groups)
+	c, err := report.Generate(r, groups)
 	if err != nil {
-		panic(fmt.Sprintf("html: %v", err))
+		panic(fmt.Sprintf("failed to generate report: %v", err))
+	}
+	html, err := c.HTML()
+	if err != nil {
+		fmt.Printf("failed to convert report to html: %v", err)
 	}
 	if err := ioutil.WriteFile(*outPath, html, 0644); err != nil {
-		panic(fmt.Sprintf("write: %v", err))
+		panic(fmt.Sprintf("failed to write the html output %s: %v", *outPath, err))
 	}
 }
