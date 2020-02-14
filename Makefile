@@ -7,11 +7,12 @@ LDFLAGS=-ldflags "-X github.com/medyagh/gopogh/out.Version=${VERSION} -X github.
 generate_json:
 	go tool test2json -t < ./testdata/minikube-logs.txt > ./testdata/minikube-logs.json
 
+.PHONY: embed-static
 embed-static: # update this before each build. to embed template files into golang
 	cd out && rice embed-go
 
 .PHONY: build
-build: embed-static:
+build: embed-static
 	CGO_ENABLED=0 go build ${LDFLAGS} -o ${BINARY}
 
 .PHONY: test
