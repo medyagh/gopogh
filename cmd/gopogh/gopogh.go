@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/medyagh/gopogh/models"
-	"github.com/medyagh/gopogh/out"
-	"github.com/medyagh/gopogh/parser"
+	"github.com/medyagh/gopogh/pkg/models"
+	"github.com/medyagh/gopogh/pkg/parser"
+	"github.com/medyagh/gopogh/pkg/report"
 )
+
+// Build includes commit sha date
+var Build string
 
 var (
 	reportName    = flag.String("name", "", "report name ")
@@ -23,7 +26,7 @@ var (
 func main() {
 	flag.Parse()
 	if *version {
-		fmt.Printf("Version %s Build %s", out.Version, out.Build)
+		fmt.Printf("Version %s Build %s", report.Version, report.Build)
 	}
 
 	if *inPath == "" {
@@ -39,7 +42,7 @@ func main() {
 	}
 	groups := parser.ProcessEvents(events)
 	r := models.Report{Name: *reportName, Details: *reportDetails, PR: *reportPR, RepoName: *reportRepo}
-	html, err := out.GenerateHTML(r, groups)
+	html, err := report.GenerateHTML(r, groups)
 	if err != nil {
 		panic(fmt.Sprintf("html: %v", err))
 	}

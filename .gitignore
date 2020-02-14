@@ -1,10 +1,10 @@
-./out/rice-box.go
-gopogh
+out
+rice-box.go
 output.html
 gopogh-linux-amd64
 gopogh-darwin-amd64
 gopogh.exe
-testdata/minikube-logs.json 
 testdata/minikube-logs2.json 
 testdata/minikube-logs2.html
 testdata/minikube-logs2.out
+./gopogh

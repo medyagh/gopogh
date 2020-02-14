@@ -1,4 +1,4 @@
-package out
+package report
 
 import (
 	"bytes"
@@ -6,13 +6,14 @@ import (
 	"time"
 
 	rice "github.com/GeertJohan/go.rice"
-	"github.com/medyagh/gopogh/models"
+	"github.com/medyagh/gopogh/pkg/models"
 )
 
-var (
-	Version string // Version is gopogh version
-	Build   string // Build includes commit sha date
-)
+// Version is gopogh version
+const Version = "v0.0.23"
+
+// Build includes commit sha date
+var Build string
 
 func mod(a, b int) int {
 	return a % b

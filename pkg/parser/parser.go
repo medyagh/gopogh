@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/medyagh/gopogh/models"
+	"github.com/medyagh/gopogh/pkg/models"
 )
 
 // parseJSON is a very forgiving JSON parser.
