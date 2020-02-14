@@ -20,7 +20,7 @@ var (
 	reportRepo    = flag.String("repo", "", "source repo")
 	inPath        = flag.String("in", "", "path to JSON input file")
 	outPath       = flag.String("out", "", "path to HTML output file")
-	version       = flag.Bool("version", true, "shows version")
+	version       = flag.Bool("version", false, "shows version")
 )
 
 func main() {
