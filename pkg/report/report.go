@@ -29,9 +29,9 @@ type DisplayContent struct {
 	Report       models.Report
 }
 
-// HTML returns html format
+// JSON return the report in json
 func (c DisplayContent) JSON() ([]byte, error) {
-	return json.Marshal(c)
+	return json.MarshalIndent(c, "", "    ")
 }
 
 // HTML returns html format
@@ -57,7 +57,7 @@ func (c DisplayContent) HTML() ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-// generate geneates a report
+// Generate geneates a report
 func Generate(report models.Report, groups []models.TestGroup) (DisplayContent, error) {
 	var passedTests []models.TestGroup
 	var failedTests []models.TestGroup
