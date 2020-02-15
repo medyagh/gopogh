@@ -10,15 +10,13 @@ import (
 	"github.com/medyagh/gopogh/pkg/models"
 )
 
-// Version is gopogh version
-const Version = "v0.1.0"
+const (
+	pass = "pass"
+	fail = "fail"
+	skip = "skip"
+)
 
-// Build includes commit sha date
-var Build string
-
-func mod(a, b int) int {
-	return a % b
-}
+var resultTypes = [3]string{pass, fail, skip}
 
 // DisplayContent represents the visible reporst to the end user
 type DisplayContent struct {
@@ -26,7 +24,40 @@ type DisplayContent struct {
 	TotalTests   int
 	BuildVersion string
 	CreatedOn    time.Time
-	Report       models.Report
+	Detail       models.ReportDetail
+}
+
+// ShortSummary returns only test names without logs
+func (c DisplayContent) ShortSummary() ([]byte, error) {
+	type shortSummary struct {
+		NumberOfFail  int
+		NumberOfPass  int
+		NumberOfSkip  int
+		FailedTests   []string
+		GopoghVersion string
+		GopoghBuild   string
+		Detail        models.ReportDetail
+	}
+	ss := shortSummary{}
+	for _, t := range resultTypes {
+		if t == pass {
+			ss.NumberOfPass = len(c.Results[t])
+		}
+		if t == fail {
+			ss.NumberOfFail = len(c.Results[t])
+			for _, t := range c.Results[t] {
+				ss.FailedTests = append(ss.FailedTests, t.TestName)
+			}
+		}
+		if t == skip {
+			ss.NumberOfSkip = len(c.Results[t])
+		}
+
+	}
+	ss.Detail = c.Detail
+	ss.GopoghVersion = Version
+	ss.GopoghBuild = Build
+	return json.MarshalIndent(ss, "", "    ")
 }
 
 // JSON return the report in json
@@ -58,20 +89,20 @@ func (c DisplayContent) HTML() ([]byte, error) {
 }
 
 // Generate geneates a report
-func Generate(report models.Report, groups []models.TestGroup) (DisplayContent, error) {
+func Generate(report models.ReportDetail, groups []models.TestGroup) (DisplayContent, error) {
 	var passedTests []models.TestGroup
 	var failedTests []models.TestGroup
 	var skippedTests []models.TestGroup
 	for _, g := range groups {
 		g.Duration = g.Events[len(g.Events)-1].Elapsed
 		if !g.Hidden {
-			if g.Status == "pass" {
+			if g.Status == pass {
 				passedTests = append(passedTests, g)
 			}
-			if g.Status == "fail" {
+			if g.Status == fail {
 				failedTests = append(failedTests, g)
 			}
-			if g.Status == "skip" {
+			if g.Status == skip {
 				skippedTests = append(skippedTests, g)
 			}
 
@@ -80,8 +111,18 @@ func Generate(report models.Report, groups []models.TestGroup) (DisplayContent, 
 
 	testsNumber := len(passedTests) + len(failedTests) + len(skippedTests)
 	rs := map[string][]models.TestGroup{}
-	rs["pass"] = passedTests
-	rs["fail"] = failedTests
-	rs["skip"] = skippedTests
-	return DisplayContent{Results: rs, TotalTests: testsNumber, BuildVersion: Version + "_" + Build, CreatedOn: time.Now(), Report: report}, nil
+	rs[pass] = passedTests
+	rs[fail] = failedTests
+	rs[skip] = skippedTests
+	return DisplayContent{Results: rs, TotalTests: testsNumber, BuildVersion: Version + "_" + Build, CreatedOn: time.Now(), Detail: report}, nil
 }
+
+func mod(a, b int) int {
+	return a % b
+}
+
+// Version is gopogh version
+const Version = "v0.1.0"
+
+// Build includes commit sha date
+var Build string

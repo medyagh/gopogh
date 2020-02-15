@@ -2,8 +2,8 @@ package models
 
 import "time"
 
-// Report holds the report details such as test name, PR number...
-type Report struct {
+// ReportDetail holds the report details such as test name, PR number...
+type ReportDetail struct {
 	Name     string
 	Details  string
 	PR       string // pull request number

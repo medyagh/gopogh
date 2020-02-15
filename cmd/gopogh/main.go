@@ -41,16 +41,25 @@ func main() {
 		panic(fmt.Sprintf("json: %v", err))
 	}
 	groups := parser.ProcessEvents(events)
-	r := models.Report{Name: *reportName, Details: *reportDetails, PR: *reportPR, RepoName: *reportRepo}
+	r := models.ReportDetail{Name: *reportName, Details: *reportDetails, PR: *reportPR, RepoName: *reportRepo}
 	c, err := report.Generate(r, groups)
 	if err != nil {
 		panic(fmt.Sprintf("failed to generate report: %v", err))
 	}
+
 	html, err := c.HTML()
 	if err != nil {
 		fmt.Printf("failed to convert report to html: %v", err)
+	} else {
+		if err := ioutil.WriteFile(*outPath, html, 0644); err != nil {
+			panic(fmt.Sprintf("failed to write the html output %s: %v", *outPath, err))
+		}
 	}
-	if err := ioutil.WriteFile(*outPath, html, 0644); err != nil {
-		panic(fmt.Sprintf("failed to write the html output %s: %v", *outPath, err))
+
+	j, err := c.ShortSummary()
+	if err != nil {
+		fmt.Printf("failed to convert report to json: %v", err)
+	} else {
+		fmt.Println(string(j))
 	}
 }

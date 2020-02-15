@@ -42,3 +42,4 @@ cross: out/gopogh-linux-amd64 out/gopogh-darwin-amd64 out/gopogh.exe
 .PHONY: clean
 clean:
 	rm -rf out
+	rm pkg/report/rice-box.go || true
