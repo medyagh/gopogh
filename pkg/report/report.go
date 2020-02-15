@@ -22,6 +22,7 @@ type DisplayContent struct {
 // ShortSummary returns only test names without logs
 func (c DisplayContent) ShortSummary() ([]byte, error) {
 	type shortSummary struct {
+		NumberOfTests int
 		NumberOfFail  int
 		NumberOfPass  int
 		NumberOfSkip  int
@@ -46,6 +47,7 @@ func (c DisplayContent) ShortSummary() ([]byte, error) {
 		}
 
 	}
+	ss.NumberOfTests = ss.NumberOfFail + ss.NumberOfPass + ss.NumberOfSkip
 	ss.Detail = c.Detail
 	ss.GopoghVersion = Version
 	ss.GopoghBuild = Build
