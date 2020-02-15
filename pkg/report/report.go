@@ -10,6 +10,12 @@ import (
 	"github.com/medyagh/gopogh/pkg/models"
 )
 
+// Version is gopogh version
+const Version = "v0.1.1"
+
+// Build includes commit sha date
+var Build string
+
 const (
 	pass = "pass"
 	fail = "fail"
@@ -120,9 +126,3 @@ func Generate(report models.ReportDetail, groups []models.TestGroup) (DisplayCon
 func mod(a, b int) int {
 	return a % b
 }
-
-// Version is gopogh version
-const Version = "v0.1.0"
-
-// Build includes commit sha date
-var Build string
