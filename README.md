@@ -7,6 +7,27 @@ Example report:
 - [raw output](https://storage.googleapis.com/minikube-builds/logs/6258/VirtualBox_Linux.txt) (before gopogh)
 - [html output](https://storage.googleapis.com/minikube-builds/logs/6258/VirtualBox_Linux.html) (after gopogh)
 
+### Install linux
+```
+        curl -LO https://github.com/medyagh/gopogh/releases/download/v0.1.15/gopogh-linux-amd64
+        sudo install gopogh-linux-amd64 /usr/local/bin/gopogh
+```
+
+### Install macos
+```
+        curl -LO https://github.com/medyagh/gopogh/releases/download/v0.1.15/gopogh-linux-amd64
+        sudo install gopogh-linux-amd64 /usr/local/bin/gopogh
+```
+
+### Install windows
+download latest binary from :
+https://github.com/medyagh/gopogh/releases
+
+
+### Example usage in github actions
+
+see minikube's workflow 
+https://github.com/kubernetes/minikube/blob/master/.github/workflows/main.yml
 
 
 #### features:
