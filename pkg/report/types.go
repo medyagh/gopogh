@@ -1,7 +1,7 @@
 package report
 
 // Version is gopogh version
-const Version = "v0.1.1"
+const Version = "v0.1.2"
 
 // Build includes commit sha date
 var Build string
