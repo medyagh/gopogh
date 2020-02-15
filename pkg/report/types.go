@@ -13,12 +13,3 @@ const (
 )
 
 var resultTypes = [3]string{pass, fail, skip}
-
-// DisplayContent represents the visible reporst to the end user
-type DisplayContent struct {
-	Results      map[string][]models.TestGroup
-	TotalTests   int
-	BuildVersion string
-	CreatedOn    time.Time
-	Detail       models.ReportDetail
-}
