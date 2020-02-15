@@ -65,7 +65,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-          asset_path: ./gopogh-linux-amd64
+          asset_path: ./out/gopogh-linux-amd64
           asset_name: gopogh-linux-amd64
           asset_content_type: application/octet-stream
       - name : upload mac assets
@@ -75,7 +75,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} 
-          asset_path: ./gopogh-darwin-amd64
+          asset_path: ./out/gopogh-darwin-amd64
           asset_name: gopogh-darwin-amd64
           asset_content_type: application/octet-stream
       - name : upload windows assets
@@ -85,7 +85,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} 
-          asset_path: ./gopogh.exe
+          asset_path: ./out/gopogh.exe
           asset_name: gopogh.exe
           asset_content_type: application/octet-stream
       - name: Publish to Docker Repository
