@@ -53,9 +53,20 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
           body: |
-              Changes in this Release
-              - First Change
-              - Second Change
+            ## Install on Linux
+
+            ```
+              curl -LO https://github.com/medyagh/gopogh/releases/download/${{ github.ref }}/gopogh-darwin-amd64 && sudo install gopogh-darwin-amd64 /usr/local/bin/gopogh
+            ```
+
+            ## Install on MacOS
+            ```
+            curl -LO https://github.com/medyagh/gopogh/releases/download/${{ github.ref }}/gopogh-linux-amd64 && sudo install gopogh-linux-amd64 /usr/local/bin/gopogh
+            ```
+
+            ## Windows
+
+            https://github.com/medyagh/gopogh/releases/download/${{ github.ref }}/gopogh.exe
           draft: false
           prerelease: false
       - name : upload linux assets
