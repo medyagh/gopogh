@@ -163,14 +163,18 @@
                                 <div class="mdl-grid ">
                                 <input size="23" id="{{$resultType}}searchbox{{$i}}" class="search_box" type="text" placeholder="🔍 search... ">
                                 <a id="pl_{{$resultType}}_{{$r.TestName}}" href="#{{$resultType}}_{{ $r.TestName }}"><i class="fa fa-link fa-2x"></i></a>
+                                <button id="button1" onclick="CopyToClipboard('{{$resultType}}_{{$r.TestName}}_content')"><i class="fa fa-2tx fa-clipboard">Copy To Clipboard</i></button>
                                 </div>
                                 
-                                <div id="{{$resultType}}testcontent{{ $i }}" class="content">
-                                            {{range $r.Events}}
-                                            <pre>{{ .Output }}</pre>
-                                            {{end}}
+                                
+                                <div id="{{$resultType}}_{{$r.TestName}}_content"> 
+                                    <div id="{{$resultType}}testcontent{{ $i }}" class="content">
+                                                {{range $r.Events}}
+                                                <pre>{{ .Output }}</pre>
+                                                {{end}}
+                                    </div>
                                 </div>
-                                </div>
+                            </div>
                             </div>
                             {{end}}
                         </div>
@@ -184,6 +188,22 @@
             <div class="mdl-snackbar__text">Copied to clipboard</div>
         </div>
     </div>
+   <script type="text/javascript">
+        function CopyToClipboard(containerid) {
+        if (document.selection) {
+            var range = document.body.createTextRange();
+            range.moveToElementText(document.getElementById(containerid));
+            range.select().createTextRange();
+            document.execCommand("copy");
+        } else if (window.getSelection) {
+            var range = document.createRange();
+            range.selectNode(document.getElementById(containerid));
+            window.getSelection().addRange(range);
+            document.execCommand("copy");
+            alert("Test logs was copied to clipboard.")
+        }
+        }
+    </script>
     <script type="text/javascript">
         var headers = document.querySelectorAll('.test-section-header');
 
