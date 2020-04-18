@@ -161,9 +161,10 @@
                                 </div>
                                 <div>
                                 <div class="mdl-grid ">
-                                <input size="23" id="{{$resultType}}searchbox{{$i}}" class="search_box" type="text" placeholder="🔍 search... ">
-                                <a id="pl_{{$resultType}}_{{$r.TestName}}" href="#{{$resultType}}_{{ $r.TestName }}"><i class="fa fa-link fa-2x"></i></a>
-                                <button id="button1" onclick="CopyToClipboard('{{$resultType}}_{{$r.TestName}}_content')"><i class="fa fa-2tx fa-clipboard">Copy To Clipboard</i></button>
+                                <input size="23" id="{{$resultType}}searchbox{{$i}}" class="search_box" type="text" placeholder="🔍 search... ">                               
+                                <button id="buttonCopyPermanentLink"><a id="pl_{{$resultType}}_{{$r.TestName}}" href="#{{$resultType}}_{{ $r.TestName }}"><i class="fa fa-link">Permanent Link</i></a></button>
+                                <button id="buttonCopyLogs" onclick="CopyToClipboard('{{$resultType}}_{{$r.TestName}}_content')"><i class="fa fa-clipboard">Copy Logs To Clipboard</i></button>
+                                <button id="buttonNewWindow" onclick="OpenInNewWindow('{{$resultType}}_{{$r.TestName}}_content')"><i class="fa fa-window-maximize"></i> Open in New Window</button>
                                 </div>
                                 
                                 
@@ -189,6 +190,31 @@
         </div>
     </div>
    <script type="text/javascript">
+        function OpenInNewWindow(containerid) {
+            var divText = document.getElementById(containerid).outerHTML;
+            var myWindow = window.open('', '', 'width=1200px');
+            var doc = myWindow.document;
+            doc.title=containerid;
+            doc.open();
+            doc.write(divText);
+            doc.close();
+        }
+
+        function CopyLinkToClipBoard(containerid) {
+            /* Get the text field */
+            var copyText = document.getElementById(containerid);
+
+            /* Select the text field */
+            copyText.select();
+            copyText.setSelectionRange(0, 99999); /*For mobile devices*/
+
+            /* Copy the text inside the text field */
+            document.execCommand("copy");
+
+            /* Alert the copied text */
+            alert("Copied the text: " + copyText.value);
+        }
+
         function CopyToClipboard(containerid) {
         if (document.selection) {
             var range = document.body.createTextRange();
