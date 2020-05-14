@@ -1,9 +1,12 @@
-FROM golang:alpine3.10
-WORKDIR /src/github.com/medyah/gopogh
+FROM golang:1.13.10-alpine3.11
+WORKDIR /src/
 COPY ./ ./
+RUN apk -U add make git
 RUN go get github.com/GeertJohan/go.rice
 RUN go get github.com/GeertJohan/go.rice/rice
-RUN apk -U add make
 RUN make build
-RUN cp ./out/gopogh /
+RUN install ./out/gopogh /bin/gopogh
+RUN chmod +x ./text2html.sh
+RUN cp ./text2html.sh /text2html.sh
+
 

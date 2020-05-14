@@ -43,3 +43,15 @@ cross: out/gopogh-linux-amd64 out/gopogh-darwin-amd64 out/gopogh.exe
 clean:
 	rm -rf out
 	rm pkg/report/rice-box.go || true
+
+
+
+.PHONY: build-image
+build-image:
+	docker build -t local/gopogh:latest .
+
+.PHONY: test-in-docker
+test-in-docker:
+	rm ./testdata/docker-test/testout.json || true
+	rm ./testdata/docker-test/testout.html || true
+	docker run  -it -v $(pwd)/testdata/docker-test:/data  local/gopogh /bin/sh
