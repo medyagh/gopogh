@@ -10,7 +10,7 @@ Example report:
 ### Run in Docker
 required: a textout.txt inside data folder
 ```
-docker run  -it -v $(pwd)/testdata/docker-test:/data  local/gopogh ./text2html.sh
+docker run  -it -v $(pwd)/testdata/docker-test:/data  medyagh/gopogh:latest ./text2html.sh
 ```
 
 replace `$(pwd)/testdata/docker-test` with wherever the testout.txt lives. there will be textout.json and textout.html produced in your data mounted folder.
