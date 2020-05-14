@@ -7,6 +7,14 @@ Example report:
 - [raw output](https://storage.googleapis.com/minikube-builds/logs/6258/VirtualBox_Linux.txt) (before gopogh)
 - [html output](https://storage.googleapis.com/minikube-builds/logs/6258/VirtualBox_Linux.html) (after gopogh)
 
+### Run in Docker
+required: a textout.txt inside data folder
+```
+docker run  -it -v $(pwd)/testdata/docker-test:/data  local/gopogh ./text2html.sh
+```
+
+replace `$(pwd)/testdata/docker-test` with wherever the testout.txt lives. there will be textout.json and textout.html produced in your data mounted folder.
+
 ### Install linux
 ```
         curl -LO https://github.com/medyagh/gopogh/releases/download/v0.1.15/gopogh-linux-amd64
