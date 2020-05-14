@@ -54,4 +54,4 @@ build-image:
 test-in-docker:
 	rm ./testdata/docker-test/testout.json || true
 	rm ./testdata/docker-test/testout.html || true
-	docker run  -it -v $(pwd)/testdata/docker-test:/data  local/gopogh /bin/sh
+	docker run  -it -v $(CURDIR)/testdata/docker-test:/data  local/gopogh ./text2html.sh
