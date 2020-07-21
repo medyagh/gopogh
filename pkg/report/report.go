@@ -27,6 +27,7 @@ func (c DisplayContent) ShortSummary() ([]byte, error) {
 		NumberOfPass  int
 		NumberOfSkip  int
 		FailedTests   []string
+		PassedTests   []string
 		GopoghVersion string
 		GopoghBuild   string
 		Detail        models.ReportDetail
@@ -35,11 +36,14 @@ func (c DisplayContent) ShortSummary() ([]byte, error) {
 	for _, t := range resultTypes {
 		if t == pass {
 			ss.NumberOfPass = len(c.Results[t])
+			for _, ti := range c.Results[t] {
+				ss.PassedTests = append(ss.PassedTests, ti.TestName)
+			}
 		}
 		if t == fail {
 			ss.NumberOfFail = len(c.Results[t])
-			for _, t := range c.Results[t] {
-				ss.FailedTests = append(ss.FailedTests, t.TestName)
+			for _, ti := range c.Results[t] {
+				ss.FailedTests = append(ss.FailedTests, ti.TestName)
 			}
 		}
 		if t == skip {
