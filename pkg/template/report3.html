@@ -71,7 +71,10 @@
             }).end();
         };
     </script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js'></script>
 
+    <!-- Include sort types you need -->
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/sorts/tablesort.number.min.js'></script>
 </head>
 
 <body class="mdl-demo mdl-color--grey-100 mdl-color-text--grey-700 mdl-base">
@@ -106,13 +109,27 @@
                         {{end}}                        
                         <h2 class="mdl-card__title-text">Test {{$resultType}} ({{ len $results }}/{{ $.TotalTests }})</h2>
                         </div>
-                        <div class="mdl-card__supporting-text mdl-grid mdl-grid--no-spacing test-results">
+                        <div id="test-result-wrap" class="mdl-card__supporting-text mdl-grid mdl-grid--no-spacing test-results">
                                     <div  id="{{$resultType}}tableofcontent">
-                                        <ul>
-                                            {{range $i,$r :=$results}}
-                                            <li><a href="#{{$resultType}}_{{ $r.TestName }}">{{ $r.TestName }}</a>  - {{$r.Duration}}s</li>
-                                            {{end}}
-                                        </ul>
+                                        <table id="{{$resultType}}dummy" class="duration_table">
+                                            <thead>
+                                            <tr>
+                                                <th style="text-align:left;text-transform: capitalize;">{{$resultType}}ed test</th>
+                                                <th data-sort-default>Duration</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                                {{range $i,$r :=$results}}
+                                                    <tr>
+                                                        <td><a href="#{{$resultType}}_{{ $r.TestName }}">{{ $r.TestName }}</a> </td>
+                                                        <td> {{$r.Duration}}s</td>
+                                                    </tr>
+                                                {{end}}
+                                            </tbody>
+                                        </table>                                        
+                                        <script>
+                                            new Tablesort(document.getElementById('{{$resultType}}dummy'), {descending: true});
+                                        </script>
                                     </div>
                             
                             {{range $i,$r :=$results}}
@@ -239,6 +256,7 @@
             });
         });
     </script>
+
 
     <script>
 
