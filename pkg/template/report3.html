@@ -109,9 +109,9 @@
                         {{end}}                        
                         <h2 class="mdl-card__title-text">Test {{$resultType}} ({{ len $results }}/{{ $.TotalTests }})</h2>
                         </div>
-                        <div class="mdl-card__supporting-text mdl-grid mdl-grid--no-spacing test-results">
+                        <div id="test-result-wrap" class="mdl-card__supporting-text mdl-grid mdl-grid--no-spacing test-results">
                                     <div  id="{{$resultType}}tableofcontent">
-                                        <table style="align:center;" id="{{$resultType}}dummy" class="tg">
+                                        <table id="{{$resultType}}dummy" class="duration_table">
                                             <thead>
                                             <tr>
                                                 <th style="text-align:left;text-transform: capitalize;">{{$resultType}}ed test</th>

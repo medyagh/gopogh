@@ -8157,9 +8157,6 @@ h5 {
     margin-bottom: 0.5em;
 }
 
-.mdl-demo section .section__text a {
-    text-decoration: none;
-}
 
 .mdl-demo section .section__circle-container>.section__circle-container__circle {
     width: 64px;
@@ -8275,9 +8272,7 @@ body {
 
 /* window BEGIN */
 
-a {
-    text-decoration: none;
-}
+
 
 span {
     line-height: 9px;
@@ -8473,10 +8468,15 @@ h3 {
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.7); /* Opera 10.5+, IE 9.0 */
     }
 
-    .highlight {
+.highlight {
     padding:1px 4px;
     margin:0 -4px;
     }
 
 
+.duration_table {
+    margin-left:40px;
+    margin-bottom:40px;
+}
+    
 {{end}}
