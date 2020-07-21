@@ -108,11 +108,22 @@
                         </div>
                         <div class="mdl-card__supporting-text mdl-grid mdl-grid--no-spacing test-results">
                                     <div  id="{{$resultType}}tableofcontent">
-                                        <ul>
-                                            {{range $i,$r :=$results}}
-                                            <li><a href="#{{$resultType}}_{{ $r.TestName }}">{{ $r.TestName }}</a>  - {{$r.Duration}}s</li>
-                                            {{end}}
-                                        </ul>
+                                        <table class="tg">
+                                            <thead>
+                                            <tr>
+                                                <th>{{$resultType}}ed test</th>
+                                                <th>Duration</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                                {{range $i,$r :=$results}}
+                                                    <tr>
+                                                        <td><a href="#{{$resultType}}_{{ $r.TestName }}">{{ $r.TestName }}</a> </td>
+                                                        <td> {{$r.Duration}}s</td>
+                                                    </tr>
+                                                {{end}}
+                                            </tbody>
+                                        </table>                                        </ul>
                                     </div>
                             
                             {{range $i,$r :=$results}}
