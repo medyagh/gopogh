@@ -14,6 +14,11 @@ embed-static: # update this before each build. to embed template files into gola
 .PHONY: build
 build: out/gopogh
 
+.PHONY: dep
+dep: ## install go rice
+	go get github.com/GeertJohan/go.rice
+	go get github.com/GeertJohan/go.rice/rice
+
 out/gopogh: embed-static $(SOURCE_FILES) go.mod
 	CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
 
