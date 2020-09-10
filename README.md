@@ -17,14 +17,14 @@ replace `$(pwd)/testdata/docker-test` with wherever the testout.txt lives. there
 
 ### Install linux
 ```
-        curl -LO https://github.com/medyagh/gopogh/releases/download/v0.1.15/gopogh-linux-amd64
+        curl -LO https://github.com/medyagh/gopogh/releases/download/v0.2.4/gopogh-linux-amd64
         sudo install gopogh-linux-amd64 /usr/local/bin/gopogh
 ```
 
 ### Install macos
 ```
-        curl -LO https://github.com/medyagh/gopogh/releases/download/v0.1.15/gopogh-linux-amd64
-        sudo install gopogh-linux-amd64 /usr/local/bin/gopogh
+        curl -LO https://github.com/medyagh/gopogh/releases/download/v0.2.4/gopogh-darwin-amd64
+        sudo install gopogh-darwin-amd64 /usr/local/bin/gopogh
 ```
 
 ### Install windows
