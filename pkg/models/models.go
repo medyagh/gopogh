@@ -21,11 +21,12 @@ type TestEvent struct {
 }
 
 type TestGroup struct {
-	TestName string
-	Hidden   bool
-	Status   string
-	Start    time.Time
-	End      time.Time
-	Duration float64
-	Events   []TestEvent
+	TestName  string
+	TestOrder int
+	Hidden    bool
+	Status    string
+	Start     time.Time
+	End       time.Time
+	Duration  float64
+	Events    []TestEvent
 }
