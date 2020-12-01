@@ -114,13 +114,15 @@
                                         <table id="{{$resultType}}dummy" class="duration_table">
                                             <thead>
                                             <tr>
+                                                <th data-sort-default style="text-align:left;text-transform: capitalize;">Order</th>
                                                 <th style="text-align:left;text-transform: capitalize;">{{$resultType}}ed test</th>
-                                                <th data-sort-default>Duration</th>
+                                                <th >Duration</th>
                                             </tr>
                                             </thead>
                                             <tbody>
                                                 {{range $i,$r :=$results}}
                                                     <tr>
+                                                        <td>{{$r.TestOrder}} </td>
                                                         <td><a href="#{{$resultType}}_{{ $r.TestName }}">{{ $r.TestName }}</a> </td>
                                                         <td> {{$r.Duration}}</td>
                                                     </tr>
@@ -128,7 +130,7 @@
                                             </tbody>
                                         </table>                                        
                                         <script>
-                                            new Tablesort(document.getElementById('{{$resultType}}dummy'), {descending: true});
+                                            new Tablesort(document.getElementById('{{$resultType}}dummy'), {descending: false});
                                         </script>
                                     </div>
                             

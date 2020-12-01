@@ -8478,5 +8478,15 @@ h3 {
     margin-left:40px;
     margin-bottom:40px;
 }
-    
+
+tr:nth-child(even) {
+    background-color: #EDEDED;
+}
+
+th {
+    background-color: black;
+    color: white;
+    font-weight: bolder;
+}
+
 {{end}}

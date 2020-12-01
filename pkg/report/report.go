@@ -91,9 +91,12 @@ func Generate(report models.ReportDetail, groups []models.TestGroup) (DisplayCon
 	var passedTests []models.TestGroup
 	var failedTests []models.TestGroup
 	var skippedTests []models.TestGroup
+	order := 0
 	for _, g := range groups {
+		order = order + 1
 		g.Duration = g.Events[len(g.Events)-1].Elapsed
 		if !g.Hidden {
+			g.TestOrder = order
 			if g.Status == pass {
 				passedTests = append(passedTests, g)
 			}
