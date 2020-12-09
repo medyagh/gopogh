@@ -30,11 +30,21 @@ jobs:
         run: |
           export PATH=$PATH:$(go env GOPATH)/bin
           make test 
-      - name: Upload Linux
+      - name: Upload Linux amd64 
         uses: actions/upload-artifact@v1
         with:
           name: "gopogh-linux-amd64"
           path: ./out/gopogh-linux-amd64
+      - name: Upload Linux arm64
+        uses: actions/upload-artifact@v1
+        with:
+          name: "gopogh-linux-arm64"
+          path: ./out/gopogh-linux-arm64
+      - name: Upload Linux arm
+        uses: actions/upload-artifact@v1
+        with:
+          name: "gopogh-linux-arm"
+          path: ./out/gopogh-linux-arm
       - name: Upload Darwin
         uses: actions/upload-artifact@v1
         with:
@@ -54,12 +64,12 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
           body: |
-              Changes in this Release
-              - First Change
-              - Second Change
+              ${{ github.ref }}
+              mac os
+              curl -LO https://github.com/medyagh/gopogh/releases/download/${{ github.ref }}/gopogh-darwin-amd64 && sudo install gopogh-darwin-amd64 /usr/local/bin/gopogh
           draft: false
           prerelease: false
-      - name : upload linux assets
+      - name : upload linux amd64 assets
         id: upload-release-asset-linux
         uses: actions/upload-release-asset@v1.0.1
         env:
@@ -68,6 +78,26 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
           asset_path: ./out/gopogh-linux-amd64
           asset_name: gopogh-linux-amd64
+          asset_content_type: application/octet-stream
+      - name : upload linux arm64 assets
+        id: upload-release-asset-linux
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          asset_path: ./out/gopogh-linux-arm64
+          asset_name: gopogh-linux-arm64
+          asset_content_type: application/octet-stream
+      - name : upload linux arm assets
+        id: upload-release-asset-linux
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          asset_path: ./out/gopogh-linux-arm
+          asset_name: gopogh-linux-arm
           asset_content_type: application/octet-stream
       - name : upload mac assets
         id: upload-release-asset-mac
