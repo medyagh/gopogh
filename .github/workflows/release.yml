@@ -70,7 +70,7 @@ jobs:
           draft: false
           prerelease: false
       - name : upload linux amd64 assets
-        id: upload-release-asset-linux
+        id: upload-release-asset-linux-amd64
         uses: actions/upload-release-asset@v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -80,7 +80,7 @@ jobs:
           asset_name: gopogh-linux-amd64
           asset_content_type: application/octet-stream
       - name : upload linux arm64 assets
-        id: upload-release-asset-linux
+        id: upload-release-asset-linux-arm64
         uses: actions/upload-release-asset@v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -90,7 +90,7 @@ jobs:
           asset_name: gopogh-linux-arm64
           asset_content_type: application/octet-stream
       - name : upload linux arm assets
-        id: upload-release-asset-linux
+        id: upload-release-asset-linux-arm
         uses: actions/upload-release-asset@v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
