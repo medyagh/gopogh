@@ -28,9 +28,6 @@ out/gopogh-darwin-amd64: embed-static $(SOURCE_FILES) go.mod
 out/gopogh-linux-amd64: embed-static $(SOURCE_FILES) go.mod
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
 
-out/gopogh-linux-arm64: embed-static $(SOURCE_FILES) go.mod
-	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
-
 out/gopogh-linux-arm: embed-static $(SOURCE_FILES) go.mod
 	CGO_ENABLED=0 GOOS=linux GOARCH=arm go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
 
@@ -69,3 +66,4 @@ test-in-docker:
 	rm ./testdata/docker-test/testout.json || true
 	rm ./testdata/docker-test/testout.html || true
 	docker run  -it -e NAME="${JOB_NAME} ${GITHUB_REF}" -e REPO="${GITHUB_REPOSITORY}" -e DETAILS="${GITHUB_SHA}" -v $(CURDIR)/testdata/docker-test:/data  local/gopogh ./text2html.sh
+
