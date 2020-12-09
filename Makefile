@@ -31,6 +31,10 @@ out/gopogh-linux-amd64: embed-static $(SOURCE_FILES) go.mod
 out/gopogh-linux-arm: embed-static $(SOURCE_FILES) go.mod
 	CGO_ENABLED=0 GOOS=linux GOARCH=arm go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
 
+out/gopogh-linux-arm64: embed-static $(SOURCE_FILES) go.mod
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
+
+
 out/gopogh.exe: embed-static $(SOURCE_FILES) go.mod
 	CGO_ENABLED=0 GOOS=windows GOARCH=amd64  go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
 
