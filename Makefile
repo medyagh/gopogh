@@ -1,8 +1,8 @@
 BINARY=/out/gopogh
-GIT_TAG=`git fetch;git describe --tags > /dev/null 2>&1`
+GIT_TAG=`git describe --tags`
 COMMIT_NO := $(shell git rev-parse HEAD 2> /dev/null || true)
 BUILD ?= $(if $(shell git status --porcelain --untracked-files=no),"${COMMIT_NO}-dirty","${COMMIT_NO}")
-LDFLAGS :=-X github.com/medyagh/gopogh/pkg/report.Build=${BUILD}
+LDFLAGS :=-X github.com/medyagh/gopogh/pkg/report.Build=${BUILD} -X github.com/medyagh/gopogh/pkg/report.Version=${GIT_TAG}
 
 CMD_SOURCE_DIRS = cmd pkg
 SOURCE_FILES = $(shell find $(CMD_SOURCE_DIRS) -type f -name "*.go" | grep -v _test.go)
