@@ -17,10 +17,7 @@ jobs:
       - name: Get SHORT SHA
         id: shortsha
         run: | 
-          echo "${GITHUB_SHA}"
-          echo ${{github.event.pull_request.head.sha}}
-          echo ${{ github.sha }}
-          echo "::set-output name=sha8::$(echo ${GITHUB_SHA} | cut -c1-8)"
+          echo "::set-output name=sha8::$(echo ${{github.event.pull_request.head.sha}} | cut -c1-8)"
       - name: Set up Go
         uses: actions/setup-go@v1
         with:
