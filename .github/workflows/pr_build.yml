@@ -42,6 +42,6 @@ jobs:
           connection_string: ${{ secrets.az_connection_string }}
           container_name: gopogh
           source_folder: ./out
-          destination_folder: /pr/${{github.event.number}}/${{ steps.shortsha.outputs.sha8 }}
+          destination_folder: bin/${{github.event.number}}/${{ steps.shortsha.outputs.sha8 }}
           clean_destination_folder: true
           fail_if_source_empty: true
