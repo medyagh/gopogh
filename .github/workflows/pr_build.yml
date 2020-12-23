@@ -8,17 +8,15 @@ jobs:
   build:
     name: Build binaries
     runs-on: ubuntu-latest
-    env:
-      SHORT_SHA: ${GITHUB_SHA::7}
     steps:
       - name: Checkout code
         uses: actions/checkout@master
       - name: Fetch Git Tags
         run: |
-          echo "---------------------------------------"
-          echo $SHORT_SHA
-          echo "---------------------------------------"
           git fetch --prune --unshallow --tags
+      - name: Get SHORT SHA
+        id: shortsha
+        run: echo "::set-output name=sha8::$(echo ${GITHUB_SHA} | cut -c1-8)"
       - name: Set up Go
         uses: actions/setup-go@v1
         with:
@@ -43,6 +41,6 @@ jobs:
           connection_string: ${{ secrets.az_connection_string }}
           container_name: gopogh
           source_folder: ./out
-          destination_folder: /pr/${{github.event.number}}/${{ env.SHORT_SHA }}
+          destination_folder: /pr/${{github.event.number}}/${{ steps.shortsha.outputs.sha8 }}
           clean_destination_folder: true
           fail_if_source_empty: true
