@@ -2,6 +2,7 @@ on:
   pull_request:
     paths:
       - "**.go"
+      - "**.yml"
 name: Build PR
 jobs:
   build:
