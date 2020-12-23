@@ -34,12 +34,10 @@ jobs:
           make test 
       - uses: LanceMcCarthy/Action-AzureBlobUpload@v1.8.0
         name: Uploading to Azure storage...
-        env: 
-          SHORT_SHA: ${GITHUB_SHA::7}
         with:
           connection_string: ${{ secrets.az_connection_string }}
           container_name: gopogh
           source_folder: ./out
-          destination_folder: /pr/${{github.event.number}}/${SHORT_SHA}
+          destination_folder: /pr/${{github.event.number}}/${GITHUB_SHA::7}
           clean_destination_folder: true
           fail_if_source_empty: true
