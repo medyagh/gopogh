@@ -15,6 +15,9 @@ jobs:
         uses: actions/checkout@master
       - name: Fetch Git Tags
         run: |
+          echo "---------------------------------------"
+          echo $SHORT_SHA
+          echo "---------------------------------------"
           git fetch --prune --unshallow --tags
       - name: Set up Go
         uses: actions/setup-go@v1
@@ -40,6 +43,6 @@ jobs:
           connection_string: ${{ secrets.az_connection_string }}
           container_name: gopogh
           source_folder: ./out
-          destination_folder: /pr/${{github.event.number}}/${env.SHORT_SHA}
+          destination_folder: /pr/${{github.event.number}}/${{ env.SHORT_SHA }}
           clean_destination_folder: true
           fail_if_source_empty: true
