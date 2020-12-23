@@ -52,7 +52,7 @@ jobs:
         shell: bash
         run: |
           echo "*******************************************************"
-          https://gopogh.blob.core.windows.net/gopogh/${{github.event.number}}/${{ steps.shortsha.outputs.sha8 }}/output.html
-          https://gopogh.blob.core.windows.net/gopogh/${{github.event.number}}/${{ steps.shortsha.outputs.sha8 }}/output.html
+          echo "https://gopogh.blob.core.windows.net/gopogh/${{github.event.number}}/${{ steps.shortsha.outputs.sha8 }}/output.html"
+          echo "https://gopogh.blob.core.windows.net/gopogh/${{github.event.number}}/${{ steps.shortsha.outputs.sha8 }}/output.html"
           echo "*******************************************************"
           
