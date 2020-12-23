@@ -48,3 +48,11 @@ jobs:
           destination_folder: ${{github.event.number}}/${{ steps.shortsha.outputs.sha8 }}
           clean_destination_folder: true
           fail_if_source_empty: true
+      - name: Report url
+        shell: bash
+        run: |
+          echo "*******************************************************"
+          https://gopogh.blob.core.windows.net/gopogh/${{github.event.number}}/${{ steps.shortsha.outputs.sha8 }}/output.html
+          https://gopogh.blob.core.windows.net/gopogh/${{github.event.number}}/${{ steps.shortsha.outputs.sha8 }}/output.html
+          echo "*******************************************************"
+          
