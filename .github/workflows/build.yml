@@ -25,7 +25,7 @@ jobs:
             short_sha=$(echo $GITHUB_SHA | cut -c1-8)
             pr_number=master
           fi
-          echo "::set-output name=dir::$(echo $pr_number/$short_sha" )"
+          echo "::set-output name=dir::$(echo $pr_number/$short_sha")"
       - name: url
         shell: bash
         run: |
