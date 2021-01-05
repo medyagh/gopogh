@@ -1,0 +1,70 @@
+on:
+  pull_request:
+    paths:
+      - "**.go"
+      - "**.yml"
+name: Build Master
+jobs:
+  build:
+    name: Build binaries
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@master
+      - name: Fetch Git Tags
+        run: |
+          git fetch --prune --unshallow --tags
+      - name: Report Dir 
+        id: reportdir
+        run: |
+          if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
+            short_sha=$(echo ${{github.event.pull_request.head.sha}} | cut -c1-8)
+            pr_number=$(echo ${{github.event.pull_request.head.sha}} | cut -c1-8)
+          fi
+          if [ "$GITHUB_EVENT_NAME" == "push" ] && [ "$GITHUB_REF == "refs/heads/master" ]; then
+            short_sha=$(echo $GITHUB_SHA | cut -c1-8)
+            pr_number=master
+          fi
+          echo "::set-output name=dir::${pr_number}/${short_sha}/${{github.job}}" 
+      - name: url
+        shell: bash
+        run: |
+          echo "*******************************************************"
+          echo "https://gopogh.blob.core.windows.net/gopogh/${{ steps.reportdir.outputs.dir }}/output.html"
+          echo "*******************************************************"
+          
+      # - name: Set up Go
+      #   uses: actions/setup-go@v1
+      #   with:
+      #     go-version: '1.14.6'
+      #     stable: true
+      #   id: go
+      # - name: install rice
+      #   run: | 
+      #     go get github.com/GeertJohan/go.rice
+      #     go get github.com/GeertJohan/go.rice/rice
+      # - name: Cross Platform Build
+      #   run: |
+      #     export PATH=$PATH:$(go env GOPATH)/bin
+      #     make cross
+      # - name: Test
+      #   run: |
+      #     export PATH=$PATH:$(go env GOPATH)/bin
+      #     make test 
+      # - uses: LanceMcCarthy/Action-AzureBlobUpload@v1.8.0
+      #   name: Uploading to Azure storage...
+      #   with:
+      #     connection_string: ${{ secrets.az_connection_string }}
+      #     container_name: gopogh
+      #     source_folder: ./out
+      #     destination_folder: pr/${{github.event.number}}/${{github.job}}/${{ steps.shortsha.outputs.sha8 }}
+      #     clean_destination_folder: true
+      #     fail_if_source_empty: true
+      # - name: Report url
+      #   shell: bash
+      #   run: |
+      #     echo "*******************************************************"
+      #     echo "https://gopogh.blob.core.windows.net/gopogh/pr/${{github.event.number}}/${{github.job}}/${{ steps.shortsha.outputs.sha8 }}/output.html"
+      #     echo "https://gopogh.blob.core.windows.net/gopogh/pr/${{github.event.number}}/${{github.job}}/${{ steps.shortsha.outputs.sha8 }}/output.html"
+      #     echo "*******************************************************"
+          
