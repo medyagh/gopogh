@@ -14,6 +14,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@master
+      - name: Fetch Git Tags
+        run: |
+          git fetch --prune --unshallow --tags
       - name: Inject slug/short variables
         uses: rlespinasse/github-slug-action@v3.x
 
@@ -33,9 +36,6 @@ jobs:
           echo "   repository : ${{ env.GITHUB_REPOSITORY_SLUG_URL }}"
           echo "Short SHA variables"
           echo "   sha        : ${{ env.GITHUB_SHA_SHORT }}"
-      - name: Fetch Git Tags
-        run: |
-          git fetch --prune --unshallow --tags
       - name: Get SHORT SHA
         id: shortsha
         run: | 
