@@ -10,7 +10,7 @@ import (
 	"github.com/medyagh/gopogh/pkg/models"
 )
 
-// parseJSON is a very forgiving JSON parser.
+// ParseJSON is a very forgiving JSON parser.
 func ParseJSON(path string) ([]models.TestEvent, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -23,12 +23,15 @@ func ParseJSON(path string) ([]models.TestEvent, error) {
 	for scanner.Scan() {
 		// Go's -json output is line-by-line JSON events
 		b := scanner.Bytes()
+		fmt.Printf("TEXT: %s\n", string(b))
 		if b[0] == '{' {
 			ev := models.TestEvent{}
 			err = json.Unmarshal(b, &ev)
 			if err != nil {
+				fmt.Printf("ERROR adding event: %v\n", err)
 				continue
 			}
+			fmt.Printf("EVENT: %+v\n", ev)
 			events = append(events, ev)
 		}
 	}
@@ -39,7 +42,7 @@ func ParseJSON(path string) ([]models.TestEvent, error) {
 	return events, err
 }
 
-// group events by their test name
+// ProcessEvents group events by their test name
 func ProcessEvents(evs []models.TestEvent) []models.TestGroup {
 	gm := map[string]int{}
 	groups := []models.TestGroup{}
