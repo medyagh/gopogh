@@ -23,7 +23,7 @@ func ParseJSON(path string) ([]models.TestEvent, error) {
 	for scanner.Scan() {
 		// Go's -json output is line-by-line JSON events
 		b := scanner.Bytes()
-		fmt.Printf("TEXT: %s\n", string(b))
+		fmt.Printf("TEXT: %s\n", scanner.Text())
 		if b[0] == '{' {
 			ev := models.TestEvent{}
 			err = json.Unmarshal(b, &ev)
