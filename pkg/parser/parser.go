@@ -2,6 +2,7 @@ package parser
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -10,7 +11,7 @@ import (
 	"github.com/medyagh/gopogh/pkg/models"
 )
 
-// parseJSON is a very forgiving JSON parser.
+// ParseJSON is a very forgiving JSON parser.
 func ParseJSON(path string) ([]models.TestEvent, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -23,7 +24,10 @@ func ParseJSON(path string) ([]models.TestEvent, error) {
 	for scanner.Scan() {
 		// Go's -json output is line-by-line JSON events
 		b := scanner.Bytes()
-		if b[0] == '{' {
+		// Windows encodes its logs with nonsense \x00 characters, causing parsing to break entirely
+		// stripping these characters away is harmless and fixes the issue.
+		b = bytes.ReplaceAll(b, []byte("\x00"), []byte(""))
+		if len(b) > 0 && b[0] == '{' {
 			ev := models.TestEvent{}
 			err = json.Unmarshal(b, &ev)
 			if err != nil {
@@ -39,7 +43,7 @@ func ParseJSON(path string) ([]models.TestEvent, error) {
 	return events, err
 }
 
-// group events by their test name
+// ProcessEvents group events by their test name
 func ProcessEvents(evs []models.TestEvent) []models.TestGroup {
 	gm := map[string]int{}
 	groups := []models.TestGroup{}
