@@ -2,6 +2,7 @@ package parser
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -23,15 +24,15 @@ func ParseJSON(path string) ([]models.TestEvent, error) {
 	for scanner.Scan() {
 		// Go's -json output is line-by-line JSON events
 		b := scanner.Bytes()
-		fmt.Printf("TEXT: %s\n", scanner.Text())
-		if b[0] == '{' {
+		// Windows encodes its logs with nonsense \x00 characters, causing parsing to break entirely
+		// stripping these characters away is harmless and fixes the issue.
+		b = bytes.ReplaceAll(b, []byte("\x00"), []byte(""))
+		if len(b) > 0 && b[0] == '{' {
 			ev := models.TestEvent{}
 			err = json.Unmarshal(b, &ev)
 			if err != nil {
-				fmt.Printf("ERROR adding event: %v\n", err)
 				continue
 			}
-			fmt.Printf("EVENT: %+v\n", ev)
 			events = append(events, ev)
 		}
 	}
