@@ -62,13 +62,14 @@ func main() {
 			panic(fmt.Sprintf("failed to write the html output %s: %v", *outHTMLPath, err))
 		}
 	}
-
 	j, err := c.ShortSummary()
 	if err != nil {
 		fmt.Printf("failed to convert report to json: %v", err)
 	} else {
-		if err := ioutil.WriteFile(*outSummaryPath, j, 0644); err != nil {
-			panic(fmt.Sprintf("failed to write the html output %s: %v", *outSummaryPath, err))
+		if *outSummaryPath != "" {
+			if err := ioutil.WriteFile(*outSummaryPath, j, 0644); err != nil {
+				panic(fmt.Sprintf("failed to write the html output %s: %v", *outSummaryPath, err))
+			}
 		}
 		fmt.Println(string(j))
 	}
