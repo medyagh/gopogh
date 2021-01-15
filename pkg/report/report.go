@@ -28,26 +28,36 @@ func (c DisplayContent) ShortSummary() ([]byte, error) {
 		NumberOfSkip  int
 		FailedTests   []string
 		PassedTests   []string
+		SkippedTests  []string
+		Durations     map[string]float64
 		GopoghVersion string
 		GopoghBuild   string
 		Detail        models.ReportDetail
 	}
 	ss := shortSummary{}
+	ss.Durations = make(map[string]float64)
 	for _, t := range resultTypes {
 		if t == pass {
 			ss.NumberOfPass = len(c.Results[t])
 			for _, ti := range c.Results[t] {
 				ss.PassedTests = append(ss.PassedTests, ti.TestName)
+				ss.Durations[ti.TestName] = ti.Duration
 			}
 		}
 		if t == fail {
 			ss.NumberOfFail = len(c.Results[t])
 			for _, ti := range c.Results[t] {
 				ss.FailedTests = append(ss.FailedTests, ti.TestName)
+				ss.Durations[ti.TestName] = ti.Duration
 			}
 		}
 		if t == skip {
-			ss.NumberOfSkip = len(c.Results[t])
+			for _, ti := range c.Results[t] {
+				ss.SkippedTests = append(ss.SkippedTests, ti.TestName)
+				// not adding to the skip test durations to avoid confusion or bad data, since they will be 0seconds most-likely
+				// but if I change my mind we need to uncomment this line
+				// ss.Durations[ti.TestName] = ti.Duration
+			}
 		}
 
 	}
@@ -56,11 +66,6 @@ func (c DisplayContent) ShortSummary() ([]byte, error) {
 	ss.GopoghVersion = Version
 	ss.GopoghBuild = Build
 	return json.MarshalIndent(ss, "", "    ")
-}
-
-// JSON return the report in json
-func (c DisplayContent) JSON() ([]byte, error) {
-	return json.MarshalIndent(c, "", "    ")
 }
 
 // HTML returns html format
