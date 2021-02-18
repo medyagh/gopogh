@@ -68,26 +68,11 @@ func ProcessEvents(evs []models.TestEvent) []models.TestGroup {
 	// Hide ancestors
 	for k, v := range gm {
 		for k2 := range gm {
-			if strings.HasPrefix(k2, fmt.Sprintf("%s/", k)) && !veto(v, groups) {
+			if strings.HasPrefix(k2, fmt.Sprintf("%s/", k)) {
 				groups[v].Hidden = true
 			}
 		}
 	}
 
 	return groups
-}
-
-// veto returns true is all child events pass, but parent event with pid fail.
-// All other combinations will return false.
-func veto(pid int, groups []models.TestGroup) bool {
-	parent := groups[pid]
-	if parent.Status != "fail" {
-		return false
-	}
-	for _, child := range groups {
-		if strings.HasPrefix(child.TestName, fmt.Sprintf("%s/", parent.TestName)) && child.Status != "pass" {
-			return false
-		}
-	}
-	return true
 }

@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="description" content="A front-end template that helps you build fast, modern mobile web apps.">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
-    <title>Test Report: {{.Detail.Name}} {{ if .Detail.PR }} -  {{.Detail.PR}} {{ end }}}
+    <title>Test Report: {{.Detail.Name}} {{ if .Detail.PR }} -  {{.Detail.PR}} {{ end }}
     </title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -83,7 +83,7 @@
             <div class="mdl-layout--large-screen-only mdl-layout__header-row">
                 <h3>Test Report: {{.Detail.Name}}
                     {{ if .Detail.PR }}
-                    <a href="https://{{.Detail.RepoName}}/pull/{{.Detail.PR}}">{{.Detail.PR}}</a>
+                    <a href="https://{{.Detail.RepoName}}pull/{{.Detail.PR}}">{{.Detail.PR}}</a>
                     {{ end }}
                 </h3>
                 <pre>
