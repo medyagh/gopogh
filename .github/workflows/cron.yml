@@ -1,8 +1,8 @@
 name: "Close stale issues"
 on:
-  schedule:
-  - cron: "*/2 * * * *"
-
+  push:
+    branches:
+      - master
 jobs:
   stale:
     runs-on: ubuntu-latest
