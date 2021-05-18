@@ -13,7 +13,7 @@ jobs:
           stable: true
     - name: Update Changelog
       run: |
-          curl -o git-chglog -L https://github.com/git-chglog/git-chglog/releases/download/0.9.1/git-chglog_linux_amd64
+          echo "hello world" > CHANGELOG.md
     - name: Create Pull Request
       id: cpr
       uses: peter-evans/create-pull-request@v3
