@@ -52,6 +52,7 @@ func (c DisplayContent) ShortSummary() ([]byte, error) {
 			}
 		}
 		if t == skip {
+			ss.NumberOfSkip = len(c.Results[t])
 			for _, ti := range c.Results[t] {
 				ss.SkippedTests = append(ss.SkippedTests, ti.TestName)
 				// not adding to the skip test durations to avoid confusion or bad data, since they will be 0seconds most-likely
