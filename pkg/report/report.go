@@ -6,8 +6,8 @@ import (
 	"html/template"
 	"time"
 
-	rice "github.com/GeertJohan/go.rice"
 	"github.com/medyagh/gopogh/pkg/models"
+	"github.com/medyagh/gopogh/pkg/templates"
 )
 
 // DisplayContent represents the visible reporst to the end user
@@ -74,12 +74,12 @@ func (c DisplayContent) HTML() ([]byte, error) {
 	fmap := template.FuncMap{
 		"mod": mod,
 	}
-	t, err := template.New("out").Parse(rice.MustFindBox("../template").MustString("report3.css"))
+	t, err := template.New("out").Parse(templates.ReportCSS)
 	if err != nil {
 		return nil, err
 	}
 
-	t, err = t.Funcs(fmap).Parse(rice.MustFindBox("../template").MustString("report3.html"))
+	t, err = t.Funcs(fmap).Parse(templates.ReportHTML)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (c DisplayContent) HTML() ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-// Generate geneates a report
+// Generate generates a report
 func Generate(report models.ReportDetail, groups []models.TestGroup) (DisplayContent, error) {
 	var passedTests []models.TestGroup
 	var failedTests []models.TestGroup
