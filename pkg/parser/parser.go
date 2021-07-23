@@ -63,6 +63,9 @@ func ProcessEvents(evs []models.TestEvent) []models.TestGroup {
 		e.Output = strings.Trim(e.Output, " ")
 		groups[index].Events = append(groups[index].Events, e)
 		groups[index].Status = e.Action
+		if e.Time.After(groups[index].End) {
+			groups[index].End = e.Time
+		}
 	}
 
 	// Hide ancestors
