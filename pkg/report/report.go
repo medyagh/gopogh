@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"html/template"
+	"math"
 	"time"
 
 	"github.com/medyagh/gopogh/pkg/models"
@@ -12,11 +13,12 @@ import (
 
 // DisplayContent represents the visible reporst to the end user
 type DisplayContent struct {
-	Results      map[string][]models.TestGroup
-	TotalTests   int
-	BuildVersion string
-	CreatedOn    time.Time
-	Detail       models.ReportDetail
+	Results       map[string][]models.TestGroup
+	TotalTests    int
+	TotalDuration float64
+	BuildVersion  string
+	CreatedOn     time.Time
+	Detail        models.ReportDetail
 }
 
 // ShortSummary returns only test names without logs
@@ -30,6 +32,7 @@ func (c DisplayContent) ShortSummary() ([]byte, error) {
 		PassedTests   []string
 		SkippedTests  []string
 		Durations     map[string]float64
+		TotalDuration float64
 		GopoghVersion string
 		GopoghBuild   string
 		Detail        models.ReportDetail
@@ -63,6 +66,7 @@ func (c DisplayContent) ShortSummary() ([]byte, error) {
 
 	}
 	ss.NumberOfTests = ss.NumberOfFail + ss.NumberOfPass + ss.NumberOfSkip
+	ss.TotalDuration = c.TotalDuration
 	ss.Detail = c.Detail
 	ss.GopoghVersion = Version
 	ss.GopoghBuild = Build
@@ -98,9 +102,24 @@ func Generate(report models.ReportDetail, groups []models.TestGroup) (DisplayCon
 	var failedTests []models.TestGroup
 	var skippedTests []models.TestGroup
 	order := 0
+	var startTime, endTime time.Time
+	if len(groups) == 0 {
+		startTime = time.Now()
+		endTime = startTime
+	} else {
+		startTime = groups[0].Start
+		endTime = groups[0].End
+	}
+
 	for _, g := range groups {
 		order = order + 1
 		g.Duration = g.Events[len(g.Events)-1].Elapsed
+		if g.Start.Before(startTime) {
+			startTime = g.Start
+		}
+		if g.End.After(endTime) {
+			endTime = g.End
+		}
 		if !g.Hidden {
 			g.TestOrder = order
 			if g.Status == pass {
@@ -112,7 +131,6 @@ func Generate(report models.ReportDetail, groups []models.TestGroup) (DisplayCon
 			if g.Status == skip {
 				skippedTests = append(skippedTests, g)
 			}
-
 		}
 	}
 
@@ -121,7 +139,14 @@ func Generate(report models.ReportDetail, groups []models.TestGroup) (DisplayCon
 	rs[pass] = passedTests
 	rs[fail] = failedTests
 	rs[skip] = skippedTests
-	return DisplayContent{Results: rs, TotalTests: testsNumber, BuildVersion: Version + "_" + Build, CreatedOn: time.Now(), Detail: report}, nil
+	return DisplayContent{
+		Results:       rs,
+		TotalTests:    testsNumber,
+		TotalDuration: math.Round(endTime.Sub(startTime).Seconds()*100) / 100,
+		BuildVersion:  Version + "_" + Build,
+		CreatedOn:     time.Now(),
+		Detail:        report,
+	}, nil
 }
 
 func mod(a, b int) int {
