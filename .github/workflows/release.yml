@@ -113,6 +113,16 @@ jobs:
           asset_path: ./out/gopogh-darwin-amd64
           asset_name: gopogh-darwin-amd64
           asset_content_type: application/octet-stream
+      - name : upload mac assets
+        id: upload-release-asset-mac
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} 
+          asset_path: ./out/gopogh-darwin-arm64
+          asset_name: gopogh-darwin-arm64
+          asset_content_type: application/octet-stream
       - name : upload windows assets
         id: upload-release-asset-winodw
         uses: actions/upload-release-asset@v1.0.1
