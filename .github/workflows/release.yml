@@ -114,7 +114,7 @@ jobs:
           asset_name: gopogh-darwin-amd64
           asset_content_type: application/octet-stream
       - name : upload mac assets m1
-        id: upload-release-asset-mac m1
+        id: upload-release-asset-mac-m1
         uses: actions/upload-release-asset@v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
