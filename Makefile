@@ -10,6 +10,9 @@ build: out/gopogh
 out/gopogh: 
 	CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
 
+out/gopogh-darwin-arm64:
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
+
 out/gopogh-darwin-amd64:
 	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
 
@@ -38,7 +41,7 @@ test: build
 
 
 .PHONY: cross
-cross: out/gopogh-linux-amd64 out/gopogh-darwin-amd64 out/gopogh.exe out/gopogh-linux-arm64 out/gopogh-linux-arm
+cross: out/gopogh-linux-amd64 out/gopogh-darwin-amd64 out/gopogh-darwin-arm64 out/gopogh.exe out/gopogh-linux-arm64 out/gopogh-linux-arm
 
 
 .PHONY: clean
