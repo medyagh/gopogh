@@ -18,13 +18,9 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: '1.16.4'
+          go-version: '1.17.1'
           stable: true
         id: go
-      - name: install rice
-        run: | 
-          go get github.com/GeertJohan/go.rice
-          go get github.com/GeertJohan/go.rice/rice
       - name: Cross Platform Build
         run: |
           export PATH=$PATH:$(go env GOPATH)/bin
@@ -53,6 +49,11 @@ jobs:
         with:
           name: "gopogh-darwin-amd64"
           path: ./out/gopogh-darwin-amd64
+      - name: Upload Darwin M1
+        uses: actions/upload-artifact@v1
+        with:
+          name: "gopogh-darwin-arm64"
+          path: ./out/gopogh-darwin-arm64
       - name: Upload windows
         uses: actions/upload-artifact@v1
         with:
