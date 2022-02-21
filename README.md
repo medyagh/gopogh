@@ -1,61 +1,57 @@
-# goprettyorgohome
-### Convert golang tests output to human friendly html.
+# What is Gopogh ?
 
-This tool is built based on this minikube PR by @tstromberg https://github.com/kubernetes/minikube/pull/5225 it is used by minikube for prettifying tests outputs.
+Converts golang test's json restults to a foldable html !
 
-Example report:  
-- [raw output](https://storage.googleapis.com/minikube-builds/logs/6258/VirtualBox_Linux.txt) (before gopogh)
-- [html output](https://storage.googleapis.com/minikube-builds/logs/6258/VirtualBox_Linux.html) (after gopogh)
+Example test logs: [before](https://storage.googleapis.com/minikube-builds/logs/6258/VirtualBox_Linux.txt), [after](https://storage.googleapis.com/minikube-builds/logs/6258/VirtualBox_Linux.html) 
 
-### Run in Docker
-required: a textout.txt inside data folder
+
+## Give it a try
+
+- first install gopogh
 ```
-docker run  -it -v $(pwd)/testdata/docker-test:/data  medyagh/gopogh:latest ./text2html.sh
-```
-
-replace `$(pwd)/testdata/docker-test` with wherever the testout.txt lives. there will be textout.json and textout.html produced in your data mounted folder.
-
-### Install linux
-```
-        curl -LO https://github.com/medyagh/gopogh/releases/download/v0.2.4/gopogh-linux-amd64
-        sudo install gopogh-linux-amd64 /usr/local/bin/gopogh
+        go install github.com/medyagh/gopogh/cmd/gopogh@latest
 ```
 
-### Install macos
+- run your integraiton test and convert it to json
+
 ```
-        curl -LO https://github.com/medyagh/gopogh/releases/download/v0.2.4/gopogh-darwin-amd64
-        sudo install gopogh-darwin-amd64 /usr/local/bin/gopogh
+        go tool test2json -t < ./your-test-logs.txt > ./your-test-log.json
+```
+- run gopogh on it
+
+```
+gopogh -in ./your-test-log.json -out_html ./report/testout.html -out_summary ./your-test-summary.sjon TEST_NAME TEST_PR_NUMBER -repo "${GITHUB_REPOSITORY}"  -details "${GITHUB_SHA}")  
 ```
 
-### Install windows
-download latest binary from :
-https://github.com/medyagh/gopogh/releases
-
-
-### Example usage in github actions
-
-see minikube's workflow 
-https://github.com/kubernetes/minikube/blob/master/.github/workflows/main.yml
-
-
-#### features:
-- separate tests by results.
-- make test results foldable.
+## Features:
+- foldable test results.
+- open each subt test restul in a new window
+- sort test by passed/failed/skipped.
+- sort test by execution duraiton.
 - search in each test result separately.
-- table of content with each test duration.
+- summary table
+- gennerate json summary
 
 
-### Before
-<img src="https://raw.githubusercontent.com/medyagh/gopogh/master/images/before.png" width="738" alt="before">
-
-### After
-<img src="https://raw.githubusercontent.com/medyagh/gopogh/master/images/after1.png" width="738" alt="after1">
-
-### After
-<img src="https://raw.githubusercontent.com/medyagh/gopogh/master/images/after2.png" width="738" alt="after2">
+## History 
+I lead minikube team's, due to growing number of integration tests on multiple OS, drivers, container runtimes.
+Each test failure on a PR generated  tens of thousands of lines for raw logs. (with system-level postmoretems)
+that made reviewing PRS slow and hard ! so during a hackathon, I built gopogh (short for go pretty or go home) that converts
 
 
-### Try localy 
+
+
+## Github Action example
+
+See [minikube's example](https://github.com/kubernetes/minikube/blob/793eeae748effb7949a2537579b2e4f32a9ab5a8/.github/workflows/master.yml#L162)
+
+
+
+
+
+### Contribution
+Contributons are welcome. 
+Run tests:
 ```
 make test
 open output.html
