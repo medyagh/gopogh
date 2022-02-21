@@ -1,3 +1,5 @@
+[![Github All Releases](https://img.shields.io/github/downloads/medyagh/gopogh/total.svg)]()
+
 # What is Gopogh ?
 
 Converts golang test's json restults to a foldable html !
