@@ -3,7 +3,7 @@
 # Gopogh
 [![Github All Releases](https://img.shields.io/github/downloads/medyagh/gopogh/total.svg)]()
 
-Converts golang test results from json to user-friendly- html !
+Converts golang test results from json to user-friendly html.
 
 Example test logs: [before](https://storage.googleapis.com/minikube-builds/logs/13641/22745/Docker_Linux.out.txt), [after](https://storage.googleapis.com/minikube-builds/logs/13641/22745/Docker_Linux.html) 
 
