@@ -25,7 +25,7 @@ Example test logs: [before](https://storage.googleapis.com/minikube-builds/logs/
         go install github.com/medyagh/gopogh/cmd/gopogh@latest
 ```
 
-- run your integraiton test and convert it to json
+- run your integration test and convert it to json
 
 ```
         go tool test2json -t < ./your-test-logs.txt > ./your-test-log.json
