@@ -11,7 +11,7 @@ import (
 	"github.com/medyagh/gopogh/pkg/templates"
 )
 
-// DisplayContent represents the visible reporst to the end user
+// DisplayContent represents the visible report to the end user
 type DisplayContent struct {
 	Results       map[string][]models.TestGroup
 	TotalTests    int
@@ -58,7 +58,7 @@ func (c DisplayContent) ShortSummary() ([]byte, error) {
 			ss.NumberOfSkip = len(c.Results[t])
 			for _, ti := range c.Results[t] {
 				ss.SkippedTests = append(ss.SkippedTests, ti.TestName)
-				// not adding to the skip test durations to avoid confusion or bad data, since they will be 0seconds most-likely
+				// not adding to the skip test durations to avoid confusion or bad data, since they will be 0 seconds most-likely
 				// but if I change my mind we need to uncomment this line
 				// ss.Durations[ti.TestName] = ti.Duration
 			}

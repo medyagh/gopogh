@@ -10,12 +10,12 @@ Example test logs: [before](https://storage.googleapis.com/minikube-builds/logs/
 
 ## Features:
 - foldable test results.
-- open each subt test restul in a new window
+- open each subtest result in a new window.
 - sort test by passed/failed/skipped.
-- sort test by execution duraiton.
+- sort test by execution duration.
 - search in each test result separately.
 - summary table
-- gennerate json summary
+- generate json summary
 
 
 ## Give it a try
@@ -40,7 +40,7 @@ gopogh -in ./your-test-log.json -out_html ./report/testout.html -out_summary ./y
 
 ## History 
 I lead the minikube team and due to growing number PRs and number of integration tests on multiple OS, drivers, container runtimes.
-Each test failure on a PR generated  tens of thousands of lines for raw logs. (with system-level postmoretems)
+Each test failure on a PR generated tens of thousands of lines for raw logs. (with system-level postmortems)
 that made reviewing PRS slow and hard ! so during a hackathon, I built gopogh (short for go pretty or go home) that converts
 
 
@@ -55,7 +55,7 @@ See [minikube's example](https://github.com/kubernetes/minikube/blob/793eeae748e
 
 
 ### Contribution
-Contributons are welcome. 
+Contributions are welcome.
 Run tests:
 ```
 make test
