@@ -1,3 +1,3 @@
 module github.com/medyagh/gopogh
 
-go 1.17
+go 1.20
