@@ -21,7 +21,6 @@ type DisplayContent struct {
 	Detail        models.ReportDetail
 }
 
-// ShortSummary returns only test names without logs
 func (c DisplayContent) ShortSummary() ([]byte, error) {
 	type shortSummary struct {
 		NumberOfTests int
