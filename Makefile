@@ -2,7 +2,8 @@ BINARY=/out/gopogh
 GIT_TAG=`git describe --tags`
 COMMIT_NO := $(shell git rev-parse HEAD 2> /dev/null || true)
 BUILD ?= $(if $(shell git status --porcelain --untracked-files=no),"${COMMIT_NO}-dirty","${COMMIT_NO}")
-LDFLAGS :=-X github.com/medyagh/gopogh/pkg/report.Build=${BUILD} -X github.com/medyagh/gopogh/pkg/report.Version=${GIT_TAG}
+LDFLAGS :=-X github.com/medyagh/gopogh/pkg/report.Build=${BUILD}
+VERSION := v0.0.14
 
 .PHONY: build
 build: out/gopogh
@@ -61,3 +62,8 @@ test-in-docker:
 .PHONY: azure_blob_connection_string
 azure_blob_connection_string: ## set this env export AZURE_STORAGE_CONNECTION_STRING=$(az storage account show-connection-string -n $AZ_STORAGE -g $AZ_RG --query connectionString -o tsv)
 	az storage account show-connection-string -n ${AZ_STORAGE} -g ${AZ_RG} --query connectionString -o tsv
+
+
+.PHONY: bump-version
+bump-version:
+	sed -i 's/var Version = \".*\"/var Version = \"$(VERSION)\"/' pkg/report/types.go
