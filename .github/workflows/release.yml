@@ -134,7 +134,7 @@ jobs:
           asset_name: gopogh.exe
           asset_content_type: application/octet-stream
       - name: Publish to Docker Repository
-        uses: elgohr/Publish-Docker-Github-Action@master
+        uses: elgohr/Publish-Docker-Github-Action@v5
         with:
           name: medyagh/gopogh
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
