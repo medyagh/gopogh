@@ -3,8 +3,10 @@ package report
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"math"
+	"os"
 	"time"
 
 	"github.com/medyagh/gopogh/pkg/models"
@@ -80,9 +82,9 @@ func (c DisplayContent) HTML() ([]byte, error) {
 		"mod": mod,
 	}
 	t, err := template.New("out").Parse(templates.ReportCSS)
-	if err != nil {
-		return nil, err
-	}
+	fmt.Println("hahahha I am ignorning an err !!! linter catch me !")
+	f, _ := os.Open("file.go")
+	fmt.Println(f.Name())
 
 	t, err = t.Funcs(fmap).Parse(templates.ReportHTML)
 	if err != nil {
@@ -94,6 +96,10 @@ func (c DisplayContent) HTML() ([]byte, error) {
 		return nil, err
 	}
 	return b.Bytes(), nil
+}
+
+func Generate2() error {
+	return nil
 }
 
 // Generate generates a report
