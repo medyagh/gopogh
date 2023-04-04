@@ -3,7 +3,7 @@ GIT_TAG=`git describe --tags`
 COMMIT_NO := $(shell git rev-parse HEAD 2> /dev/null || true)
 BUILD ?= $(if $(shell git status --porcelain --untracked-files=no),"${COMMIT_NO}-dirty","${COMMIT_NO}")
 LDFLAGS :=-X github.com/medyagh/gopogh/pkg/report.Build=${BUILD}
-VERSION := v0.0.16
+VERSION := v0.16.0
 
 .PHONY: build
 build: out/gopogh
