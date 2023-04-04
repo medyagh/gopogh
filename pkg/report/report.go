@@ -112,7 +112,7 @@ func Generate(report models.ReportDetail, groups []models.TestGroup) (DisplayCon
 	}
 
 	for _, g := range groups {
-		order = order + 1
+		order++
 		g.Duration = g.Events[len(g.Events)-1].Elapsed
 		if g.Start.Before(startTime) {
 			startTime = g.Start
