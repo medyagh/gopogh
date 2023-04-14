@@ -7,6 +7,11 @@ Converts golang test results from json to user-friendly html.
 
 Example test logs: [before](https://storage.googleapis.com/minikube-builds/logs/13641/22745/Docker_Linux.out.txt), [after](https://storage.googleapis.com/minikube-builds/logs/13641/22745/Docker_Linux.html) 
 
+## GIF Demo
+
+![Demo](https://raw.githubusercontent.com/medyagh/gopogh/master/demo.gif)
+
+
 
 ## Features:
 - foldable test results.
