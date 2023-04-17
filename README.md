@@ -9,7 +9,11 @@ Example test logs: [before](https://storage.googleapis.com/minikube-builds/logs/
 
 ## GIF Demo
 
-![Demo](https://raw.githubusercontent.com/medyagh/gopogh/master/demo.gif)
+### Without gopogh
+![Demo without gopogh](https://raw.githubusercontent.com/medyagh/gopogh/master/before.gif)
+
+### With gopogh
+![Demo with gopogh](https://raw.githubusercontent.com/medyagh/gopogh/master/after.gif)
 
 
 
