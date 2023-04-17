@@ -8490,4 +8490,8 @@ th {
     cursor: pointer;
 }
 
+button {
+    cursor: pointer;
+}
+
 {{end}}
