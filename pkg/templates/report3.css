@@ -8490,7 +8490,13 @@ th {
     cursor: pointer;
 }
 
-button {
+button,
+.close,
+.closebutton,
+.minimize,
+.minimizebutton,
+.zoom,
+.zoombutton {
     cursor: pointer;
 }
 
