@@ -33,7 +33,8 @@ func main() {
 	}
 
 	if *inPath == "" {
-		panic("must provide path to JSON input file")
+		fmt.Println("must provide path to JSON input file")
+		os.Exit(1)
 	}
 
 	if *outPath != "" {
@@ -41,18 +42,21 @@ func main() {
 	}
 
 	if *outHTMLPath == "" {
-		panic("must provide path to HTML output file")
+		fmt.Println("must provide path to HTML output file")
+		os.Exit(1)
 	}
 
 	events, err := parser.ParseJSON(*inPath)
 	if err != nil {
-		panic(fmt.Sprintf("json: %v", err))
+		fmt.Printf("json: %v", err)
+		os.Exit(1)
 	}
 	groups := parser.ProcessEvents(events)
 	r := models.ReportDetail{Name: *reportName, Details: *reportDetails, PR: *reportPR, RepoName: *reportRepo}
 	c, err := report.Generate(r, groups)
 	if err != nil {
-		panic(fmt.Sprintf("failed to generate report: %v", err))
+		fmt.Printf("failed to generate report: %v", err)
+		os.Exit(1)
 	}
 
 	html, err := c.HTML()
@@ -64,7 +68,8 @@ func main() {
 			os.Exit(1)
 		}
 		if err := os.WriteFile(*outHTMLPath, html, 0644); err != nil {
-			panic(fmt.Sprintf("failed to write the html output %s: %v", *outHTMLPath, err))
+			fmt.Printf("failed to write the html output %s: %v", *outHTMLPath, err)
+			os.Exit(1)
 		}
 	}
 	j, err := c.ShortSummary()
@@ -77,7 +82,8 @@ func main() {
 				os.Exit(1)
 			}
 			if err := os.WriteFile(*outSummaryPath, j, 0644); err != nil {
-				panic(fmt.Sprintf("failed to write the html output %s: %v", *outSummaryPath, err))
+				fmt.Printf("failed to write the html output %s: %v", *outSummaryPath, err)
+				os.Exit(1)
 			}
 		}
 		fmt.Println(string(j))
