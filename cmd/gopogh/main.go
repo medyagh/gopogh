@@ -33,7 +33,7 @@ func main() {
 	}
 
 	if *inPath == "" {
-		fmt.Println("must provide path to JSON input file")
+		fmt.Println("Please provide path to JSON input file using -in")
 		os.Exit(1)
 	}
 
@@ -42,7 +42,7 @@ func main() {
 	}
 
 	if *outHTMLPath == "" {
-		fmt.Println("must provide path to HTML output file")
+		fmt.Println("Please provide path to HTML output file using -out_html")
 		os.Exit(1)
 	}
 
