@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/medyagh/gopogh/pkg/models"
 	"github.com/medyagh/gopogh/pkg/parser"
@@ -58,6 +59,10 @@ func main() {
 	if err != nil {
 		fmt.Printf("failed to convert report to html: %v", err)
 	} else {
+		if err := os.MkdirAll(filepath.Dir(*outHTMLPath), 0755); err != nil {
+			fmt.Printf("failed to create directory: %v", err)
+			os.Exit(1)
+		}
 		if err := os.WriteFile(*outHTMLPath, html, 0644); err != nil {
 			panic(fmt.Sprintf("failed to write the html output %s: %v", *outHTMLPath, err))
 		}
@@ -67,6 +72,10 @@ func main() {
 		fmt.Printf("failed to convert report to json: %v", err)
 	} else {
 		if *outSummaryPath != "" {
+			if err := os.MkdirAll(filepath.Dir(*outSummaryPath), 0755); err != nil {
+				fmt.Printf("failed to create directory: %v", err)
+				os.Exit(1)
+			}
 			if err := os.WriteFile(*outSummaryPath, j, 0644); err != nil {
 				panic(fmt.Sprintf("failed to write the html output %s: %v", *outSummaryPath, err))
 			}
