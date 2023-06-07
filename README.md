@@ -46,7 +46,7 @@ TEST_PR_NUMBER=1313
 TEST_NAME="KVM Linux"
 GITHUB_REPOSITORY="github.com/kubernetes/minikube/"
 GITHUB_SHA=1234567890
-gopogh -in ./your-test-log.json -out_html ./report/testout.html -out_summary ./your-test-summary.json -name "${TEST_NAME}" -pr "${TEST_PR_NUMBER}" -repo "${GITHUB_REPOSITORY}"  -details "${GITHUB_SHA}" 
+gopogh -in ./your-test-log.json -out_html ./report/testout.html -out_summary ./your-test-summary.json -out_summary_sql_lite ./your-sql-summary.db -name "${TEST_NAME}" -pr "${TEST_PR_NUMBER}" -repo "${GITHUB_REPOSITORY}"  -details "${GITHUB_SHA}" 
 ```
 
 

@@ -30,3 +30,10 @@ type TestGroup struct {
 	Duration  float64
 	Events    []TestEvent
 }
+
+type DatabaseRow struct {
+	PR       string
+	CommitId string
+	TestName string
+	Result   string
+}

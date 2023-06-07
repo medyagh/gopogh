@@ -9,24 +9,24 @@ VERSION := v0.17.0
 build: out/gopogh
 
 out/gopogh: 
-	CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
+	go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
 
 out/gopogh-darwin-arm64:
-	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
+	GOOS=darwin GOARCH=arm64 go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
 
 out/gopogh-darwin-amd64:
-	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
+	GOOS=darwin GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
 
 out/gopogh-linux-amd64: 
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
+	GOOS=linux GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
 
 out/gopogh-linux-arm: 
-	CGO_ENABLED=0 GOOS=linux GOARCH=arm go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
+	GOOS=linux GOARCH=arm go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
 
 out/gopogh-linux-arm64:
-	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
+	GOOS=linux GOARCH=arm64 go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
 out/gopogh.exe: 
-	CGO_ENABLED=0 GOOS=windows GOARCH=amd64  go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
+	GOOS=windows GOARCH=amd64  go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
 
 # gopogh requires a json input, uses go tool test2json to convert to json
 generate_json:
@@ -36,8 +36,8 @@ generate_json:
 test: build
 	rm ./out/output.html || true
 	rm ./out/output2.html || true
-	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/minikube-logs.json" -out_html "./out/output.html" -out_summary out/output_summary.json -details "0c07e808219403a7241ee5a0fc6a85a897594339"
-	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2.html" -out_summary out/output2_summary.json "0c07e808219403a7241ee5a0fc6a85a897594339"
+	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/minikube-logs.json" -out_html "./out/output.html" -out_summary out/output_summary.json -out_summary_sql_lite out/output_sqlLite_summary.db -details "0c07e808219403a7241ee5a0fc6a85a897594339"
+	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2.html" -out_summary out/output2_summary.json -out_summary_sql_lite out/output2_sqlLite_summary.db "0c07e808219403a7241ee5a0fc6a85a897594339"
 	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2NoSummary.html"  "0c07e808219403a7241ee5a0fc6a85a897594339"
 
 

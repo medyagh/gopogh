@@ -3,10 +3,14 @@ package report
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"math"
+	"os"
+	"path/filepath"
 	"time"
 
+	"github.com/medyagh/gopogh/pkg/db"
 	"github.com/medyagh/gopogh/pkg/models"
 	"github.com/medyagh/gopogh/pkg/templates"
 )
@@ -94,6 +98,34 @@ func (c DisplayContent) HTML() ([]byte, error) {
 		return nil, err
 	}
 	return b.Bytes(), nil
+}
+
+func (c DisplayContent) SQL(dbPath string) error {
+	if err := os.MkdirAll(filepath.Dir(dbPath), 0755); err != nil {
+		return fmt.Errorf("failed to create directory: %v", err)
+	}
+	database, err := db.CreateDatabase(dbPath)
+	if err != nil {
+		return err
+	}
+
+	expectedRowNumber := 0
+	for _, g := range c.Results {
+		expectedRowNumber += len(g)
+	}
+	rows := make([]models.DatabaseRow, 0, expectedRowNumber)
+	for resultType, testGroups := range c.Results {
+		for _, test := range testGroups {
+			r := models.DatabaseRow{PR: c.Detail.PR, CommitId: c.Detail.Details, TestName: test.TestName, Result: resultType}
+			rows = append(rows, r)
+		}
+	}
+
+	if err := db.PopulateDatabase(database, rows); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Generate generates a report
