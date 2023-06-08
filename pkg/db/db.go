@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/mattn/go-sqlite3" // Blank import used for registering sqlLite driver as a database driver
 	"github.com/medyagh/gopogh/pkg/models"
 )
 
@@ -13,7 +13,13 @@ func PopulateDatabase(database *sql.DB, dbRows []models.DatabaseRow) error {
 	if err != nil {
 		return fmt.Errorf("failed to create SQL transaction: %v", err)
 	}
-	defer tx.Rollback()
+
+	var rollbackError error
+	defer func() {
+		if rErr := tx.Rollback(); rErr != nil {
+			rollbackError = fmt.Errorf("error occurred during rollback: %v", rErr)
+		}
+	}()
 
 	sqlInsert := `INSERT OR REPLACE INTO tests (PR, CommitId, TestName, Result) VALUES (?, ?, ?, ?)`
 	stmt, err := tx.Prepare(sqlInsert)
@@ -23,7 +29,7 @@ func PopulateDatabase(database *sql.DB, dbRows []models.DatabaseRow) error {
 	defer stmt.Close()
 
 	for _, r := range dbRows {
-		_, err := stmt.Exec(r.PR, r.CommitId, r.TestName, r.Result)
+		_, err := stmt.Exec(r.PR, r.CommitID, r.TestName, r.Result)
 		if err != nil {
 			return fmt.Errorf("failed to execute SQL insert: %v", err)
 		}
@@ -33,7 +39,7 @@ func PopulateDatabase(database *sql.DB, dbRows []models.DatabaseRow) error {
 	if err != nil {
 		return fmt.Errorf("failed to commit SQL insert transaction: %v", err)
 	}
-	return nil
+	return rollbackError
 }
 
 func CreateDatabase(dbPath string) (*sql.DB, error) {

@@ -33,7 +33,7 @@ type TestGroup struct {
 
 type DatabaseRow struct {
 	PR       string
-	CommitId string
+	CommitID string
 	TestName string
 	Result   string
 }

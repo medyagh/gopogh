@@ -116,7 +116,7 @@ func (c DisplayContent) SQL(dbPath string) error {
 	rows := make([]models.DatabaseRow, 0, expectedRowNumber)
 	for resultType, testGroups := range c.Results {
 		for _, test := range testGroups {
-			r := models.DatabaseRow{PR: c.Detail.PR, CommitId: c.Detail.Details, TestName: test.TestName, Result: resultType}
+			r := models.DatabaseRow{PR: c.Detail.PR, CommitID: c.Detail.Details, TestName: test.TestName, Result: resultType}
 			rows = append(rows, r)
 		}
 	}
