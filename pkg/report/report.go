@@ -121,11 +121,7 @@ func (c DisplayContent) SQL(dbPath string) error {
 		}
 	}
 
-	if err := db.PopulateDatabase(database, rows); err != nil {
-		return err
-	}
-
-	return nil
+	return db.PopulateDatabase(database, rows)
 }
 
 // Generate generates a report

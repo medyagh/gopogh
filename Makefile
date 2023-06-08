@@ -44,6 +44,9 @@ test: build
 .PHONY: cross
 cross: out/gopogh-linux-amd64 out/gopogh-darwin-amd64 out/gopogh-darwin-arm64 out/gopogh.exe out/gopogh-linux-arm64 out/gopogh-linux-arm
 
+.PHONY: lint
+lint:
+	golangci-lint run --enable gofmt,goimports,gocritic,revive,gocyclo,misspell,nakedret,stylecheck,unconvert,unparam,dogsled
 
 .PHONY: clean
 clean:
