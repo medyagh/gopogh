@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	_ "github.com/mattn/go-sqlite3" // Blank import used for registering sqlLite driver as a database driver
+	_ "github.com/mattn/go-sqlite3" // Blank import used for registering SQLite driver as a database driver
 	"github.com/medyagh/gopogh/pkg/models"
 )
 
