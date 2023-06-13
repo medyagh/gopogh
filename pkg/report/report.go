@@ -23,6 +23,7 @@ type DisplayContent struct {
 	BuildVersion  string
 	CreatedOn     time.Time
 	Detail        models.ReportDetail
+	TestTime      time.Time
 }
 
 // ShortSummary returns only test names without logs
@@ -121,8 +122,17 @@ func (c DisplayContent) SQL(dbPath string) error {
 			rows = append(rows, r)
 		}
 	}
+	dbcommitRow := models.DatabaseCommitRow{
+		CommitID:     c.Detail.Details,
+		EnvName:      c.Detail.Name,
+		GopoghTime:   time.Now().String(),
+		TestTime:     c.TestTime.String(),
+		NumberOfFail: len(c.Results[fail]),
+		NumberOfPass: len(c.Results[pass]),
+		NumberOfSkip: len(c.Results[skip]),
+	}
 
-	return db.PopulateDatabase(database, rows)
+	return db.PopulateDatabase(database, rows, dbcommitRow)
 }
 
 // Generate generates a report
@@ -175,6 +185,7 @@ func Generate(report models.ReportDetail, groups []models.TestGroup) (DisplayCon
 		BuildVersion:  Version + "_" + Build,
 		CreatedOn:     time.Now(),
 		Detail:        report,
+		TestTime:      startTime,
 	}, nil
 }
 

@@ -37,3 +37,12 @@ type DatabaseTestRow struct {
 	TestName string
 	Result   string
 }
+type DatabaseCommitRow struct {
+	CommitID     string
+	EnvName      string
+	GopoghTime   string
+	TestTime     string
+	NumberOfFail int
+	NumberOfPass int
+	NumberOfSkip int
+}

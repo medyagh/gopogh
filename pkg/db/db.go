@@ -9,7 +9,7 @@ import (
 )
 
 // PopulateDatabase adds/updates rows to the database
-func PopulateDatabase(database *sql.DB, dbRows []models.DatabaseTestRow) error {
+func PopulateDatabase(database *sql.DB, dbRows []models.DatabaseTestRow, commitRow models.DatabaseCommitRow) error {
 	tx, err := database.Begin()
 	if err != nil {
 		return fmt.Errorf("failed to create SQL transaction: %v", err)
@@ -36,6 +36,12 @@ func PopulateDatabase(database *sql.DB, dbRows []models.DatabaseTestRow) error {
 		}
 	}
 
+	sqlInsert = `INSERT OR REPLACE INTO commits (CommitID, EnvName, GopoghTime, TestTime, NumberOfFail, NumberOfPass, NumberOfSkip) VALUES (?, ?, ?, ?, ?, ?, ?)`
+	_, err = tx.Exec(sqlInsert, commitRow.CommitID, commitRow.EnvName, commitRow.GopoghTime, commitRow.TestTime, commitRow.NumberOfFail, commitRow.NumberOfPass, commitRow.NumberOfSkip)
+	if err != nil {
+		return fmt.Errorf("failed to execute SQL insert: %v", err)
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return fmt.Errorf("failed to commit SQL insert transaction: %v", err)
@@ -58,9 +64,28 @@ func CreateDatabase(dbPath string) (*sql.DB, error) {
 		PRIMARY KEY (CommitId, TestName)
 	);
 `
+
 	_, err = database.Exec(createTableSQL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create table: %v", err)
+		return nil, fmt.Errorf("failed to create tests table: %v", err)
 	}
+
+	createTableSQL = `
+	CREATE TABLE IF NOT EXISTS commits (
+		CommitID TEXT,
+    	EnvName TEXT,
+    	GopoghTime TEXT,
+    	TestTime TEXT,
+    	NumberOfFail INTEGER,
+    	NumberOfPass INTEGER,
+    	NumberOfSkip INTEGER,
+		PRIMARY KEY (CommitId)
+	);
+`
+	_, err = database.Exec(createTableSQL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create commits table: %v", err)
+	}
+
 	return database, nil
 }
