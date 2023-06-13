@@ -38,16 +38,7 @@ jobs:
       - name: Test
         run: |
           export PATH=$PATH:$(go env GOPATH)/bin
-          make test 
-      - uses: LanceMcCarthy/Action-AzureBlobUpload@v1.8.0
-        name: Uploading to Azure storage...
-        with:
-          connection_string: ${{ secrets.az_connection_string }}
-          container_name: gopogh
-          source_folder: ./out
-          destination_folder: ${{github.event.number}}/${{ steps.shortsha.outputs.sha8 }}
-          clean_destination_folder: true
-          fail_if_source_empty: true
+          make test
       - name: Report url
         shell: bash
         run: |
@@ -55,4 +46,3 @@ jobs:
           echo "https://gopogh.blob.core.windows.net/gopogh/${{github.event.number}}/${{ steps.shortsha.outputs.sha8 }}/output.html"
           echo "https://gopogh.blob.core.windows.net/gopogh/${{github.event.number}}/${{ steps.shortsha.outputs.sha8 }}/output.html"
           echo "*******************************************************"
-          
