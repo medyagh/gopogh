@@ -31,7 +31,7 @@ type TestGroup struct {
 	Events    []TestEvent
 }
 
-type DatabaseRow struct {
+type DatabaseTestRow struct {
 	PR       string
 	CommitID string
 	TestName string

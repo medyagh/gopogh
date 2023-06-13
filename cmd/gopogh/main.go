@@ -62,7 +62,7 @@ func main() {
 
 	if *outSummarySQLLitePath != "" {
 		if err := c.SQL(*outSummarySQLLitePath); err != nil {
-			fmt.Printf("%v", err)
+			fmt.Println(err)
 			os.Exit(1)
 		}
 	}

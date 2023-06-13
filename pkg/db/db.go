@@ -8,7 +8,8 @@ import (
 	"github.com/medyagh/gopogh/pkg/models"
 )
 
-func PopulateDatabase(database *sql.DB, dbRows []models.DatabaseRow) error {
+// PopulateDatabase adds/updates rows to the database
+func PopulateDatabase(database *sql.DB, dbRows []models.DatabaseTestRow) error {
 	tx, err := database.Begin()
 	if err != nil {
 		return fmt.Errorf("failed to create SQL transaction: %v", err)
@@ -42,6 +43,7 @@ func PopulateDatabase(database *sql.DB, dbRows []models.DatabaseRow) error {
 	return rollbackError
 }
 
+// CreateDatabase opens the database and creates the tables if not present
 func CreateDatabase(dbPath string) (*sql.DB, error) {
 	database, err := sql.Open("sqlite3", dbPath)
 	if err != nil {

@@ -100,6 +100,7 @@ func (c DisplayContent) HTML() ([]byte, error) {
 	return b.Bytes(), nil
 }
 
+// SQL handles database creation and updatess
 func (c DisplayContent) SQL(dbPath string) error {
 	if err := os.MkdirAll(filepath.Dir(dbPath), 0755); err != nil {
 		return fmt.Errorf("failed to create directory: %v", err)
@@ -113,10 +114,10 @@ func (c DisplayContent) SQL(dbPath string) error {
 	for _, g := range c.Results {
 		expectedRowNumber += len(g)
 	}
-	rows := make([]models.DatabaseRow, 0, expectedRowNumber)
+	rows := make([]models.DatabaseTestRow, 0, expectedRowNumber)
 	for resultType, testGroups := range c.Results {
 		for _, test := range testGroups {
-			r := models.DatabaseRow{PR: c.Detail.PR, CommitID: c.Detail.Details, TestName: test.TestName, Result: resultType}
+			r := models.DatabaseTestRow{PR: c.Detail.PR, CommitID: c.Detail.Details, TestName: test.TestName, Result: resultType}
 			rows = append(rows, r)
 		}
 	}
