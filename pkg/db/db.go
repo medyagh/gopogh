@@ -79,7 +79,7 @@ func CreateDatabase(dbPath string) (*sql.DB, error) {
     	NumberOfFail INTEGER,
     	NumberOfPass INTEGER,
     	NumberOfSkip INTEGER,
-		PRIMARY KEY (CommitId)
+		PRIMARY KEY (CommitID)
 	);
 `
 	_, err = database.Exec(createTableSQL)

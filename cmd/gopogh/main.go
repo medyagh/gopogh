@@ -15,16 +15,16 @@ import (
 var Build string
 
 var (
-	outSummarySQLLitePath = flag.String("out_summary_sql_lite", "", "path to sql summary output file")
-	reportName            = flag.String("name", "", "report name")
-	reportPR              = flag.String("pr", "", "Pull request number")
-	reportDetails         = flag.String("details", "", "report details (for example test args...)")
-	reportRepo            = flag.String("repo", "", "source repo")
-	inPath                = flag.String("in", "", "path to JSON file produced by go tool test2json")
-	outPath               = flag.String("out", "", "(deprecated use  -out_html instead) path to HTML output file")
-	outHTMLPath           = flag.String("out_html", "", "path to HTML output file")
-	outSummaryPath        = flag.String("out_summary", "", "path to json summary output file")
-	version               = flag.Bool("version", false, "shows version")
+	outSummarySQLitePath = flag.String("out_summary_sql_lite", "", "path to sql summary output file")
+	reportName           = flag.String("name", "", "report name")
+	reportPR             = flag.String("pr", "", "Pull request number")
+	reportDetails        = flag.String("details", "", "report details (for example test args...)")
+	reportRepo           = flag.String("repo", "", "source repo")
+	inPath               = flag.String("in", "", "path to JSON file produced by go tool test2json")
+	outPath              = flag.String("out", "", "(deprecated use  -out_html instead) path to HTML output file")
+	outHTMLPath          = flag.String("out_html", "", "path to HTML output file")
+	outSummaryPath       = flag.String("out_summary", "", "path to json summary output file")
+	version              = flag.Bool("version", false, "shows version")
 )
 
 func main() {
@@ -60,8 +60,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	if *outSummarySQLLitePath != "" {
-		if err := c.SQL(*outSummarySQLLitePath); err != nil {
+	if *outSummarySQLitePath != "" {
+		if err := c.SQL(*outSummarySQLitePath); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
