@@ -79,7 +79,7 @@ func (m *SQLite) Set(commitRow models.DatabaseCommitRow, dbRows []models.Databas
 	return rollbackError
 }
 
-// CreateDatabase opens the database and creates the tables if not present
+// NewSQLite opens the database returning an SQLite database struct instance
 func NewSQLite(cfg Config) (*SQLite, error) {
 	if err := os.MkdirAll(filepath.Dir(cfg.Path), 0755); err != nil {
 		return nil, fmt.Errorf("failed to create directory: %v", err)
@@ -94,6 +94,8 @@ func NewSQLite(cfg Config) (*SQLite, error) {
 	}
 	return m, nil
 }
+
+// Initialize creates the tables within the SQLite database
 func (m *SQLite) Initialize() error {
 
 	if _, err := m.db.Exec(createCommitsTableSQL); err != nil {
