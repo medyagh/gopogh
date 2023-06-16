@@ -36,9 +36,21 @@ generate_json:
 test: build
 	rm ./out/output.html || true
 	rm ./out/output2.html || true
-	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/minikube-logs.json" -out_html "./out/output.html" -out_summary out/output_summary.json -db_path out/output_sqlite_summary.db -details "0c07e808219403a7241ee5a0fc6a85a897594339"
-	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2.html" -out_summary out/output2_summary.json -db_path out/output2_sqlite_summary.db -details "0c07e808219403a7241ee5a0fc6a85a897594339"
+	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/minikube-logs.json" -out_html "./out/output.html" -out_summary out/output_summary.json -details "0c07e808219403a7241ee5a0fc6a85a897594339"
+	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2.html" -out_summary out/output2_summary.json -details "0c07e808219403a7241ee5a0fc6a85a897594339"
 	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2NoSummary.html" -details "0c07e808219403a7241ee5a0fc6a85a897594339"
+
+.PHONY: testdb
+testdb: build
+	$(eval export DB_BACKEND=sqlite)
+	$(eval export DB_PATH=out/testdb/output2_sqlite_NoDBPATH.db)
+	rm -f ./out/output.html
+	rm -f ./out/output2.html 
+	rm -f ./out/output_sqlite_summary.db 
+	rm -f ./out/output2_sqlite_summary.db
+	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/minikube-logs.json" -out_html "./out/output.html" -out_summary out/output_summary.json -db_path out/testdb/output_sqlite_summary.db -details "0c07e808219403a7241ee5a0fc6a85a897594339"
+	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2.html" -out_summary out/output2_summary.json -db_path out/testdb/output2_sqlite_summary.db -details "0c07e808219403a7241ee5a0fc6a85a897594339"
+	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2NoDBPath.html" -details "0c07e808219403a7241ee5a0fc6a85a897594339"
 
 
 .PHONY: cross
