@@ -41,9 +41,9 @@ test: build
 	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2NoSummary.html" -details "0c07e808219403a7241ee5a0fc6a85a897594339"
 
 .PHONY: testdb
+testdb: export DB_BACKEND=sqlite
+testdb: export DB_PATH=out/testdb/output2_sqlite_NoDBPATH.db
 testdb: build
-	$(eval export DB_BACKEND=sqlite)
-	$(eval export DB_PATH=out/testdb/output2_sqlite_NoDBPATH.db)
 	rm -f ./out/output.html
 	rm -f ./out/output2.html 
 	rm -f ./out/output_sqlite_summary.db 
