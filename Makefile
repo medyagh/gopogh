@@ -36,8 +36,8 @@ generate_json:
 test: build
 	rm ./out/output.html || true
 	rm ./out/output2.html || true
-	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/minikube-logs.json" -out_html "./out/output.html" -out_summary out/output_summary.json -out_summary_sql_lite out/output_sqlite_summary.db -details "0c07e808219403a7241ee5a0fc6a85a897594339"
-	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2.html" -out_summary out/output2_summary.json -out_summary_sql_lite out/output2_sqlite_summary.db -details "0c07e808219403a7241ee5a0fc6a85a897594339"
+	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/minikube-logs.json" -out_html "./out/output.html" -out_summary out/output_summary.json -db_path out/output_sqlite_summary.db -details "0c07e808219403a7241ee5a0fc6a85a897594339"
+	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2.html" -out_summary out/output2_summary.json -db_path out/output2_sqlite_summary.db -details "0c07e808219403a7241ee5a0fc6a85a897594339"
 	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2NoSummary.html" -details "0c07e808219403a7241ee5a0fc6a85a897594339"
 
 

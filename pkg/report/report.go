@@ -3,11 +3,8 @@ package report
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"math"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/medyagh/gopogh/pkg/db"
@@ -103,11 +100,11 @@ func (c DisplayContent) HTML() ([]byte, error) {
 
 // SQL handles database creation and updatess
 func (c DisplayContent) SQL(dbPath string) error {
-	if err := os.MkdirAll(filepath.Dir(dbPath), 0755); err != nil {
-		return fmt.Errorf("failed to create directory: %v", err)
-	}
-	database, err := db.CreateDatabase(dbPath)
+	database, err := db.FromEnv("", dbPath)
 	if err != nil {
+		return err
+	}
+	if err := database.Initialize(); err != nil {
 		return err
 	}
 
@@ -122,7 +119,7 @@ func (c DisplayContent) SQL(dbPath string) error {
 			rows = append(rows, r)
 		}
 	}
-	dbcommitRow := models.DatabaseCommitRow{
+	dbCommitRow := models.DatabaseCommitRow{
 		CommitID:     c.Detail.Details,
 		EnvName:      c.Detail.Name,
 		GopoghTime:   time.Now().String(),
@@ -132,7 +129,7 @@ func (c DisplayContent) SQL(dbPath string) error {
 		NumberOfSkip: len(c.Results[skip]),
 	}
 
-	return db.PopulateDatabase(database, rows, dbcommitRow)
+	return database.Set(dbCommitRow, rows)
 }
 
 // Generate generates a report
