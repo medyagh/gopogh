@@ -15,7 +15,7 @@ type Config struct {
 
 // datab is the database interface we support
 type datab interface {
-	Set(models.DbEnvironmentTest, []models.DbTestCase) error
+	Set(models.DBEnvironmentTest, []models.DBTestCase) error
 
 	Initialize() error
 }
@@ -30,6 +30,8 @@ func New(cfg Config) (datab, error) {
 	}
 }
 
+// FromEnv configures and returns a database instance.
+// backend and path parameters are default config, otherwise gets config from the environment variables DB_BACKEND and DB_PATH
 func FromEnv(backend string, path string) (datab, error) {
 	if backend == "" {
 		backend = os.Getenv("DB_BACKEND")

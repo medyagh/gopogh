@@ -11,8 +11,8 @@ import (
 	"github.com/medyagh/gopogh/pkg/models"
 )
 
-var createEnviornmentTestsTableSQL = `
-	CREATE TABLE IF NOT EXISTS db_enviornment_tests (
+var createEnvironmentTestsTableSQL = `
+	CREATE TABLE IF NOT EXISTS db_environment_tests (
 		CommitID TEXT,
     	EnvName TEXT,
     	GopoghTime TEXT,
@@ -39,7 +39,7 @@ type SQLite struct {
 }
 
 // Set adds/updates rows to the database
-func (m *SQLite) Set(commitRow models.DbEnvironmentTest, dbRows []models.DbTestCase) error {
+func (m *SQLite) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTestCase) error {
 	tx, err := m.db.DB.Begin()
 	if err != nil {
 		return fmt.Errorf("failed to create SQL transaction: %v", err)
@@ -66,7 +66,7 @@ func (m *SQLite) Set(commitRow models.DbEnvironmentTest, dbRows []models.DbTestC
 		}
 	}
 
-	sqlInsert = `INSERT OR REPLACE INTO db_enviornment_tests (CommitID, EnvName, GopoghTime, TestTime, NumberOfFail, NumberOfPass, NumberOfSkip) VALUES (?, ?, ?, ?, ?, ?, ?)`
+	sqlInsert = `INSERT OR REPLACE INTO db_environment_tests (CommitID, EnvName, GopoghTime, TestTime, NumberOfFail, NumberOfPass, NumberOfSkip) VALUES (?, ?, ?, ?, ?, ?, ?)`
 	_, err = tx.Exec(sqlInsert, commitRow.CommitID, commitRow.EnvName, commitRow.GopoghTime, commitRow.TestTime, commitRow.NumberOfFail, commitRow.NumberOfPass, commitRow.NumberOfSkip)
 	if err != nil {
 		return fmt.Errorf("failed to execute SQL insert: %v", err)
@@ -98,8 +98,8 @@ func NewSQLite(cfg Config) (*SQLite, error) {
 // Initialize creates the tables within the SQLite database
 func (m *SQLite) Initialize() error {
 
-	if _, err := m.db.Exec(createEnviornmentTestsTableSQL); err != nil {
-		return fmt.Errorf("failed to initialize enviornment tests table: %w", err)
+	if _, err := m.db.Exec(createEnvironmentTestsTableSQL); err != nil {
+		return fmt.Errorf("failed to initialize environment tests table: %w", err)
 	}
 	if _, err := m.db.Exec(createTestCasesTableSQL); err != nil {
 		return fmt.Errorf("failed to initialize test cases table: %w", err)
