@@ -31,13 +31,16 @@ type TestGroup struct {
 	Events    []TestEvent
 }
 
-type DatabaseTestRow struct {
+// DbTestCaseRow represents a row in db table that holds each individual subtest
+type DbTestCase struct {
 	PR       string
 	CommitID string
 	TestName string
 	Result   string
 }
-type DatabaseCommitRow struct {
+
+// DbEnvironmentTestsRow represents a row in db table that has finished tests in each environments
+type DbEnvironmentTest struct {
 	CommitID     string
 	EnvName      string
 	GopoghTime   string

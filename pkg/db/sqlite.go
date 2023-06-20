@@ -11,8 +11,8 @@ import (
 	"github.com/medyagh/gopogh/pkg/models"
 )
 
-var createCommitsTableSQL = `
-	CREATE TABLE IF NOT EXISTS commits (
+var createEnviornmentTestsTableSQL = `
+	CREATE TABLE IF NOT EXISTS db_enviornment_tests (
 		CommitID TEXT,
     	EnvName TEXT,
     	GopoghTime TEXT,
@@ -23,8 +23,8 @@ var createCommitsTableSQL = `
 		PRIMARY KEY (CommitID)
 	);
 `
-var createTestsTableSQL = `
-	CREATE TABLE IF NOT EXISTS tests (
+var createTestCasesTableSQL = `
+	CREATE TABLE IF NOT EXISTS db_test_cases (
 		PR TEXT,
 		CommitId TEXT,
 		TestName TEXT,
@@ -39,7 +39,7 @@ type SQLite struct {
 }
 
 // Set adds/updates rows to the database
-func (m *SQLite) Set(commitRow models.DatabaseCommitRow, dbRows []models.DatabaseTestRow) error {
+func (m *SQLite) Set(commitRow models.DbEnvironmentTest, dbRows []models.DbTestCase) error {
 	tx, err := m.db.DB.Begin()
 	if err != nil {
 		return fmt.Errorf("failed to create SQL transaction: %v", err)
@@ -52,7 +52,7 @@ func (m *SQLite) Set(commitRow models.DatabaseCommitRow, dbRows []models.Databas
 		}
 	}()
 
-	sqlInsert := `INSERT OR REPLACE INTO tests (PR, CommitId, TestName, Result) VALUES (?, ?, ?, ?)`
+	sqlInsert := `INSERT OR REPLACE INTO db_test_cases (PR, CommitId, TestName, Result) VALUES (?, ?, ?, ?)`
 	stmt, err := tx.Prepare(sqlInsert)
 	if err != nil {
 		return fmt.Errorf("failed to prepare SQL insert statement: %v", err)
@@ -66,7 +66,7 @@ func (m *SQLite) Set(commitRow models.DatabaseCommitRow, dbRows []models.Databas
 		}
 	}
 
-	sqlInsert = `INSERT OR REPLACE INTO commits (CommitID, EnvName, GopoghTime, TestTime, NumberOfFail, NumberOfPass, NumberOfSkip) VALUES (?, ?, ?, ?, ?, ?, ?)`
+	sqlInsert = `INSERT OR REPLACE INTO db_enviornment_tests (CommitID, EnvName, GopoghTime, TestTime, NumberOfFail, NumberOfPass, NumberOfSkip) VALUES (?, ?, ?, ?, ?, ?, ?)`
 	_, err = tx.Exec(sqlInsert, commitRow.CommitID, commitRow.EnvName, commitRow.GopoghTime, commitRow.TestTime, commitRow.NumberOfFail, commitRow.NumberOfPass, commitRow.NumberOfSkip)
 	if err != nil {
 		return fmt.Errorf("failed to execute SQL insert: %v", err)
@@ -98,11 +98,11 @@ func NewSQLite(cfg Config) (*SQLite, error) {
 // Initialize creates the tables within the SQLite database
 func (m *SQLite) Initialize() error {
 
-	if _, err := m.db.Exec(createCommitsTableSQL); err != nil {
-		return fmt.Errorf("failed to initialize commits table: %w", err)
+	if _, err := m.db.Exec(createEnviornmentTestsTableSQL); err != nil {
+		return fmt.Errorf("failed to initialize enviornment tests table: %w", err)
 	}
-	if _, err := m.db.Exec(createTestsTableSQL); err != nil {
-		return fmt.Errorf("failed to initialize tests table: %w", err)
+	if _, err := m.db.Exec(createTestCasesTableSQL); err != nil {
+		return fmt.Errorf("failed to initialize test cases table: %w", err)
 	}
 	return nil
 }

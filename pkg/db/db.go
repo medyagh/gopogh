@@ -15,7 +15,7 @@ type Config struct {
 
 // datab is the database interface we support
 type datab interface {
-	Set(models.DatabaseCommitRow, []models.DatabaseTestRow) error
+	Set(models.DbEnvironmentTest, []models.DbTestCase) error
 
 	Initialize() error
 }

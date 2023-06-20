@@ -112,14 +112,14 @@ func (c DisplayContent) SQL(dbPath string) error {
 	for _, g := range c.Results {
 		expectedRowNumber += len(g)
 	}
-	rows := make([]models.DatabaseTestRow, 0, expectedRowNumber)
+	dbTestRows := make([]models.DbTestCase, 0, expectedRowNumber)
 	for resultType, testGroups := range c.Results {
 		for _, test := range testGroups {
-			r := models.DatabaseTestRow{PR: c.Detail.PR, CommitID: c.Detail.Details, TestName: test.TestName, Result: resultType}
-			rows = append(rows, r)
+			r := models.DbTestCase{PR: c.Detail.PR, CommitID: c.Detail.Details, TestName: test.TestName, Result: resultType}
+			dbTestRows = append(dbTestRows, r)
 		}
 	}
-	dbCommitRow := models.DatabaseCommitRow{
+	dbEnviornmentRow := models.DbEnvironmentTest{
 		CommitID:     c.Detail.Details,
 		EnvName:      c.Detail.Name,
 		GopoghTime:   time.Now().String(),
@@ -129,7 +129,7 @@ func (c DisplayContent) SQL(dbPath string) error {
 		NumberOfSkip: len(c.Results[skip]),
 	}
 
-	return database.Set(dbCommitRow, rows)
+	return database.Set(dbEnviornmentRow, dbTestRows)
 }
 
 // Generate generates a report
