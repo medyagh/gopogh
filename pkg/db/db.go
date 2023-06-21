@@ -7,8 +7,8 @@ import (
 	"github.com/medyagh/gopogh/pkg/models"
 )
 
-// Config is database configuration
-type Config struct {
+// config is database configuration
+type config struct {
 	Type string
 	Path string
 }
@@ -20,11 +20,11 @@ type datab interface {
 	Initialize() error
 }
 
-// New handles which database driver to use and initializes the db
-func New(cfg Config) (datab, error) {
+// newDB handles which database driver to use and initializes the db
+func newDB(cfg config) (datab, error) {
 	switch cfg.Type {
 	case "sqlite":
-		return NewSQLite(cfg)
+		return newSQLite(cfg)
 	default:
 		return nil, fmt.Errorf("unknown backend: %q", cfg.Type)
 	}
@@ -47,7 +47,7 @@ func FromEnv(backend string, path string) (datab, error) {
 		return nil, fmt.Errorf("missing DB_PATH")
 	}
 
-	c, err := New(Config{
+	c, err := newDB(config{
 		Type: backend,
 		Path: path,
 	})

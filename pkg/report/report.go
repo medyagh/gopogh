@@ -115,18 +115,20 @@ func (c DisplayContent) SQL(dbPath string) error {
 	dbTestRows := make([]models.DBTestCase, 0, expectedRowNumber)
 	for resultType, testGroups := range c.Results {
 		for _, test := range testGroups {
-			r := models.DBTestCase{PR: c.Detail.PR, CommitID: c.Detail.Details, TestName: test.TestName, Result: resultType}
+			r := models.DBTestCase{PR: c.Detail.PR, CommitID: c.Detail.Details, TestName: test.TestName, Result: resultType, Duration: test.Duration, EnvName: c.Detail.Name, TestOrder: test.TestOrder}
 			dbTestRows = append(dbTestRows, r)
 		}
 	}
 	dbEnvironmentRow := models.DBEnvironmentTest{
-		CommitID:     c.Detail.Details,
-		EnvName:      c.Detail.Name,
-		GopoghTime:   time.Now().String(),
-		TestTime:     c.TestTime.String(),
-		NumberOfFail: len(c.Results[fail]),
-		NumberOfPass: len(c.Results[pass]),
-		NumberOfSkip: len(c.Results[skip]),
+		CommitID:      c.Detail.Details,
+		EnvName:       c.Detail.Name,
+		GopoghTime:    time.Now().String(),
+		TestTime:      c.TestTime.String(),
+		NumberOfFail:  len(c.Results[fail]),
+		NumberOfPass:  len(c.Results[pass]),
+		NumberOfSkip:  len(c.Results[skip]),
+		TotalDuration: c.TotalDuration,
+		GopoghVersion: c.BuildVersion,
 	}
 
 	return database.Set(dbEnvironmentRow, dbTestRows)
