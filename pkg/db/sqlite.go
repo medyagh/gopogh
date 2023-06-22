@@ -7,19 +7,19 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	_ "github.com/mattn/go-sqlite3" // Blank import used for registering SQLite driver as a database driver
 	"github.com/medyagh/gopogh/pkg/models"
+	_ "modernc.org/sqlite" // Blank import used for registering SQLite driver as a database driver
 )
 
 var createEnvironmentTestsTableSQL = `
 	CREATE TABLE IF NOT EXISTS db_environment_tests (
 		CommitID TEXT,
-    	EnvName TEXT,
-    	GopoghTime TEXT,
-    	TestTime TEXT,
-    	NumberOfFail INTEGER,
-    	NumberOfPass INTEGER,
-    	NumberOfSkip INTEGER,
+		EnvName TEXT,
+		GopoghTime TEXT,
+		TestTime TEXT,
+		NumberOfFail INTEGER,
+		NumberOfPass INTEGER,
+		NumberOfSkip INTEGER,
 		TotalDuration REAL,
 		GopoghVersion TEXT,
 		PRIMARY KEY (CommitID, EnvName)
@@ -89,7 +89,7 @@ func newSQLite(cfg config) (*sqlite, error) {
 	if err := os.MkdirAll(filepath.Dir(cfg.Path), 0755); err != nil {
 		return nil, fmt.Errorf("failed to create directory: %v", err)
 	}
-	database, err := sqlx.Connect("sqlite3", cfg.Path)
+	database, err := sqlx.Connect("sqlite", cfg.Path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database connection: %v", err)
 	}
@@ -104,10 +104,10 @@ func newSQLite(cfg config) (*sqlite, error) {
 func (m *sqlite) Initialize() error {
 
 	if _, err := m.db.Exec(createEnvironmentTestsTableSQL); err != nil {
-		return fmt.Errorf("failed to initialize environment tests table: %w", err)
+		return fmt.Errorf("failed to initialize environment tests table: %v", err)
 	}
 	if _, err := m.db.Exec(createTestCasesTableSQL); err != nil {
-		return fmt.Errorf("failed to initialize test cases table: %w", err)
+		return fmt.Errorf("failed to initialize test cases table: %v", err)
 	}
 	return nil
 }

@@ -15,7 +15,8 @@ import (
 var Build string
 
 var (
-	dbPath         = flag.String("db_path", "", "path to sql summary output (file). Set DB_BACKEND env variable to 'sqlite' for file output")
+	dbPath         = flag.String("db_path", "", "path to sql summary output")
+	dbBackend      = flag.String("db_backend", "", "sql database driver. 'sqlite' for file output")
 	reportName     = flag.String("name", "", "report name")
 	reportPR       = flag.String("pr", "", "Pull request number")
 	reportDetails  = flag.String("details", "", "report details (for example test args...)")
@@ -61,7 +62,7 @@ func main() {
 	}
 
 	if *dbPath != "" || os.Getenv("DB_PATH") != "" {
-		if err := c.SQL(*dbPath); err != nil {
+		if err := c.SQL(*dbPath, *dbBackend); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}

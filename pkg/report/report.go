@@ -98,9 +98,9 @@ func (c DisplayContent) HTML() ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-// SQL handles database creation and updatess
-func (c DisplayContent) SQL(dbPath string) error {
-	database, err := db.FromEnv("", dbPath)
+// SQL handles database creation and updates
+func (c DisplayContent) SQL(dbPath string, dbBackend string) error {
+	database, err := db.FromEnv(dbPath, dbBackend)
 	if err != nil {
 		return err
 	}
@@ -115,7 +115,15 @@ func (c DisplayContent) SQL(dbPath string) error {
 	dbTestRows := make([]models.DBTestCase, 0, expectedRowNumber)
 	for resultType, testGroups := range c.Results {
 		for _, test := range testGroups {
-			r := models.DBTestCase{PR: c.Detail.PR, CommitID: c.Detail.Details, TestName: test.TestName, Result: resultType, Duration: test.Duration, EnvName: c.Detail.Name, TestOrder: test.TestOrder}
+			r := models.DBTestCase{
+				PR:        c.Detail.PR,
+				CommitID:  c.Detail.Details,
+				TestName:  test.TestName,
+				Result:    resultType,
+				Duration:  test.Duration,
+				EnvName:   c.Detail.Name,
+				TestOrder: test.TestOrder,
+			}
 			dbTestRows = append(dbTestRows, r)
 		}
 	}

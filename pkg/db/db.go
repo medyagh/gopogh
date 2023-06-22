@@ -32,7 +32,7 @@ func newDB(cfg config) (datab, error) {
 
 // FromEnv configures and returns a database instance.
 // backend and path parameters are default config, otherwise gets config from the environment variables DB_BACKEND and DB_PATH
-func FromEnv(backend string, path string) (datab, error) {
+func FromEnv(path string, backend string) (datab, error) {
 	if backend == "" {
 		backend = os.Getenv("DB_BACKEND")
 	}
@@ -52,7 +52,7 @@ func FromEnv(backend string, path string) (datab, error) {
 		Path: path,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("new from %s: %s: %w", backend, path, err)
+		return nil, fmt.Errorf("new from %s: %s: %v", backend, path, err)
 	}
 
 	return c, nil
