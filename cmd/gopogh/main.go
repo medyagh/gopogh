@@ -61,7 +61,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if *dbPath != "" || os.Getenv("DB_PATH") != "" {
+	if *dbPath != "" || os.Getenv("DB_PATH") != "" || *dbBackend != "" || os.Getenv("DB_BACKEND") != "" {
 		if err := c.SQL(*dbPath, *dbBackend); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
