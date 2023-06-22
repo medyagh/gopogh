@@ -61,7 +61,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if *dbPath != "" || os.Getenv("DB_PATH") != "" || *dbBackend != "" || os.Getenv("DB_BACKEND") != "" {
+	if isDBVarSet(*dbPath, *dbBackend) {
 		if err := c.SQL(*dbPath, *dbBackend); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -97,4 +97,11 @@ func main() {
 		}
 		fmt.Println(string(j))
 	}
+}
+
+// isDBVarSet checks whether any of the database flags/environment variables are set
+func isDBVarSet(dbPath string, dbBackend string) bool {
+	return (dbPath != "" || os.Getenv("DB_PATH") != "") ||
+		(dbBackend != "" || os.Getenv("DB_BACKEND") != "")
+
 }
