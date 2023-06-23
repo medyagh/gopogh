@@ -15,6 +15,8 @@ import (
 var Build string
 
 var (
+	dbPath         = flag.String("db_path", "", "path to sql summary output")
+	dbBackend      = flag.String("db_backend", "", "sql database driver. 'sqlite' for file output")
 	reportName     = flag.String("name", "", "report name")
 	reportPR       = flag.String("pr", "", "Pull request number")
 	reportDetails  = flag.String("details", "", "report details (for example test args...)")
@@ -59,6 +61,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	if dbVarProvided(*dbPath, *dbBackend) {
+		if err := c.SQL(*dbPath, *dbBackend); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	}
+
 	html, err := c.HTML()
 	if err != nil {
 		fmt.Printf("failed to convert report to html: %v", err)
@@ -88,4 +97,11 @@ func main() {
 		}
 		fmt.Println(string(j))
 	}
+}
+
+// dbVarProvided checks whether any of the database flags/environment variables are set
+func dbVarProvided(dbPath string, dbBackend string) bool {
+	return (dbPath != "" || os.Getenv("DB_PATH") != "") ||
+		(dbBackend != "" || os.Getenv("DB_BACKEND") != "")
+
 }

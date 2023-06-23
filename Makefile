@@ -37,13 +37,32 @@ test: build
 	rm ./out/output.html || true
 	rm ./out/output2.html || true
 	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/minikube-logs.json" -out_html "./out/output.html" -out_summary out/output_summary.json -details "0c07e808219403a7241ee5a0fc6a85a897594339"
-	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2.html" -out_summary out/output2_summary.json "0c07e808219403a7241ee5a0fc6a85a897594339"
-	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2NoSummary.html"  "0c07e808219403a7241ee5a0fc6a85a897594339"
+	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2.html" -out_summary out/output2_summary.json -details "0c07e808219403a7241ee5a0fc6a85a897594339"
+	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2NoSummary.html" -details "0c07e808219403a7241ee5a0fc6a85a897594339"
+
+.PHONY: testdb
+testdb: export DB_BACKEND=sqlite
+testdb: export DB_PATH=out/testdb/output_db.db
+testdb: build
+	rm -f ./out/output.html
+	rm -f ./out/output2.html 
+	rm -f ./out/testdb/output_sqlite_summary.db 
+	rm -f ./out/testdb/output2_sqlite_summary.db
+	rm -f ./out/testdb/output_db.db
+	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/minikube-logs.json" -out_html "./out/output.html" -out_summary out/output_summary.json -db_path out/testdb/output_sqlite_summary.db -details "0c07e808219403a7241ee5a0fc6a85a897594339"
+	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2.html" -out_summary out/output2_summary.json -db_path out/testdb/output2_sqlite_summary.db -details "0c07e808219403a7241ee5a0fc6a85a897594339"
+	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2NoDBPath.html" -details "0c07e808219403a7241ee5a0fc6a85a897594339"
+	.${BINARY} -name "Docker MacOS" -repo "github.com/kubernetes/minikube/" -pr "16569" -in "testdata/testdb/Docker_macOS.json" -out_html "./out/docker_macOS_output.html" -details "0168d63fc8c165681b1cad1801eadd6bbe2c8a5c"
+	.${BINARY} -name "KVM Linux containerd" -repo "github.com/kubernetes/minikube/" -pr "16569" -in "testdata/testdb/KVM_Linux_containerd.json" -out_html "./out/kvm_linux_containerd_output.html" -details "0168d63fc8c165681b1cad1801eadd6bbe2c8a5c"
+	.${BINARY} -name "QEMU MacOS" -repo "github.com/kubernetes/minikube/" -pr "16569" -in "testdata/testdb/QEMU_macOS.json" -out_html "./out/qemu_macos_output.html" -details "0168d63fc8c165681b1cad1801eadd6bbe2c8a5c"
 
 
 .PHONY: cross
 cross: out/gopogh-linux-amd64 out/gopogh-darwin-amd64 out/gopogh-darwin-arm64 out/gopogh.exe out/gopogh-linux-arm64 out/gopogh-linux-arm
 
+.PHONY: lint
+lint:
+	golangci-lint run --enable gofmt,goimports,gocritic,revive,gocyclo,misspell,nakedret,stylecheck,unconvert,unparam,dogsled
 
 .PHONY: clean
 clean:

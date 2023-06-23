@@ -30,3 +30,27 @@ type TestGroup struct {
 	Duration  float64
 	Events    []TestEvent
 }
+
+// DBTestCase represents a row in db table that holds each individual subtest
+type DBTestCase struct {
+	PR        string
+	CommitID  string
+	TestName  string
+	Result    string
+	Duration  float64
+	EnvName   string
+	TestOrder int
+}
+
+// DBEnvironmentTest represents a row in db table that has finished tests in each environment
+type DBEnvironmentTest struct {
+	CommitID      string
+	EnvName       string
+	GopoghTime    string
+	TestTime      string
+	NumberOfFail  int
+	NumberOfPass  int
+	NumberOfSkip  int
+	TotalDuration float64
+	GopoghVersion string
+}

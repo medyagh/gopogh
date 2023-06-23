@@ -7,6 +7,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/medyagh/gopogh/pkg/db"
 	"github.com/medyagh/gopogh/pkg/models"
 	"github.com/medyagh/gopogh/pkg/templates"
 )
@@ -19,6 +20,7 @@ type DisplayContent struct {
 	BuildVersion  string
 	CreatedOn     time.Time
 	Detail        models.ReportDetail
+	TestTime      time.Time
 }
 
 // ShortSummary returns only test names without logs
@@ -96,6 +98,50 @@ func (c DisplayContent) HTML() ([]byte, error) {
 	return b.Bytes(), nil
 }
 
+// SQL handles database creation and updates
+func (c DisplayContent) SQL(dbPath string, dbBackend string) error {
+	database, err := db.FromEnv(dbPath, dbBackend)
+	if err != nil {
+		return err
+	}
+	if err := database.Initialize(); err != nil {
+		return err
+	}
+
+	expectedRowNumber := 0
+	for _, g := range c.Results {
+		expectedRowNumber += len(g)
+	}
+	dbTestRows := make([]models.DBTestCase, 0, expectedRowNumber)
+	for resultType, testGroups := range c.Results {
+		for _, test := range testGroups {
+			r := models.DBTestCase{
+				PR:        c.Detail.PR,
+				CommitID:  c.Detail.Details,
+				TestName:  test.TestName,
+				Result:    resultType,
+				Duration:  test.Duration,
+				EnvName:   c.Detail.Name,
+				TestOrder: test.TestOrder,
+			}
+			dbTestRows = append(dbTestRows, r)
+		}
+	}
+	dbEnvironmentRow := models.DBEnvironmentTest{
+		CommitID:      c.Detail.Details,
+		EnvName:       c.Detail.Name,
+		GopoghTime:    time.Now().String(),
+		TestTime:      c.TestTime.String(),
+		NumberOfFail:  len(c.Results[fail]),
+		NumberOfPass:  len(c.Results[pass]),
+		NumberOfSkip:  len(c.Results[skip]),
+		TotalDuration: c.TotalDuration,
+		GopoghVersion: c.BuildVersion,
+	}
+
+	return database.Set(dbEnvironmentRow, dbTestRows)
+}
+
 // Generate generates a report
 func Generate(report models.ReportDetail, groups []models.TestGroup) (DisplayContent, error) {
 	var passedTests []models.TestGroup
@@ -146,6 +192,7 @@ func Generate(report models.ReportDetail, groups []models.TestGroup) (DisplayCon
 		BuildVersion:  Version + "_" + Build,
 		CreatedOn:     time.Now(),
 		Detail:        report,
+		TestTime:      startTime,
 	}, nil
 }
 
