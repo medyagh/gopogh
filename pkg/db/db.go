@@ -25,6 +25,10 @@ func newDB(cfg config) (datab, error) {
 	switch cfg.Type {
 	case "sqlite":
 		return newSQLite(cfg)
+	case "postgres":
+		return newPostgres(cfg)
+	case "cloudsql":
+		return newCloudSQL(cfg)
 	default:
 		return nil, fmt.Errorf("unknown backend: %q", cfg.Type)
 	}
