@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres" //Blank import used for registering cloudsql driver as a database driver
+	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres" // Blank import used for registering cloudsql driver as a database driver
 	"github.com/jmoiron/sqlx"
 )
 
