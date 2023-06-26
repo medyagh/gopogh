@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq" //Blank import used for registering postgres driver as a database driver
+	_ "github.com/lib/pq" // Blank import used for registering postgres driver as a database driver
 	"github.com/medyagh/gopogh/pkg/models"
 )
 
