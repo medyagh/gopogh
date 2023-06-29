@@ -9,12 +9,12 @@ import (
 )
 
 // newCloudSQL returns a new Google Cloud SQL database
-func newCloudSQL(cfg config) (datab, error) {
-	return newCloudPostgres(cfg)
+func newCloudSQL(cfg Config) (datab, error) {
+	return NewCloudPostgres(cfg)
 }
 
-// newCloudPostgres returns a new Google Cloud Postgres database instance
-func newCloudPostgres(cfg config) (*Postgres, error) {
+// NewCloudPostgres returns a new Google Cloud Postgres database instance
+func NewCloudPostgres(cfg Config) (*Postgres, error) {
 	cfg.Path = strings.Trim(cfg.Path, " ")
 	cfg.Path = strings.Trim(cfg.Path, "'")
 	if !strings.Contains(cfg.Path, "sslmode=disable") {

@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // Blank import used for registering postgres driver as a database driver
@@ -87,7 +88,7 @@ func (m *Postgres) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTes
 }
 
 // newPostgres opens the database returning a Postgres database struct instance
-func newPostgres(cfg config) (*Postgres, error) {
+func newPostgres(cfg Config) (*Postgres, error) {
 	database, err := sqlx.Connect("postgres", cfg.Path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database connection: %v", err)
@@ -108,4 +109,53 @@ func (m *Postgres) Initialize() error {
 		return fmt.Errorf("failed to initialize test cases table: %v", err)
 	}
 	return nil
+}
+
+// PrintEnvironmentTestsAndTestCases writes the environment tests and test cases tables to an HTTP response in a combined page
+func (m *Postgres) PrintEnvironmentTestsAndTestCases(w http.ResponseWriter, r *http.Request) {
+	var environmentTests []models.DBEnvironmentTest
+	var testCases []models.DBTestCase
+
+	// Query the database for environment tests
+	err := m.db.Select(&environmentTests, "SELECT * FROM db_environment_tests")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to execute SQL query for environment tests: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Query the database for test cases
+	err = m.db.Select(&testCases, "SELECT * FROM db_test_cases")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to execute SQL query for test cases: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Write the response header
+	w.Header().Set("Content-Type", "text/html")
+
+	// Write the HTML page structure
+	fmt.Fprintf(w, "<html><head><title>Environment Tests and Test Cases</title></head><body>")
+
+	// Write the environment tests table
+	fmt.Fprintf(w, "<h1>Environment Tests</h1><table>")
+	fmt.Fprintf(w, "<table class=\"sortable\">")
+	fmt.Fprintf(w, "<thead><tr><th>CommitID</th><th>EnvName</th><th>GopoghTime</th><th>TestTime</th><th>NumberOfFail</th><th>NumberOfPass</th><th>NumberOfSkip</th></tr></thead>")
+	for _, row := range environmentTests {
+		fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%d</td><td>%d</td><td>%d</td></tr>",
+			row.CommitID, row.EnvName, row.GopoghTime, row.TestTime, row.NumberOfFail, row.NumberOfPass, row.NumberOfSkip)
+	}
+	fmt.Fprintf(w, "</table>")
+
+	// Write the test cases table
+	fmt.Fprintf(w, "<h1>Test Cases</h1><table>")
+	fmt.Fprintf(w, "<table class=\"sortable\">")
+	fmt.Fprintf(w, "<thead><tr><th>PR</th><th>CommitID</th><th>TestName</th><th>Result</th></tr></thead>")
+	for _, row := range testCases {
+		fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>",
+			row.PR, row.CommitID, row.TestName, row.Result)
+	}
+	fmt.Fprintf(w, "</table>")
+
+	// Close the HTML page structure
+	fmt.Fprintf(w, "</body></html>")
 }

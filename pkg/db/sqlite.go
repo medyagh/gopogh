@@ -85,7 +85,7 @@ func (m *sqlite) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTestC
 }
 
 // newSQLite opens the database returning an SQLite database struct instance
-func newSQLite(cfg config) (*sqlite, error) {
+func newSQLite(cfg Config) (*sqlite, error) {
 	if err := os.MkdirAll(filepath.Dir(cfg.Path), 0755); err != nil {
 		return nil, fmt.Errorf("failed to create directory: %v", err)
 	}
