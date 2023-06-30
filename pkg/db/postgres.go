@@ -24,10 +24,11 @@ var pgEnvTableSchema = `
 var pgTestCasesTableSchema = `
 	CREATE TABLE IF NOT EXISTS db_test_cases (
 		PR TEXT,
-		CommitId TEXT,
+		CommitID TEXT,
+		EnvName TEXT,
 		TestName TEXT,
 		Result TEXT,
-		PRIMARY KEY (CommitId, EnvName, TestName)
+		PRIMARY KEY (CommitID, EnvName, TestName)
 	);
 `
 
@@ -51,9 +52,9 @@ func (m *Postgres) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTes
 	}()
 
 	sqlInsert := `
-		INSERT INTO db_test_cases (PR, CommitId, TestName, Result)
-		VALUES ($1, $2, $3, $4)
-		ON CONFLICT (CommitId, TestName)
+		INSERT INTO db_test_cases (PR, CommitId, EnvName, TestName, Result)
+		VALUES ($1, $2, $3, $4, $5)
+		ON CONFLICT (CommitId, EnvName, TestName)
 		DO UPDATE SET Result = excluded.Result 
 	`
 	stmt, err := tx.Prepare(sqlInsert)
@@ -63,7 +64,7 @@ func (m *Postgres) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTes
 	defer stmt.Close()
 
 	for _, r := range dbRows {
-		_, err := stmt.Exec(r.PR, r.CommitID, r.TestName, r.Result)
+		_, err := stmt.Exec(r.PR, r.CommitID, r.EnvName, r.TestName, r.Result)
 		if err != nil {
 			return fmt.Errorf("failed to execute SQL insert: %v", err)
 		}
@@ -112,33 +113,30 @@ func (m *Postgres) Initialize() error {
 }
 
 // PrintEnvironmentTestsAndTestCases writes the environment tests and test cases tables to an HTTP response in a combined page
-func (m *Postgres) PrintEnvironmentTestsAndTestCases(w http.ResponseWriter, r *http.Request) {
+func (m *Postgres) PrintEnvironmentTestsAndTestCases(w http.ResponseWriter, _ *http.Request) {
 	var environmentTests []models.DBEnvironmentTest
 	var testCases []models.DBTestCase
 
-	// Query the database for environment tests
 	err := m.db.Select(&environmentTests, "SELECT * FROM db_environment_tests")
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to execute SQL query for environment tests: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	// Query the database for test cases
 	err = m.db.Select(&testCases, "SELECT * FROM db_test_cases")
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to execute SQL query for test cases: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	// Write the response header
+	// Write the response header to be html
 	w.Header().Set("Content-Type", "text/html")
 
 	// Write the HTML page structure
 	fmt.Fprintf(w, "<html><head><title>Environment Tests and Test Cases</title></head><body>")
 
-	// Write the environment tests table
+	// Environment tests table
 	fmt.Fprintf(w, "<h1>Environment Tests</h1><table>")
-	fmt.Fprintf(w, "<table class=\"sortable\">")
 	fmt.Fprintf(w, "<thead><tr><th>CommitID</th><th>EnvName</th><th>GopoghTime</th><th>TestTime</th><th>NumberOfFail</th><th>NumberOfPass</th><th>NumberOfSkip</th></tr></thead>")
 	for _, row := range environmentTests {
 		fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%d</td><td>%d</td><td>%d</td></tr>",
@@ -146,13 +144,12 @@ func (m *Postgres) PrintEnvironmentTestsAndTestCases(w http.ResponseWriter, r *h
 	}
 	fmt.Fprintf(w, "</table>")
 
-	// Write the test cases table
+	// Test cases table
 	fmt.Fprintf(w, "<h1>Test Cases</h1><table>")
-	fmt.Fprintf(w, "<table class=\"sortable\">")
-	fmt.Fprintf(w, "<thead><tr><th>PR</th><th>CommitID</th><th>TestName</th><th>Result</th></tr></thead>")
+	fmt.Fprintf(w, "<thead><tr><th>PR</th><th>CommitID</th><th>EnvName</th><th>TestName</th><th>Result</th></tr></thead>")
 	for _, row := range testCases {
-		fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>",
-			row.PR, row.CommitID, row.TestName, row.Result)
+		fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>",
+			row.PR, row.CommitID, row.EnvName, row.TestName, row.Result)
 	}
 	fmt.Fprintf(w, "</table>")
 
