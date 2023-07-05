@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/medyagh/gopogh/pkg/db"
 )
@@ -15,10 +14,7 @@ var dbPath = flag.String("db_path", "", "path to cloudsql db in the form of 'hos
 func main() {
 	flag.Parse()
 	if *dbPath == "" {
-		fmt.Println("db_path not specified. defaulting to minikube")
-		mkPath := "host=k8s-minikube:us-west1:flake-rate user=postgres dbname=flakedbdev password="
-		mkPath += os.Getenv("DB_PASS")
-		*dbPath = mkPath
+		log.Fatal(fmt.Errorf("db_path not specified"))
 	}
 	cfg := db.Config{
 		Type: "cloudsql",
