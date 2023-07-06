@@ -55,16 +55,14 @@ func FromEnv(path string, backend string, useCloudSQL bool) (datab, error) {
 		c   datab
 		err error
 	)
+	cfg := Config{
+		Type: backend,
+		Path: path,
+	}
 	if useCloudSQL {
-		c, err = NewCloudSQL(Config{
-			Type: backend,
-			Path: path,
-		})
+		c, err = NewCloudSQL(cfg)
 	} else {
-		c, err = newDB(Config{
-			Type: backend,
-			Path: path,
-		})
+		c, err = newDB(cfg)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("new from %s: %s: %v", backend, path, err)
