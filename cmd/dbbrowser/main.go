@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -14,7 +13,7 @@ var dbPath = flag.String("db_path", "", "path to cloudsql db in the form of 'hos
 func main() {
 	flag.Parse()
 	if *dbPath == "" {
-		log.Fatal(fmt.Errorf("db_path not specified"))
+		log.Fatalf("db_path not specified")
 	}
 	cfg := db.Config{
 		Type: "cloudsql",

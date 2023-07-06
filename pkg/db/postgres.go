@@ -12,12 +12,12 @@ import (
 var pgEnvTableSchema = `
 	CREATE TABLE IF NOT EXISTS db_environment_tests (
 		CommitID TEXT,
-    	EnvName TEXT,
-    	GopoghTime TEXT,
-    	TestTime TEXT,
-    	NumberOfFail INTEGER,
-    	NumberOfPass INTEGER,
-    	NumberOfSkip INTEGER,
+		EnvName TEXT,
+		GopoghTime TEXT,
+		TestTime TEXT,
+		NumberOfFail INTEGER,
+		NumberOfPass INTEGER,
+		NumberOfSkip INTEGER,
 		PRIMARY KEY (CommitID, EnvName)
 	);
 `

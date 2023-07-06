@@ -15,7 +15,7 @@ import (
 var Build string
 
 var (
-	dbPath         = flag.String("db_path", "", "path to sql summary output. if using cloudsql in the form of 'host=HOST_NAME user=DB_USER dbname=DB_NAME password=DB_PASS'")
+	dbPath         = flag.String("db_path", "", "path to sql database/database file. if using cloudsql in the form of 'host=HOST_NAME user=DB_USER dbname=DB_NAME password=DB_PASS'")
 	dbBackend      = flag.String("db_backend", "", "sql database driver. 'sqlite' for file output")
 	reportName     = flag.String("name", "", "report name")
 	reportPR       = flag.String("pr", "", "Pull request number")

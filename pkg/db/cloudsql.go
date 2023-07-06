@@ -15,8 +15,7 @@ func newCloudSQL(cfg Config) (datab, error) {
 
 // NewCloudPostgres returns a new Google Cloud Postgres database instance
 func NewCloudPostgres(cfg Config) (*Postgres, error) {
-	cfg.Path = strings.Trim(cfg.Path, " ")
-	cfg.Path = strings.Trim(cfg.Path, "'")
+	cfg.Path = strings.Trim(cfg.Path, " '")
 	if !strings.Contains(cfg.Path, "sslmode=disable") {
 		cfg.Path += " sslmode=disable"
 	}
