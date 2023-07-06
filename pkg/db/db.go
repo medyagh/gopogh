@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/medyagh/gopogh/pkg/models"
@@ -18,6 +19,8 @@ type datab interface {
 	Set(models.DBEnvironmentTest, []models.DBTestCase) error
 
 	Initialize() error
+
+	PrintEnvironmentTestsAndTestCases(http.ResponseWriter, *http.Request)
 }
 
 // newDB handles which database driver to use and initializes the db
@@ -27,8 +30,6 @@ func newDB(cfg Config) (datab, error) {
 		return newSQLite(cfg)
 	case "postgres":
 		return newPostgres(cfg)
-	case "cloudsql":
-		return newCloudSQL(cfg)
 	default:
 		return nil, fmt.Errorf("unknown backend: %q", cfg.Type)
 	}
@@ -36,7 +37,7 @@ func newDB(cfg Config) (datab, error) {
 
 // FromEnv configures and returns a database instance.
 // backend and path parameters are default config, otherwise gets config from the environment variables DB_BACKEND and DB_PATH
-func FromEnv(path string, backend string) (datab, error) {
+func FromEnv(path string, backend string, useCloudSQL bool) (datab, error) {
 	if backend == "" {
 		backend = os.Getenv("DB_BACKEND")
 	}
@@ -50,11 +51,21 @@ func FromEnv(path string, backend string) (datab, error) {
 	if path == "" {
 		return nil, fmt.Errorf("missing DB_PATH")
 	}
-
-	c, err := newDB(Config{
-		Type: backend,
-		Path: path,
-	})
+	var (
+		c   datab
+		err error
+	)
+	if useCloudSQL {
+		c, err = NewCloudSQL(Config{
+			Type: backend,
+			Path: path,
+		})
+	} else {
+		c, err = newDB(Config{
+			Type: backend,
+			Path: path,
+		})
+	}
 	if err != nil {
 		return nil, fmt.Errorf("new from %s: %s: %v", backend, path, err)
 	}

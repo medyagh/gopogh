@@ -57,14 +57,14 @@ testdb: build
 	.${BINARY} -name "QEMU MacOS" -repo "github.com/kubernetes/minikube/" -pr "16569" -in "testdata/testdb/QEMU_macOS.json" -out_html "./out/qemu_macos_output.html" -details "0168d63fc8c165681b1cad1801eadd6bbe2c8a5c"
 
 .PHONY: testpgdb
-testpgdb: export DB_BACKEND=cloudsql
+testpgdb: export DB_BACKEND=postgres
 testpgdb: export DB_PATH='host=k8s-minikube:us-west1:flake-rate user=postgres dbname=flakedbdev password=${DB_PASS}'
 testpgdb: build
 	rm -f ./out/output.html
 	rm -f ./out/output2.html 
-	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/minikube-logs.json" -out_html "./out/output.html" -out_summary out/output_summary.json -details "0c07e808219403a7241ee5a0fc6a85a897594339"
-	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2.html" -out_summary out/output2_summary.json -details "0c07e808219403a7241ee5a0fc6a85a897594339"
-	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2NoDBPath.html" -details "0c07e808219403a7241ee5a0fc6a85a897594339"
+	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/minikube-logs.json" -out_html "./out/output.html" -out_summary out/output_summary.json -details "0c07e808219403a7241ee5a0fc6a85a897594339" -use_cloudsql
+	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2.html" -out_summary out/output2_summary.json -details "0c07e808219403a7241ee5a0fc6a85a897594339" -use_cloudsql
+	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2NoDBPath.html" -details "0c07e808219403a7241ee5a0fc6a85a897594339" -use_cloudsql
 
 
 .PHONY: cross

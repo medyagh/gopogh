@@ -8,23 +8,20 @@ import (
 	"github.com/medyagh/gopogh/pkg/db"
 )
 
-var dbPath = flag.String("db_path", "", "path to cloudsql db in the form of 'host=HOST_NAME user=DB_USER dbname=DB_NAME password=DB_PASS'")
+var dbPath = flag.String("db_path", "", "path to postgres db in the form of 'host=HOST_NAME user=DB_USER dbname=DB_NAME password=DB_PASS'")
+var useCloudSQL = flag.Bool("use_cloudsql", false, "whether the database is a cloudsql db")
 
 func main() {
 	flag.Parse()
 	if *dbPath == "" {
 		log.Fatalf("db_path not specified")
 	}
-	cfg := db.Config{
-		Type: "cloudsql",
-		Path: *dbPath,
-	}
-	pg, err := db.NewCloudPostgres(cfg)
+	db, err := db.FromEnv(*dbPath, "postgres", *useCloudSQL)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// Create an HTTP server and register the handlers
-	http.HandleFunc("/db", pg.PrintEnvironmentTestsAndTestCases)
+	http.HandleFunc("/db", db.PrintEnvironmentTestsAndTestCases)
 
 	// Start the HTTP server
 	err = http.ListenAndServe(":8080", nil)

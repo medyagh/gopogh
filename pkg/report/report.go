@@ -99,8 +99,8 @@ func (c DisplayContent) HTML() ([]byte, error) {
 }
 
 // SQL handles database creation and updates
-func (c DisplayContent) SQL(dbPath string, dbBackend string) error {
-	database, err := db.FromEnv(dbPath, dbBackend)
+func (c DisplayContent) SQL(dbPath string, dbBackend string, useCloudSQL bool) error {
+	database, err := db.FromEnv(dbPath, dbBackend, useCloudSQL)
 	if err != nil {
 		return err
 	}
