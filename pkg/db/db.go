@@ -37,7 +37,7 @@ func newDB(cfg Config) (datab, error) {
 
 // FromEnv configures and returns a database instance.
 // backend and path parameters are default config, otherwise gets config from the environment variables DB_BACKEND and DB_PATH
-func FromEnv(path string, backend string, useCloudSQL bool) (datab, error) {
+func FromEnv(path string, backend string, useCloudSQL bool) (c datab, err error) {
 	if backend == "" {
 		backend = os.Getenv("DB_BACKEND")
 	}
@@ -51,10 +51,6 @@ func FromEnv(path string, backend string, useCloudSQL bool) (datab, error) {
 	if path == "" {
 		return nil, fmt.Errorf("missing DB_PATH")
 	}
-	var (
-		c   datab
-		err error
-	)
 	cfg := Config{
 		Type: backend,
 		Path: path,

@@ -4,10 +4,14 @@ COMMIT_NO := $(shell git rev-parse HEAD 2> /dev/null || true)
 BUILD ?= $(if $(shell git status --porcelain --untracked-files=no),"${COMMIT_NO}-dirty","${COMMIT_NO}")
 LDFLAGS :=-X github.com/medyagh/gopogh/pkg/report.Build=${BUILD}
 VERSION := v0.17.0
+MK_REPO=github.com/kubernetes/minikube/
+DUMMY_COMMIT_NUM=0c07e808219403a7241ee5a0fc6a85a897594339
+DUMMY_COMMIT2_NUM=0168d63fc8c165681b1cad1801eadd6bbe2c8a5c
 
 .PHONY: build
 build: out/gopogh
 
+.PHONY: out/gopogh
 out/gopogh: 
 	CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
 
@@ -34,11 +38,14 @@ generate_json:
 
 .PHONY: test
 test: build
-	rm ./out/output.html || true
-	rm ./out/output2.html || true
-	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/minikube-logs.json" -out_html "./out/output.html" -out_summary out/output_summary.json -details "0c07e808219403a7241ee5a0fc6a85a897594339"
-	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2.html" -out_summary out/output2_summary.json -details "0c07e808219403a7241ee5a0fc6a85a897594339"
-	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2NoSummary.html" -details "0c07e808219403a7241ee5a0fc6a85a897594339"
+	rm -f ./out/output.html
+	rm -f ./out/output2.html
+	rm -f ./out/output2NoSummary.html
+	rm -f ./out/output_summary.json
+	rm -f ./out/output2_summary.json
+	.${BINARY} -name "KVM Linux" -repo "${MK_REPO}" -pr "6096" -in "testdata/minikube-logs.json" -out_html "./out/output.html" -out_summary out/output_summary.json -details "${DUMMY_COMMIT_NUM}"
+	.${BINARY} -name "KVM Linux" -repo "${MK_REPO}" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2.html" -out_summary out/output2_summary.json -details "${DUMMY_COMMIT_NUM}"
+	.${BINARY} -name "KVM Linux" -repo "${MK_REPO}" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2NoSummary.html" -details "${DUMMY_COMMIT_NUM}"
 
 .PHONY: testdb
 testdb: export DB_BACKEND=sqlite
@@ -46,15 +53,19 @@ testdb: export DB_PATH=out/testdb/output_db.db
 testdb: build
 	rm -f ./out/output.html
 	rm -f ./out/output2.html 
-	rm -f ./out/testdb/output_sqlite_summary.db 
-	rm -f ./out/testdb/output2_sqlite_summary.db
-	rm -f ./out/testdb/output_db.db
-	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/minikube-logs.json" -out_html "./out/output.html" -out_summary out/output_summary.json -db_path out/testdb/output_sqlite_summary.db -details "0c07e808219403a7241ee5a0fc6a85a897594339"
-	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2.html" -out_summary out/output2_summary.json -db_path out/testdb/output2_sqlite_summary.db -details "0c07e808219403a7241ee5a0fc6a85a897594339"
-	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2NoDBPath.html" -details "0c07e808219403a7241ee5a0fc6a85a897594339"
-	.${BINARY} -name "Docker MacOS" -repo "github.com/kubernetes/minikube/" -pr "16569" -in "testdata/testdb/Docker_macOS.json" -out_html "./out/docker_macOS_output.html" -details "0168d63fc8c165681b1cad1801eadd6bbe2c8a5c"
-	.${BINARY} -name "KVM Linux containerd" -repo "github.com/kubernetes/minikube/" -pr "16569" -in "testdata/testdb/KVM_Linux_containerd.json" -out_html "./out/kvm_linux_containerd_output.html" -details "0168d63fc8c165681b1cad1801eadd6bbe2c8a5c"
-	.${BINARY} -name "QEMU MacOS" -repo "github.com/kubernetes/minikube/" -pr "16569" -in "testdata/testdb/QEMU_macOS.json" -out_html "./out/qemu_macos_output.html" -details "0168d63fc8c165681b1cad1801eadd6bbe2c8a5c"
+	rm -f ./out/output_summary.json
+	rm -f ./out/output2_summary.json
+	rm -f ./out/testdb
+	rm -f ./out/docker_macOS_output.html
+	rm -f ./out/kvm_linux_containerd_output.html
+	rm -f ./out/qemu_macos_output.html
+	rm -f ./out/output2NoDBPath.html
+	.${BINARY} -name "KVM Linux" -repo "${MK_REPO}" -pr "6096" -in "testdata/minikube-logs.json" -out_html "./out/output.html" -out_summary out/output_summary.json -db_path out/testdb/output_sqlite_summary.db -details "${DUMMY_COMMIT_NUM}"
+	.${BINARY} -name "KVM Linux" -repo "${MK_REPO}" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2.html" -out_summary out/output2_summary.json -db_path out/testdb/output2_sqlite_summary.db -details "${DUMMY_COMMIT_NUM}"
+	.${BINARY} -name "KVM Linux" -repo "${MK_REPO}" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2NoDBPath.html" -details "${DUMMY_COMMIT_NUM}"
+	.${BINARY} -name "Docker MacOS" -repo "${MK_REPO}" -pr "16569" -in "testdata/testdb/Docker_macOS.json" -out_html "./out/docker_macOS_output.html" -details "${DUMMY_COMMIT2_NUM}"
+	.${BINARY} -name "KVM Linux containerd" -repo "${MK_REPO}" -pr "16569" -in "testdata/testdb/KVM_Linux_containerd.json" -out_html "./out/kvm_linux_containerd_output.html" -details "${DUMMY_COMMIT2_NUM}"
+	.${BINARY} -name "QEMU MacOS" -repo "${MK_REPO}" -pr "16569" -in "testdata/testdb/QEMU_macOS.json" -out_html "./out/qemu_macos_output.html" -details "${DUMMY_COMMIT2_NUM}"
 
 .PHONY: testpgdb
 testpgdb: export DB_BACKEND=postgres
@@ -62,9 +73,12 @@ testpgdb: export DB_PATH='host=k8s-minikube:us-west1:flake-rate user=postgres db
 testpgdb: build
 	rm -f ./out/output.html
 	rm -f ./out/output2.html 
-	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/minikube-logs.json" -out_html "./out/output.html" -out_summary out/output_summary.json -details "0c07e808219403a7241ee5a0fc6a85a897594339" -use_cloudsql
-	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2.html" -out_summary out/output2_summary.json -details "0c07e808219403a7241ee5a0fc6a85a897594339" -use_cloudsql
-	.${BINARY} -name "KVM Linux" -repo "github.com/kubernetes/minikube/" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2NoDBPath.html" -details "0c07e808219403a7241ee5a0fc6a85a897594339" -use_cloudsql
+	rm -f ./out/output_summary.json
+	rm -f ./out/output2_summary.json
+	rm -f ./out/output2NoDBPath.html
+	.${BINARY} -name "KVM Linux" -repo "${MK_REPO}" -pr "6096" -in "testdata/minikube-logs.json" -out_html "./out/output.html" -out_summary out/output_summary.json -details "${DUMMY_COMMIT_NUM}" -use_cloudsql
+	.${BINARY} -name "KVM Linux" -repo "${MK_REPO}" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2.html" -out_summary out/output2_summary.json -details "${DUMMY_COMMIT_NUM}" -use_cloudsql
+	.${BINARY} -name "KVM Linux" -repo "${MK_REPO}" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2NoDBPath.html" -details "${DUMMY_COMMIT_NUM}" -use_cloudsql
 
 
 .PHONY: cross
