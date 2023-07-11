@@ -58,8 +58,9 @@ testpgdb: export DB_BACKEND=postgres
 testpgdb: export DB_PATH='host=k8s-minikube:us-west1:flake-rate user=postgres dbname=flakedbdev password=${DB_PASS}'
 testpgdb: clean build
 	.${BINARY} -name "KVM Linux" -repo "${MK_REPO}" -pr "6096" -in "testdata/minikube-logs.json" -out_html "./out/output.html" -out_summary out/output_summary.json -details "${DUMMY_COMMIT_NUM}" -use_cloudsql
-	.${BINARY} -name "KVM Linux" -repo "${MK_REPO}" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2.html" -out_summary out/output2_summary.json -details "${DUMMY_COMMIT_NUM}" -use_cloudsql
-	.${BINARY} -name "KVM Linux" -repo "${MK_REPO}" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2NoDBPath.html" -details "${DUMMY_COMMIT_NUM}" -use_cloudsql
+	.${BINARY} -name "Docker MacOS" -repo "${MK_REPO}" -pr "16569" -in "testdata/testdb/Docker_macOS.json" -out_html "./out/docker_macOS_output.html" -details "${DUMMY_COMMIT2_NUM}" -use_cloudsql
+	.${BINARY} -name "KVM Linux containerd" -repo "${MK_REPO}" -pr "16569" -in "testdata/testdb/KVM_Linux_containerd.json" -out_html "./out/kvm_linux_containerd_output.html" -details "${DUMMY_COMMIT2_NUM}" -use_cloudsql
+	.${BINARY} -name "QEMU MacOS" -repo "${MK_REPO}" -pr "16569" -in "testdata/testdb/QEMU_macOS.json" -out_html "./out/qemu_macos_output.html" -details "${DUMMY_COMMIT2_NUM}" -use_cloudsql
 
 
 .PHONY: cross
