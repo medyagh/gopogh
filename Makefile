@@ -37,12 +37,7 @@ generate_json:
 	go tool test2json -t < ./testdata/minikube-logs.txt > ./testdata/minikube-logs.json
 
 .PHONY: test
-test: build
-	rm -f ./out/output.html
-	rm -f ./out/output2.html
-	rm -f ./out/output2NoSummary.html
-	rm -f ./out/output_summary.json
-	rm -f ./out/output2_summary.json
+test: clean build
 	.${BINARY} -name "KVM Linux" -repo "${MK_REPO}" -pr "6096" -in "testdata/minikube-logs.json" -out_html "./out/output.html" -out_summary out/output_summary.json -details "${DUMMY_COMMIT_NUM}"
 	.${BINARY} -name "KVM Linux" -repo "${MK_REPO}" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2.html" -out_summary out/output2_summary.json -details "${DUMMY_COMMIT_NUM}"
 	.${BINARY} -name "KVM Linux" -repo "${MK_REPO}" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2NoSummary.html" -details "${DUMMY_COMMIT_NUM}"
@@ -50,16 +45,7 @@ test: build
 .PHONY: testdb
 testdb: export DB_BACKEND=sqlite
 testdb: export DB_PATH=out/testdb/output_db.db
-testdb: build
-	rm -f ./out/output.html
-	rm -f ./out/output2.html 
-	rm -f ./out/output_summary.json
-	rm -f ./out/output2_summary.json
-	rm -f ./out/testdb
-	rm -f ./out/docker_macOS_output.html
-	rm -f ./out/kvm_linux_containerd_output.html
-	rm -f ./out/qemu_macos_output.html
-	rm -f ./out/output2NoDBPath.html
+testdb: clean build
 	.${BINARY} -name "KVM Linux" -repo "${MK_REPO}" -pr "6096" -in "testdata/minikube-logs.json" -out_html "./out/output.html" -out_summary out/output_summary.json -db_path out/testdb/output_sqlite_summary.db -details "${DUMMY_COMMIT_NUM}"
 	.${BINARY} -name "KVM Linux" -repo "${MK_REPO}" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2.html" -out_summary out/output2_summary.json -db_path out/testdb/output2_sqlite_summary.db -details "${DUMMY_COMMIT_NUM}"
 	.${BINARY} -name "KVM Linux" -repo "${MK_REPO}" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2NoDBPath.html" -details "${DUMMY_COMMIT_NUM}"
@@ -70,12 +56,7 @@ testdb: build
 .PHONY: testpgdb
 testpgdb: export DB_BACKEND=postgres
 testpgdb: export DB_PATH='host=k8s-minikube:us-west1:flake-rate user=postgres dbname=flakedbdev password=${DB_PASS}'
-testpgdb: build
-	rm -f ./out/output.html
-	rm -f ./out/output2.html 
-	rm -f ./out/output_summary.json
-	rm -f ./out/output2_summary.json
-	rm -f ./out/output2NoDBPath.html
+testpgdb: clean build
 	.${BINARY} -name "KVM Linux" -repo "${MK_REPO}" -pr "6096" -in "testdata/minikube-logs.json" -out_html "./out/output.html" -out_summary out/output_summary.json -details "${DUMMY_COMMIT_NUM}" -use_cloudsql
 	.${BINARY} -name "KVM Linux" -repo "${MK_REPO}" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2.html" -out_summary out/output2_summary.json -details "${DUMMY_COMMIT_NUM}" -use_cloudsql
 	.${BINARY} -name "KVM Linux" -repo "${MK_REPO}" -pr "6096" -in "testdata/Docker_Linux.json" -out_html "./out/output2NoDBPath.html" -details "${DUMMY_COMMIT_NUM}" -use_cloudsql
