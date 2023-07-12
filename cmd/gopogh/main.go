@@ -15,7 +15,8 @@ import (
 var Build string
 
 var (
-	dbPath         = flag.String("db_path", "", "path to sql summary output")
+	dbPath         = flag.String("db_path", "", "path to sql database/database file. if using postgres in the form of 'host=HOST_NAME user=DB_USER dbname=DB_NAME password=DB_PASS'")
+	useCloudSQL    = flag.Bool("use_cloudsql", false, "whether the database is a cloudsql db")
 	dbBackend      = flag.String("db_backend", "", "sql database driver. 'sqlite' for file output")
 	reportName     = flag.String("name", "", "report name")
 	reportPR       = flag.String("pr", "", "Pull request number")
@@ -62,7 +63,7 @@ func main() {
 	}
 
 	if dbVarProvided(*dbPath, *dbBackend) {
-		if err := c.SQL(*dbPath, *dbBackend); err != nil {
+		if err := c.SQL(*dbPath, *dbBackend, *useCloudSQL); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}

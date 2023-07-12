@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 
@@ -85,7 +86,7 @@ func (m *sqlite) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTestC
 }
 
 // newSQLite opens the database returning an SQLite database struct instance
-func newSQLite(cfg config) (*sqlite, error) {
+func newSQLite(cfg Config) (*sqlite, error) {
 	if err := os.MkdirAll(filepath.Dir(cfg.Path), 0755); err != nil {
 		return nil, fmt.Errorf("failed to create directory: %v", err)
 	}
@@ -110,4 +111,9 @@ func (m *sqlite) Initialize() error {
 		return fmt.Errorf("failed to initialize test cases table: %v", err)
 	}
 	return nil
+}
+
+// PrintEnvironmentTestsAndTestCases writes the environment tests and test cases tables to an HTTP response in a combined page
+// This is not yet supported for sqlite
+func (m *sqlite) PrintEnvironmentTestsAndTestCases(_ http.ResponseWriter, _ *http.Request) {
 }
