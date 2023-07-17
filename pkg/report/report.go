@@ -123,6 +123,7 @@ func (c DisplayContent) SQL(dbPath string, dbBackend string, useCloudSQL bool) e
 				Duration:  test.Duration,
 				EnvName:   c.Detail.Name,
 				TestOrder: test.TestOrder,
+				TestTime:  c.TestTime.String(),
 			}
 			dbTestRows = append(dbTestRows, r)
 		}

@@ -35,6 +35,7 @@ var createTestCasesTableSQL = `
 		Duration REAL,
 		EnvName TEXT,
 		TestOrder INTEGER,
+		TestTime TEXT,
 		PRIMARY KEY (CommitId, EnvName, TestName)
 	);
 `
@@ -58,7 +59,7 @@ func (m *sqlite) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTestC
 		}
 	}()
 
-	sqlInsert := `INSERT OR REPLACE INTO db_test_cases (PR, CommitId, TestName, Result, Duration, EnvName, TestOrder) VALUES (?, ?, ?, ?, ?, ?, ?)`
+	sqlInsert := `INSERT OR REPLACE INTO db_test_cases (PR, CommitId, TestName, Result, Duration, EnvName, TestOrder, TestTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 	stmt, err := tx.Prepare(sqlInsert)
 	if err != nil {
 		return fmt.Errorf("failed to prepare SQL insert statement: %v", err)
@@ -66,7 +67,7 @@ func (m *sqlite) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTestC
 	defer stmt.Close()
 
 	for _, r := range dbRows {
-		_, err := stmt.Exec(r.PR, r.CommitID, r.TestName, r.Result, r.Duration, r.EnvName, r.TestOrder)
+		_, err := stmt.Exec(r.PR, r.CommitID, r.TestName, r.Result, r.Duration, r.EnvName, r.TestOrder, r.TestTime)
 		if err != nil {
 			return fmt.Errorf("failed to execute SQL insert: %v", err)
 		}

@@ -36,6 +36,7 @@ type DBTestCase struct {
 	PR        string
 	CommitID  string
 	TestName  string
+	TestTime  string
 	Result    string
 	Duration  float64
 	EnvName   string

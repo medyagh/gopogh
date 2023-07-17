@@ -28,6 +28,7 @@ var pgTestCasesTableSchema = `
 		EnvName TEXT,
 		TestName TEXT,
 		Result TEXT,
+		TestTime TEXT,
 		PRIMARY KEY (CommitID, EnvName, TestName)
 	);
 `
@@ -52,10 +53,10 @@ func (m *Postgres) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTes
 	}()
 
 	sqlInsert := `
-		INSERT INTO db_test_cases (PR, CommitId, EnvName, TestName, Result)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO db_test_cases (PR, CommitId, EnvName, TestName, Result, TestTime)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		ON CONFLICT (CommitId, EnvName, TestName)
-		DO UPDATE SET Result = excluded.Result 
+		DO UPDATE SET (PR, Result, TestTime) = (EXCLUDED.PR, EXCLUDED.Result, EXCLUDED.TestTime)
 	`
 	stmt, err := tx.Prepare(sqlInsert)
 	if err != nil {
@@ -64,7 +65,7 @@ func (m *Postgres) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTes
 	defer stmt.Close()
 
 	for _, r := range dbRows {
-		_, err := stmt.Exec(r.PR, r.CommitID, r.EnvName, r.TestName, r.Result)
+		_, err := stmt.Exec(r.PR, r.CommitID, r.EnvName, r.TestName, r.Result, r.TestTime)
 		if err != nil {
 			return fmt.Errorf("failed to execute SQL insert: %v", err)
 		}
@@ -146,10 +147,10 @@ func (m *Postgres) PrintEnvironmentTestsAndTestCases(w http.ResponseWriter, _ *h
 
 	// Test cases table
 	fmt.Fprintf(w, "<h1>Test Cases</h1><table>")
-	fmt.Fprintf(w, "<thead><tr><th>PR</th><th>CommitID</th><th>EnvName</th><th>TestName</th><th>Result</th></tr></thead>")
+	fmt.Fprintf(w, "<thead><tr><th>PR</th><th>CommitID</th><th>EnvName</th><th>TestName</th><th>Result</th><th>TestTime</th></tr></thead>")
 	for _, row := range testCases {
-		fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>",
-			row.PR, row.CommitID, row.EnvName, row.TestName, row.Result)
+		fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>",
+			row.PR, row.CommitID, row.EnvName, row.TestName, row.Result, row.TestTime)
 	}
 	fmt.Fprintf(w, "</table>")
 
