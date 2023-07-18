@@ -13,8 +13,8 @@ var pgEnvTableSchema = `
 	CREATE TABLE IF NOT EXISTS db_environment_tests (
 		CommitID TEXT,
 		EnvName TEXT,
-		GopoghTime TEXT,
-		TestTime TEXT,
+		GopoghTime TIMESTAMP,
+		TestTime TIMESTAMP,
 		NumberOfFail INTEGER,
 		NumberOfPass INTEGER,
 		NumberOfSkip INTEGER,
@@ -28,7 +28,7 @@ var pgTestCasesTableSchema = `
 		EnvName TEXT,
 		TestName TEXT,
 		Result TEXT,
-		TestTime TEXT,
+		TestTime TIMESTAMP,
 		PRIMARY KEY (CommitID, EnvName, TestName)
 	);
 `
