@@ -67,14 +67,14 @@ func (m *sqlite) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTestC
 	defer stmt.Close()
 
 	for _, r := range dbRows {
-		_, err := stmt.Exec(r.PR, r.CommitID, r.TestName, r.Result, r.Duration, r.EnvName, r.TestOrder, r.TestTime)
+		_, err := stmt.Exec(r.PR, r.CommitID, r.TestName, r.Result, r.Duration, r.EnvName, r.TestOrder, r.TestTime.String())
 		if err != nil {
 			return fmt.Errorf("failed to execute SQL insert: %v", err)
 		}
 	}
 
 	sqlInsert = `INSERT OR REPLACE INTO db_environment_tests (CommitID, EnvName, GopoghTime, TestTime, NumberOfFail, NumberOfPass, NumberOfSkip, TotalDuration, GopoghVersion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	_, err = tx.Exec(sqlInsert, commitRow.CommitID, commitRow.EnvName, commitRow.GopoghTime, commitRow.TestTime, commitRow.NumberOfFail, commitRow.NumberOfPass, commitRow.NumberOfSkip, commitRow.TotalDuration, commitRow.GopoghVersion)
+	_, err = tx.Exec(sqlInsert, commitRow.CommitID, commitRow.EnvName, commitRow.GopoghTime, commitRow.TestTime.String(), commitRow.NumberOfFail, commitRow.NumberOfPass, commitRow.NumberOfSkip, commitRow.TotalDuration, commitRow.GopoghVersion)
 	if err != nil {
 		return fmt.Errorf("failed to execute SQL insert: %v", err)
 	}

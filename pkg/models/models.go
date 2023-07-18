@@ -36,7 +36,7 @@ type DBTestCase struct {
 	PR        string
 	CommitID  string
 	TestName  string
-	TestTime  string
+	TestTime  time.Time
 	Result    string
 	Duration  float64
 	EnvName   string
@@ -47,8 +47,8 @@ type DBTestCase struct {
 type DBEnvironmentTest struct {
 	CommitID      string
 	EnvName       string
-	GopoghTime    string
-	TestTime      string
+	GopoghTime    time.Time
+	TestTime      time.Time
 	NumberOfFail  int
 	NumberOfPass  int
 	NumberOfSkip  int

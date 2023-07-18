@@ -123,7 +123,7 @@ func (c DisplayContent) SQL(dbPath string, dbBackend string, useCloudSQL bool) e
 				Duration:  test.Duration,
 				EnvName:   c.Detail.Name,
 				TestOrder: test.TestOrder,
-				TestTime:  c.TestTime.String(),
+				TestTime:  c.TestTime,
 			}
 			dbTestRows = append(dbTestRows, r)
 		}
@@ -131,8 +131,8 @@ func (c DisplayContent) SQL(dbPath string, dbBackend string, useCloudSQL bool) e
 	dbEnvironmentRow := models.DBEnvironmentTest{
 		CommitID:      c.Detail.Details,
 		EnvName:       c.Detail.Name,
-		GopoghTime:    time.Now().String(),
-		TestTime:      c.TestTime.String(),
+		GopoghTime:    time.Now(),
+		TestTime:      c.TestTime,
 		NumberOfFail:  len(c.Results[fail]),
 		NumberOfPass:  len(c.Results[pass]),
 		NumberOfSkip:  len(c.Results[skip]),
