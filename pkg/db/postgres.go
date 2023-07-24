@@ -18,6 +18,7 @@ var pgEnvTableSchema = `
 		NumberOfFail INTEGER,
 		NumberOfPass INTEGER,
 		NumberOfSkip INTEGER,
+		TotalDuration FLOAT,
 		PRIMARY KEY (CommitID, EnvName)
 	);
 `
@@ -29,6 +30,7 @@ var pgTestCasesTableSchema = `
 		TestName TEXT,
 		Result TEXT,
 		TestTime TIMESTAMP,
+		Duration FLOAT,
 		PRIMARY KEY (CommitID, EnvName, TestName)
 	);
 `
@@ -53,10 +55,10 @@ func (m *Postgres) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTes
 	}()
 
 	sqlInsert := `
-		INSERT INTO db_test_cases (PR, CommitId, EnvName, TestName, Result, TestTime)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO db_test_cases (PR, CommitId, EnvName, TestName, Result, TestTime, Duration)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		ON CONFLICT (CommitId, EnvName, TestName)
-		DO UPDATE SET (PR, Result, TestTime) = (EXCLUDED.PR, EXCLUDED.Result, EXCLUDED.TestTime)
+		DO UPDATE SET (PR, Result, TestTime, Duration) = (EXCLUDED.PR, EXCLUDED.Result, EXCLUDED.TestTime, EXCLUDED.Duration)
 	`
 	stmt, err := tx.Prepare(sqlInsert)
 	if err != nil {
@@ -65,19 +67,19 @@ func (m *Postgres) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTes
 	defer stmt.Close()
 
 	for _, r := range dbRows {
-		_, err := stmt.Exec(r.PR, r.CommitID, r.EnvName, r.TestName, r.Result, r.TestTime)
+		_, err := stmt.Exec(r.PR, r.CommitID, r.EnvName, r.TestName, r.Result, r.TestTime, r.Duration)
 		if err != nil {
 			return fmt.Errorf("failed to execute SQL insert: %v", err)
 		}
 	}
 
 	sqlInsert = `
-		INSERT INTO db_environment_tests (CommitID, EnvName, GopoghTime, TestTime, NumberOfFail, NumberOfPass, NumberOfSkip) 
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO db_environment_tests (CommitID, EnvName, GopoghTime, TestTime, NumberOfFail, NumberOfPass, NumberOfSkip, TotalDuration) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		ON CONFLICT (CommitId, EnvName)
-		DO UPDATE SET (GopoghTime, TestTime, NumberOfFail, NumberOfPass, NumberOfSkip) = (EXCLUDED.GopoghTime, EXCLUDED.TestTime, EXCLUDED.NumberOfFail, EXCLUDED.NumberOfPass, EXCLUDED.NumberOfSkip)
+		DO UPDATE SET (GopoghTime, TestTime, NumberOfFail, NumberOfPass, NumberOfSkip, TotalDuration) = (EXCLUDED.GopoghTime, EXCLUDED.TestTime, EXCLUDED.NumberOfFail, EXCLUDED.NumberOfPass, EXCLUDED.NumberOfSkip, EXCLUDED.TotalDuration)
 		`
-	_, err = tx.Exec(sqlInsert, commitRow.CommitID, commitRow.EnvName, commitRow.GopoghTime, commitRow.TestTime, commitRow.NumberOfFail, commitRow.NumberOfPass, commitRow.NumberOfSkip)
+	_, err = tx.Exec(sqlInsert, commitRow.CommitID, commitRow.EnvName, commitRow.GopoghTime, commitRow.TestTime, commitRow.NumberOfFail, commitRow.NumberOfPass, commitRow.NumberOfSkip, commitRow.TotalDuration)
 	if err != nil {
 		return fmt.Errorf("failed to execute SQL insert: %v", err)
 	}
@@ -138,19 +140,19 @@ func (m *Postgres) PrintEnvironmentTestsAndTestCases(w http.ResponseWriter, _ *h
 
 	// Environment tests table
 	fmt.Fprintf(w, "<h1>Environment Tests</h1><table>")
-	fmt.Fprintf(w, "<thead><tr><th>CommitID</th><th>EnvName</th><th>GopoghTime</th><th>TestTime</th><th>NumberOfFail</th><th>NumberOfPass</th><th>NumberOfSkip</th></tr></thead>")
+	fmt.Fprintf(w, "<thead><tr><th>CommitID</th><th>EnvName</th><th>GopoghTime</th><th>TestTime</th><th>NumberOfFail</th><th>NumberOfPass</th><th>NumberOfSkip</th><th>TotalDuration</th></tr></thead>")
 	for _, row := range environmentTests {
-		fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%d</td><td>%d</td><td>%d</td></tr>",
-			row.CommitID, row.EnvName, row.GopoghTime, row.TestTime, row.NumberOfFail, row.NumberOfPass, row.NumberOfSkip)
+		fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%d</td><td>%d</td><td>%d</td><td>%f</td></tr>",
+			row.CommitID, row.EnvName, row.GopoghTime, row.TestTime, row.NumberOfFail, row.NumberOfPass, row.NumberOfSkip, row.TotalDuration)
 	}
 	fmt.Fprintf(w, "</table>")
 
 	// Test cases table
 	fmt.Fprintf(w, "<h1>Test Cases</h1><table>")
-	fmt.Fprintf(w, "<thead><tr><th>PR</th><th>CommitID</th><th>EnvName</th><th>TestName</th><th>Result</th><th>TestTime</th></tr></thead>")
+	fmt.Fprintf(w, "<thead><tr><th>PR</th><th>CommitID</th><th>EnvName</th><th>TestName</th><th>Result</th><th>TestTime</th><th>Duration</th></tr></thead>")
 	for _, row := range testCases {
-		fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>",
-			row.PR, row.CommitID, row.EnvName, row.TestName, row.Result, row.TestTime)
+		fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%f</td></tr>",
+			row.PR, row.CommitID, row.EnvName, row.TestName, row.Result, row.TestTime, row.Duration)
 	}
 	fmt.Fprintf(w, "</table>")
 
