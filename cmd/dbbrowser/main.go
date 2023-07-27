@@ -35,6 +35,8 @@ func main() {
 	// Create an HTTP server and register the handlers
 	http.HandleFunc("/db", db.PrintEnvironmentTestsAndTestCases)
 
+	http.HandleFunc("/env", db.PrintBasicFlake)
+
 	// Start the HTTP server
 	err = http.ListenAndServe(":8080", nil)
 	if err != nil {

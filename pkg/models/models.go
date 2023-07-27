@@ -55,3 +55,10 @@ type DBEnvironmentTest struct {
 	TotalDuration float64
 	GopoghVersion string
 }
+
+// DBFlakeRow represents a row in the basic flake rate table
+type DBFlakeRow struct {
+	TestName              string  `json:"testName"`
+	RecentFlakePercentage float32 `json:"recentFlakePercentage"`
+	GrowthRate            float32 `json:"growthRate"`
+}

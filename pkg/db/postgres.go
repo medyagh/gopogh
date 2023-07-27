@@ -1,6 +1,7 @@
 package db
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -159,4 +160,68 @@ func (m *Postgres) PrintEnvironmentTestsAndTestCases(w http.ResponseWriter, _ *h
 
 	// Close the HTML page structure
 	fmt.Fprintf(w, "</body></html>")
+}
+
+// PrintBasicFlake writes the a basic flake rate table to an HTTP response
+func (m *Postgres) PrintBasicFlake(w http.ResponseWriter, r *http.Request) {
+	queryValues := r.URL.Query()
+	env := queryValues.Get("env")
+	if env == "" {
+		env = "KVM Linux"
+	}
+
+	// Number of days to use to look for "flaky-est" tests.
+	const dateRange = 15
+
+	// This query first makes a temp table containing the $1 (30) most recent dates
+	// Then it computes the recentCutoff and prevCutoff (15th most recent and 30th most recent dates)
+	// Then, filtering out the skips and filtering for the correct env we calculate the flake rate and the flake rate growth
+	// for the 15 most recent days and the 15 days following that
+	sqlQuer := `
+	WITH dates AS (
+		SELECT DISTINCT DATE_TRUNC('day', TestTime) AS Date
+		FROM db_test_cases
+		ORDER BY Date DESC
+		LIMIT $1
+	), recentCutoff AS (
+		SELECT Date 
+		FROM dates 
+		OFFSET $2
+		LIMIT 1
+	), prevCutoff AS (
+		SELECT Date
+		FROM dates
+		OFFSET $3
+		LIMIT 1
+	)
+	SELECT TestName,
+	ROUND(COALESCE(AVG(CASE WHEN TestTime > (SELECT Date From prevCutoff) THEN CASE WHEN Result = 'fail' THEN 1 ELSE 0 END END) * 100, 0), 2) AS RecentFlakePercentage,
+	ROUND(100.0 * COALESCE((AVG(CASE WHEN TestTime > (SELECT Date From recentCutoff) THEN CASE WHEN Result = 'fail' THEN 1 ELSE 0 END END) - AVG(CASE WHEN TestTime <= (SELECT Date From recentCutoff) AND TestTime > (SELECT Date From prevCutoff) THEN CASE WHEN Result = 'fail' THEN 1 ELSE 0 END END)) / NULLIF(AVG(CASE WHEN TestTime <= (SELECT Date From recentCutoff) THEN 1 ELSE 0 END), 0), 0), 2) AS GrowthRate
+	FROM db_test_cases
+	WHERE Result != 'skip' AND EnvName = $4
+	GROUP BY TestName
+	ORDER BY RecentFlakePercentage DESC;
+	`
+	var flakeRates []models.DBFlakeRow
+	err := m.db.Select(&flakeRates, sqlQuer, 2*dateRange, dateRange-1, 2*dateRange-1, env)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to execute SQL query for flake chart: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	data := map[string]interface{}{
+		"recentFlakePercentTable": flakeRates,
+	}
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		http.Error(w, "Failed to marshal JSON", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	_, err = w.Write(jsonData)
+	if err != nil {
+		http.Error(w, "Failed to write JSON data", http.StatusInternalServerError)
+		return
+	}
 }

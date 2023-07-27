@@ -118,3 +118,8 @@ func (m *sqlite) Initialize() error {
 // This is not yet supported for sqlite
 func (m *sqlite) PrintEnvironmentTestsAndTestCases(_ http.ResponseWriter, _ *http.Request) {
 }
+
+// PrintBasicFlake writes the a basic flake rate table to an HTTP response
+// This is not yet supported for sqlite
+func (m *sqlite) PrintBasicFlake(_ http.ResponseWriter, _ *http.Request) {
+}
