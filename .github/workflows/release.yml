@@ -16,123 +16,58 @@ jobs:
         run: |
           git fetch --prune --unshallow --tags
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v4
         with:
-          go-version: '1.20.6'
-          stable: true
-        id: go
+          go-version: '1.20'
+      - name: Test
+        run: |
+          export PATH=$PATH:$(go env GOPATH)/bin
+          make test
+          make clean
       - name: Cross Platform Build
         run: |
           export PATH=$PATH:$(go env GOPATH)/bin
           make cross
-      - name: Test
-        run: |
-          export PATH=$PATH:$(go env GOPATH)/bin
-          make test 
       - name: Upload Linux amd64 
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v3
         with:
           name: "gopogh-linux-amd64"
           path: ./out/gopogh-linux-amd64
       - name: Upload Linux arm64
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v3
         with:
           name: "gopogh-linux-arm64"
           path: ./out/gopogh-linux-arm64
       - name: Upload Linux arm
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v3
         with:
           name: "gopogh-linux-arm"
           path: ./out/gopogh-linux-arm
       - name: Upload Darwin
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v3
         with:
           name: "gopogh-darwin-amd64"
           path: ./out/gopogh-darwin-amd64
       - name: Upload Darwin M1
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v3
         with:
           name: "gopogh-darwin-arm64"
           path: ./out/gopogh-darwin-arm64
       - name: Upload windows
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v3
         with:
           name: "gopogh.exe"
           path: ./out/gopogh.exe
       - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v1
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
           body: |
               ${{ github.ref }}
               mac os
               curl -LO https://github.com/medyagh/gopogh/releases/download/${{ github.ref }}/gopogh-darwin-amd64 && sudo install gopogh-darwin-amd64 /usr/local/bin/gopogh
-          draft: false
-          prerelease: false
-      - name : upload linux amd64 assets
-        id: upload-release-asset-linux-amd64
-        uses: actions/upload-release-asset@v1.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-          asset_path: ./out/gopogh-linux-amd64
-          asset_name: gopogh-linux-amd64
-          asset_content_type: application/octet-stream
-      - name : upload linux arm64 assets
-        id: upload-release-asset-linux-arm64
-        uses: actions/upload-release-asset@v1.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-          asset_path: ./out/gopogh-linux-arm64
-          asset_name: gopogh-linux-arm64
-          asset_content_type: application/octet-stream
-      - name : upload linux arm assets
-        id: upload-release-asset-linux-arm
-        uses: actions/upload-release-asset@v1.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-          asset_path: ./out/gopogh-linux-arm
-          asset_name: gopogh-linux-arm
-          asset_content_type: application/octet-stream
-      - name : upload mac assets
-        id: upload-release-asset-mac
-        uses: actions/upload-release-asset@v1.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} 
-          asset_path: ./out/gopogh-darwin-amd64
-          asset_name: gopogh-darwin-amd64
-          asset_content_type: application/octet-stream
-      - name : upload mac assets m1
-        id: upload-release-asset-mac-m1
-        uses: actions/upload-release-asset@v1.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} 
-          asset_path: ./out/gopogh-darwin-arm64
-          asset_name: gopogh-darwin-arm64
-          asset_content_type: application/octet-stream
-      - name : upload windows assets
-        id: upload-release-asset-winodw
-        uses: actions/upload-release-asset@v1.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} 
-          asset_path: ./out/gopogh.exe
-          asset_name: gopogh.exe
-          asset_content_type: application/octet-stream
+          files: ./out/*
       - name: Publish to Docker Repository
         uses: elgohr/Publish-Docker-Github-Action@v5
         with:
