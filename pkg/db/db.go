@@ -8,10 +8,21 @@ import (
 	"github.com/medyagh/gopogh/pkg/models"
 )
 
-// Config is database configuration
-type Config struct {
-	Type string
-	Path string
+// FlagValues are the config values from flags
+type FlagValues struct {
+	Backend     string
+	Host        string
+	Path        string
+	UseCloudSQL bool
+	UseIAMAuth  bool
+}
+
+// config is database configuration
+type config struct {
+	dbType     string
+	path       string
+	host       string
+	useIAMAuth bool
 }
 
 // datab is the database interface we support
@@ -24,38 +35,39 @@ type datab interface {
 }
 
 // newDB handles which database driver to use and initializes the db
-func newDB(cfg Config) (datab, error) {
-	switch cfg.Type {
+func newDB(cfg config) (datab, error) {
+	switch cfg.dbType {
 	case "sqlite":
 		return newSQLite(cfg)
 	case "postgres":
 		return newPostgres(cfg)
 	default:
-		return nil, fmt.Errorf("unknown backend: %q", cfg.Type)
+		return nil, fmt.Errorf("unknown backend: %q", cfg.dbType)
 	}
 }
 
 // FromEnv configures and returns a database instance.
 // backend and path parameters are default config, otherwise gets config from the environment variables DB_BACKEND and DB_PATH
-func FromEnv(path string, backend string, useCloudSQL bool) (c datab, err error) {
-	if backend == "" {
-		backend = os.Getenv("DB_BACKEND")
+func FromEnv(fv FlagValues) (c datab, err error) {
+	backend, err := getFlagOrEnv(fv.Backend, "DB_BACKEND")
+	if err != nil {
+		return nil, err
 	}
-	if backend == "" {
-		return nil, fmt.Errorf("missing DB_BACKEND")
+	path, err := getFlagOrEnv(fv.Path, "DB_PATH")
+	if err != nil {
+		return nil, err
 	}
-
-	if path == "" {
-		path = os.Getenv("DB_PATH")
+	host, err := getFlagOrEnv(fv.Host, "DB_HOST")
+	if err != nil {
+		return nil, err
 	}
-	if path == "" {
-		return nil, fmt.Errorf("missing DB_PATH")
+	cfg := config{
+		dbType:     backend,
+		path:       path,
+		host:       host,
+		useIAMAuth: fv.UseIAMAuth,
 	}
-	cfg := Config{
-		Type: backend,
-		Path: path,
-	}
-	if useCloudSQL {
+	if fv.UseCloudSQL {
 		c, err = NewCloudSQL(cfg)
 	} else {
 		c, err = newDB(cfg)
@@ -65,4 +77,15 @@ func FromEnv(path string, backend string, useCloudSQL bool) (c datab, err error)
 	}
 
 	return c, nil
+}
+
+func getFlagOrEnv(flagValue, envName string) (string, error) {
+	if flagValue != "" {
+		return flagValue, nil
+	}
+	env := os.Getenv(envName)
+	if env != "" {
+		return env, nil
+	}
+	return "", fmt.Errorf("missing %s", envName)
 }

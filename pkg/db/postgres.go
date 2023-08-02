@@ -92,14 +92,15 @@ func (m *Postgres) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTes
 }
 
 // newPostgres opens the database returning a Postgres database struct instance
-func newPostgres(cfg Config) (*Postgres, error) {
-	database, err := sqlx.Connect("postgres", cfg.Path)
+func newPostgres(cfg config) (*Postgres, error) {
+	path := fmt.Sprintf("host=%s %s", cfg.host, cfg.path)
+	database, err := sqlx.Connect("postgres", path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database connection: %v", err)
 	}
 	m := &Postgres{
 		db:   database,
-		path: cfg.Path,
+		path: path,
 	}
 	return m, nil
 }
