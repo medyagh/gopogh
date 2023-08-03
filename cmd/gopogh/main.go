@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/medyagh/gopogh/pkg/db"
 	"github.com/medyagh/gopogh/pkg/models"
 	"github.com/medyagh/gopogh/pkg/parser"
 	"github.com/medyagh/gopogh/pkg/report"
@@ -15,9 +16,11 @@ import (
 var Build string
 
 var (
-	dbPath         = flag.String("db_path", "", "path to sql database/database file. if using postgres in the form of 'host=HOST_NAME user=DB_USER dbname=DB_NAME password=DB_PASS'")
-	useCloudSQL    = flag.Bool("use_cloudsql", false, "whether the database is a cloudsql db")
 	dbBackend      = flag.String("db_backend", "", "sql database driver. 'sqlite' for file output")
+	dbHost         = flag.String("db_host", "", "host of the db")
+	dbPath         = flag.String("db_path", "", "path to sql database/database file. if using postgres in the form of 'user=DB_USER dbname=DB_NAME password=DB_PASS'")
+	useCloudSQL    = flag.Bool("use_cloudsql", false, "whether the database is a cloudsql db")
+	useIAMAuth     = flag.Bool("use_iam_auth", false, "whether to use IAM to authenticate with the cloudsql db")
 	reportName     = flag.String("name", "", "report name")
 	reportPR       = flag.String("pr", "", "Pull request number")
 	reportDetails  = flag.String("details", "", "report details (for example test args...)")
@@ -62,8 +65,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	if dbVarProvided(*dbPath, *dbBackend) {
-		if err := c.SQL(*dbPath, *dbBackend, *useCloudSQL); err != nil {
+	if dbVarProvided(*dbPath, *dbBackend, *dbHost) {
+		flagValues := db.FlagValues{
+			Backend:     *dbBackend,
+			Host:        *dbHost,
+			Path:        *dbPath,
+			UseCloudSQL: *useCloudSQL,
+			UseIAMAuth:  *useIAMAuth,
+		}
+		if err := c.SQL(flagValues); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
@@ -101,8 +111,19 @@ func main() {
 }
 
 // dbVarProvided checks whether any of the database flags/environment variables are set
-func dbVarProvided(dbPath string, dbBackend string) bool {
-	return (dbPath != "" || os.Getenv("DB_PATH") != "") ||
-		(dbBackend != "" || os.Getenv("DB_BACKEND") != "")
-
+func dbVarProvided(dbPath, dbBackend, dbHost string) bool {
+	values := []string{
+		dbBackend,
+		dbHost,
+		dbPath,
+		os.Getenv("DB_BACKEND"),
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PATH"),
+	}
+	for _, v := range values {
+		if v != "" {
+			return true
+		}
+	}
+	return false
 }
