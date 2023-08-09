@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // Blank import used for registering postgres driver as a database driver
@@ -162,55 +165,389 @@ func (m *Postgres) PrintEnvironmentTestsAndTestCases(w http.ResponseWriter, _ *h
 	fmt.Fprintf(w, "</body></html>")
 }
 
-// PrintBasicFlake writes the a basic flake rate table to an HTTP response
-func (m *Postgres) PrintBasicFlake(w http.ResponseWriter, r *http.Request) {
+// PrintTestFlake writes the individual test charts to a JSON HTTP response
+func (m *Postgres) PrintTestFlake(w http.ResponseWriter, r *http.Request) {
 	queryValues := r.URL.Query()
 	env := queryValues.Get("env")
 	if env == "" {
-		env = "KVM Linux"
+		http.Error(w, "missing environment name", http.StatusInternalServerError)
+		return
 	}
+	test := queryValues.Get("test")
+	if test == "" {
+		http.Error(w, "missing test name", http.StatusInternalServerError)
+		return
+	}
+
+	var validEnvs []string
+	err := m.db.Select(&validEnvs, "SELECT DISTINCT EnvName FROM db_environment_tests")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to execute SQL query for list of valid environments: %v", err), http.StatusInternalServerError)
+		return
+	}
+	isValidEnv := false
+	for _, e := range validEnvs {
+		if env == e {
+			isValidEnv = true
+		}
+	}
+	if !isValidEnv {
+		http.Error(w, fmt.Sprintf("invalid environment. Not found in database: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	viewName := fmt.Sprintf("\"lastn_data_%s\"", env)
+
+	createView := fmt.Sprintf(`
+	CREATE MATERIALIZED VIEW IF NOT EXISTS %s AS 
+		SELECT * FROM db_test_cases
+		WHERE Result != 'skip' AND EnvName = '%s' AND TestTime >= NOW() - INTERVAL '90 days'
+	`, viewName, env)
+
+	_, err = m.db.Exec(createView)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to execute SQL query for view creation: %v", err), http.StatusInternalServerError)
+		return
+	}
+	// Groups the datetimes together by date, calculating flake percentage and aggregating the individual results/durations for each date
+	sqlQuery := fmt.Sprintf(`
+	SELECT
+	DATE_TRUNC('day', TestTime) AS StartOfDate,
+	AVG(Duration) AS AvgDuration,
+	ROUND(COALESCE(AVG(CASE WHEN Result = 'fail' THEN 1 ELSE 0 END) * 100, 0), 2) AS FlakePercentage,
+	STRING_AGG(CommitID || ': ' || Result || ': ' || Duration, ', ') AS CommitResultsAndDurations
+	FROM %s 
+	WHERE TestName = $1
+	GROUP BY StartOfDate
+	ORDER BY StartOfDate DESC
+	`, viewName)
+
+	var flakeByDay []models.DBTestRateAndDuration
+	err = m.db.Select(&flakeByDay, sqlQuery, test)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to execute SQL query for flake rate and duration by day chart: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Groups the datetimes together by week, calculating flake percentage and aggregating the individual results/durations for each date
+	sqlQuery = fmt.Sprintf(`
+	SELECT
+	DATE_TRUNC('week', TestTime) AS StartOfDate,
+	AVG(Duration) AS AvgDuration,
+	ROUND(COALESCE(AVG(CASE WHEN Result = 'fail' THEN 1 ELSE 0 END) * 100, 0), 2) AS FlakePercentage,
+	STRING_AGG(CommitID || ': ' || Result || ': ' || Duration, ', ') AS CommitResultsAndDurations
+	FROM %s 
+	WHERE TestName = $1
+	GROUP BY StartOfDate
+	ORDER BY StartOfDate DESC
+	`, viewName)
+	var flakeByWeek []models.DBTestRateAndDuration
+	err = m.db.Select(&flakeByWeek, sqlQuery, test)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to execute SQL query for flake rate and duration by week chart: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	data := map[string]interface{}{
+		"flakeByDay":  flakeByDay,
+		"flakeByWeek": flakeByWeek,
+	}
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		http.Error(w, "Failed to marshal JSON", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	_, err = w.Write(jsonData)
+	if err != nil {
+		http.Error(w, "Failed to write JSON data", http.StatusInternalServerError)
+		return
+	}
+}
+
+// PrintBasicFlake writes the overall environment charts to a JSON HTTP response
+func (m *Postgres) PrintBasicFlake(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+	queryValues := r.URL.Query()
+	env := queryValues.Get("env")
+	if env == "" {
+		env = "KVM_Linux"
+	}
+	tests_in_top := queryValues.Get("tests_in_top")
+	if tests_in_top == "" {
+		tests_in_top = "10"
+	}
+	num_tests, err := strconv.Atoi(tests_in_top)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("invalid number of top tests to use: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	var validEnvs []string
+	err = m.db.Select(&validEnvs, "SELECT DISTINCT EnvName FROM db_environment_tests")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to execute SQL query for list of valid environments: %v", err), http.StatusInternalServerError)
+		return
+	}
+	isValidEnv := false
+	for _, e := range validEnvs {
+		if env == e {
+			isValidEnv = true
+		}
+	}
+	if !isValidEnv {
+		http.Error(w, fmt.Sprintf("invalid environment. Not found in database: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	viewName := fmt.Sprintf("\"lastn_data_%s\"", env)
+
+	createView := fmt.Sprintf(`
+	CREATE MATERIALIZED VIEW IF NOT EXISTS %s AS 
+		SELECT * FROM db_test_cases
+		WHERE Result != 'skip' AND EnvName = '%s' AND TestTime >= NOW() - INTERVAL '90 days'
+	`, viewName, env)
+
+	_, err = m.db.Exec(createView)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to execute SQL query for view creation: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Printf("\n\nduration metric: took %f seconds to execute SQL query for refreshing materialized view since start of handler", time.Since(start).Seconds())
 
 	// Number of days to use to look for "flaky-est" tests.
 	const dateRange = 15
 
 	// This query first makes a temp table containing the $1 (30) most recent dates
 	// Then it computes the recentCutoff and prevCutoff (15th most recent and 30th most recent dates)
-	// Then, filtering out the skips and filtering for the correct env we calculate the flake rate and the flake rate growth
+	// Then we calculate the flake rate and the flake rate growth
 	// for the 15 most recent days and the 15 days following that
-	sqlQuer := `
+	sqlQuer := fmt.Sprintf(`
 	WITH dates AS (
 		SELECT DISTINCT DATE_TRUNC('day', TestTime) AS Date
-		FROM db_test_cases
+		FROM %s
 		ORDER BY Date DESC
 		LIMIT $1
 	), recentCutoff AS (
 		SELECT Date 
 		FROM dates 
+		ORDER BY Date DESC
 		OFFSET $2
 		LIMIT 1
 	), prevCutoff AS (
 		SELECT Date
 		FROM dates
+		ORDER BY Date DESC
 		OFFSET $3
 		LIMIT 1
+	), temp AS (
+	SELECT TestName,
+	ROUND(COALESCE(AVG(CASE WHEN TestTime > (SELECT Date FROM recentCutoff) THEN CASE WHEN Result = 'fail' THEN 1 ELSE 0 END END) * 100, 0), 2) AS RecentFlakePercentage,
+	ROUND(COALESCE(AVG(CASE WHEN TestTime <= (SELECT Date FROM recentCutoff) AND TestTime > (SELECT Date FROM prevCutoff) THEN CASE WHEN Result = 'fail' THEN 1 ELSE 0 END END) * 100, 0), 2) AS PrevFlakePercentage
+	FROM %s
+	GROUP BY TestName
+	ORDER BY RecentFlakePercentage DESC
+	)
+	SELECT TestName, RecentFlakePercentage, RecentFlakePercentage - PrevFlakePercentage AS GrowthRate
+	FROM temp
+	ORDER BY RecentFlakePercentage DESC;
+	`, viewName, viewName)
+	var flakeRates []models.DBFlakeRow
+	err = m.db.Select(&flakeRates, sqlQuer, 2*dateRange, dateRange-1, 2*dateRange-1)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to execute SQL query for flake table: %v", err), http.StatusInternalServerError)
+		return
+	}
+	fmt.Printf("\n\nduration metric: took %f seconds to execute SQL query for flake table since start of handler", time.Since(start).Seconds())
+
+	var topTestNames []string
+	for _, row := range flakeRates {
+		topTestNames = append(topTestNames, row.TestName)
+		if len(topTestNames) >= num_tests {
+			break
+		}
+	}
+
+	// Gets the data on just the top ten previously calculated and aggregates flake rates and results per date
+	sqlQuer = fmt.Sprintf(`
+	WITH lastn_data_top AS (
+		SELECT *
+		FROM %s
+		WHERE TestName IN ('%s')
+	)
+	SELECT TestName, 
+	DATE_TRUNC('day', TestTime) AS StartOfDate,
+	COALESCE(AVG(CASE WHEN Result = 'fail' THEN 1 ELSE 0 END) * 100, 0) AS FlakePercentage,
+	STRING_AGG(CommitID || ': ' || Result, ', ') AS CommitResults
+	FROM lastn_data_top
+	GROUP BY TestName, StartOfDate
+	ORDER BY StartOfDate DESC
+	`, viewName,
+		strings.Join(topTestNames, "', '"))
+	var flakeRateByDay []models.DBFlakeBy
+	err = m.db.Select(&flakeRateByDay, sqlQuer)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to execute SQL query for by day flake chart: %v", err), http.StatusInternalServerError)
+		return
+	}
+	fmt.Printf("\n\nduration metric: took %f seconds to execute SQL query for day flake chart since start of handler", time.Since(start).Seconds())
+
+	// Filters to get the top flakiest in the past week, calculating flake rate per week for those tests
+	sqlQuer = fmt.Sprintf(`
+	WITH recent_week AS (
+		SELECT MAX (DATE_TRUNC('week', TestTime)) AS weekCutoff
+		FROM %s
+	),
+	recent_week_data AS (
+		SELECT * 
+		FROM %s 
+		WHERE TestTime >= (SELECT weekCutoff FROM recent_week)
+	),
+	top_flakiest AS (
+		SELECT TestName, COALESCE(AVG(CASE WHEN Result = 'fail' THEN 1 ELSE 0 END) * 100, 0) AS RecentFlakePercentage
+		FROM recent_week_data
+		GROUP BY TestName
+		ORDER BY RecentFlakePercentage DESC
+		LIMIT $1
+	),
+	top_flakiest_data AS (
+		SELECT * FROM %s 
+		WHERE TestName IN (SELECT TestName FROM top_flakiest)
 	)
 	SELECT TestName,
-	ROUND(COALESCE(AVG(CASE WHEN TestTime > (SELECT Date From prevCutoff) THEN CASE WHEN Result = 'fail' THEN 1 ELSE 0 END END) * 100, 0), 2) AS RecentFlakePercentage,
-	ROUND(100.0 * COALESCE((AVG(CASE WHEN TestTime > (SELECT Date From recentCutoff) THEN CASE WHEN Result = 'fail' THEN 1 ELSE 0 END END) - AVG(CASE WHEN TestTime <= (SELECT Date From recentCutoff) AND TestTime > (SELECT Date From prevCutoff) THEN CASE WHEN Result = 'fail' THEN 1 ELSE 0 END END)) / NULLIF(AVG(CASE WHEN TestTime <= (SELECT Date From recentCutoff) THEN 1 ELSE 0 END), 0), 0), 2) AS GrowthRate
-	FROM db_test_cases
-	WHERE Result != 'skip' AND EnvName = $4
-	GROUP BY TestName
-	ORDER BY RecentFlakePercentage DESC;
-	`
-	var flakeRates []models.DBFlakeRow
-	err := m.db.Select(&flakeRates, sqlQuer, 2*dateRange, dateRange-1, 2*dateRange-1, env)
+	DATE_TRUNC('week', TestTime) AS StartOfDate,
+	ROUND(COALESCE(AVG(CASE WHEN Result = 'fail' THEN 1 ELSE 0 END) * 100, 0), 2) AS FlakePercentage,
+	STRING_AGG(CommitID || ': ' || Result, ', ') AS CommitResults
+	FROM top_flakiest_data
+	GROUP BY TestName, StartOfDate
+	ORDER BY StartOfDate DESC;
+	`, viewName, viewName, viewName)
+	var flakeRateByWeek []models.DBFlakeBy
+	err = m.db.Select(&flakeRateByWeek, sqlQuer, num_tests)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to execute SQL query for flake chart: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("failed to execute SQL query for by week flake chart: %v", err), http.StatusInternalServerError)
+		return
+	}
+	fmt.Printf("\n\nduration metric: took %f seconds to execute SQL query for flake by week chart since start of handler", time.Since(start).Seconds())
+
+	// Filters out data prior to 90 days and with the incorrect environment
+	// Then calculates for each date aggregates the duration and number of tests, calculating the average for both
+	sqlQuer = `
+	WITH lastn_env_data AS (
+		SELECT *
+		FROM db_environment_tests
+		WHERE EnvName = $1 AND TestTime >= NOW() - INTERVAL '90 days'
+	)
+	SELECT
+	DATE_TRUNC('day', TestTime) AS StartOfDate,
+	AVG(NumberOfPass + NumberOfFail) AS TestCount,
+	AVG(TotalDuration) AS Duration,
+	STRING_AGG(CommitID || ': ' || (NumberOfPass + NumberOfFail), ', ') AS CommitCounts,
+	STRING_AGG(CommitID || ': ' || TotalDuration, ', ') AS CommitDurations
+	FROM lastn_env_data 
+	GROUP BY StartOfDate
+	ORDER BY StartOfDate DESC
+	`
+	var countsAndDurations []models.DBEnvDuration
+	err = m.db.Select(&countsAndDurations, sqlQuer, env)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to execute SQL query for environment test count and duration chart: %v", err), http.StatusInternalServerError)
+		return
+	}
+	fmt.Printf("\n\nduration metric: took %f seconds to execute SQL query for env duration chart since start of handler", time.Since(start).Seconds())
+
+	data := map[string]interface{}{
+		"recentFlakePercentTable": flakeRates,
+		"flakeRateByWeek":         flakeRateByWeek,
+		"flakeRateByDay":          flakeRateByDay,
+		"countsAndDurations":      countsAndDurations,
+	}
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		http.Error(w, "Failed to marshal JSON", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	_, err = w.Write(jsonData)
+	if err != nil {
+		http.Error(w, "Failed to write JSON data", http.StatusInternalServerError)
+		return
+	}
+	fmt.Printf("\n\nduration metric: took %f seconds to write json SQL response since start of handler", time.Since(start).Seconds())
+
+}
+
+// PrintSummary writes the summary chart for all of the environments to a JSON HTTP response
+func (m *Postgres) PrintSummary(w http.ResponseWriter, r *http.Request) {
+	// Filters out old data and calculates the average number of failures and average duration per day per environment
+	sqlQuery := `
+	SELECT DATE_TRUNC('day', TestTime) AS StartOfDate, EnvName, AVG(NumberOfFail) AS AvgFailedTests, AVG(TotalDuration) AS AvgDuration
+	FROM db_environment_tests
+	WHERE TestTime >= NOW() - INTERVAL '90 days'
+	GROUP BY StartOfDate, EnvName
+	ORDER BY StartOfDate, EnvName;
+	`
+
+	var summaryAvgFail []models.DBSummaryAvgFail
+	err := m.db.Select(&summaryAvgFail, sqlQuery)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to execute SQL query for summary chart: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Number of days to use to look for "flaky-est" envs.
+	const dateRange = 15
+
+	// Filters out data from prior to 90 days
+	// Then computes average number of fails for each environment for each time frame
+	// Then calculates the change in the average number of fails between the time frames
+	sqlQuery = `
+	WITH data AS (
+		SELECT * 
+		FROM db_environment_tests 
+		WHERE TestTime >= NOW() - INTERVAL '90 days'
+	), dates AS (
+		SELECT DISTINCT DATE_TRUNC('day', TestTime) AS Date
+		FROM data
+		ORDER BY Date DESC
+		LIMIT $1
+	), recentCutoff AS (
+		SELECT Date 
+		FROM dates 
+		ORDER BY Date DESC
+		OFFSET $2
+		LIMIT 1
+	), prevCutoff AS (
+		SELECT Date
+		FROM dates
+		ORDER BY Date DESC
+		OFFSET $3
+		LIMIT 1
+	), temp AS (
+	SELECT EnvName,
+	ROUND(COALESCE(AVG(CASE WHEN TestTime > (SELECT Date FROM recentCutoff) THEN NumberOfFail END), 0), 2) AS RecentNumberOfFail,
+	ROUND(COALESCE(AVG(CASE WHEN TestTime <= (SELECT Date FROM recentCutoff) AND TestTime > (SELECT Date FROM prevCutoff) THEN NumberOfFail END), 0), 2) AS PrevNumberOfFail
+	FROM data
+	GROUP BY EnvName
+	ORDER BY RecentNumberOfFail DESC
+	)
+	SELECT EnvName, RecentNumberOfFail, RecentNumberOfFail - PrevNumberOfFail AS Growth
+	FROM temp
+	ORDER BY RecentNumberOfFail DESC;
+	`
+	var summaryTable []models.DBSummaryTable
+	err = m.db.Select(&summaryTable, sqlQuery, 2*dateRange, dateRange-1, 2*dateRange-1)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to execute SQL query for flake table: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	data := map[string]interface{}{
-		"recentFlakePercentTable": flakeRates,
+		"summaryAvgFail": summaryAvgFail,
+		"summaryTable":   summaryTable,
 	}
 	jsonData, err := json.Marshal(data)
 	if err != nil {

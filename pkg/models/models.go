@@ -62,3 +62,43 @@ type DBFlakeRow struct {
 	RecentFlakePercentage float32 `json:"recentFlakePercentage"`
 	GrowthRate            float32 `json:"growthRate"`
 }
+
+// DBFlakeBy represents a "row" in the flake rate by _ of top 10 of recent test flakiness charts
+type DBFlakeBy struct {
+	TestName        string    `json:"testName"`
+	StartOfDate     time.Time `json:"startOfDate"`
+	FlakePercentage float32   `json:"flakePercentage"`
+	CommitResults   string    `json:"commitResults"`
+}
+
+// DBEnvDuration represents a "row" in the test count and total duration by day chart
+type DBEnvDuration struct {
+	StartOfDate     time.Time `json:"startOfDate"`
+	TestCount       float32   `json:"testCount"`
+	Duration        float32   `json:"duration"`
+	CommitCounts    string    `json:"commitCounts"`
+	CommitDurations string    `json:"commitDurations"`
+}
+
+// DBTestRateAndDuration represents a "row" in the flake rate and duration chart for a given test
+type DBTestRateAndDuration struct {
+	StartOfDate               time.Time `json:"startOfDate"`
+	AvgDuration               float32   `json:"avgDuration"`
+	FlakePercentage           float32   `json:"flakePercentage"`
+	CommitResultsAndDurations string    `json:"commitResultsAndDurations"`
+}
+
+// DBSummaryAvgFail represents a "row" in most flakey environments summary chart
+type DBSummaryAvgFail struct {
+	StartOfDate    time.Time `json:"startOfDate"`
+	EnvName        string    `json:"envName"`
+	AvgFailedTests float32   `json:"avgFailedTests"`
+	AvgDuration    float32   `json:"avgDuration"`
+}
+
+// DBSummaryTable represents a row in the summary number of fail table
+type DBSummaryTable struct {
+	EnvName            string  `json:"envName"`
+	RecentNumberOfFail float32 `json:"recentNumberOfFail"`
+	Growth             float32 `json:"growth"`
+}
