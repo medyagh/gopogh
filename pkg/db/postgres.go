@@ -275,11 +275,11 @@ func (m *Postgres) PrintBasicFlake(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "missing environment name", http.StatusInternalServerError)
 		return
 	}
-	tests_in_top := queryValues.Get("tests_in_top")
-	if tests_in_top == "" {
-		tests_in_top = "10"
+	testsInTop := queryValues.Get("tests_in_top")
+	if testsInTop == "" {
+		testsInTop = "10"
 	}
-	num_tests, err := strconv.Atoi(tests_in_top)
+	numTests, err := strconv.Atoi(testsInTop)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("invalid number of top tests to use: %v", err), http.StatusInternalServerError)
 		return
@@ -366,7 +366,7 @@ func (m *Postgres) PrintBasicFlake(w http.ResponseWriter, r *http.Request) {
 	var topTestNames []string
 	for _, row := range flakeRates {
 		topTestNames = append(topTestNames, row.TestName)
-		if len(topTestNames) >= num_tests {
+		if len(topTestNames) >= numTests {
 			break
 		}
 	}
@@ -426,7 +426,7 @@ func (m *Postgres) PrintBasicFlake(w http.ResponseWriter, r *http.Request) {
 	ORDER BY StartOfDate DESC;
 	`, viewName, viewName, viewName)
 	var flakeRateByWeek []models.DBFlakeBy
-	err = m.db.Select(&flakeRateByWeek, sqlQuer, num_tests)
+	err = m.db.Select(&flakeRateByWeek, sqlQuer, numTests)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to execute SQL query for by week flake chart: %v", err), http.StatusInternalServerError)
 		return
@@ -482,7 +482,7 @@ func (m *Postgres) PrintBasicFlake(w http.ResponseWriter, r *http.Request) {
 }
 
 // PrintSummary writes the summary chart for all of the environments to a JSON HTTP response
-func (m *Postgres) PrintSummary(w http.ResponseWriter, r *http.Request) {
+func (m *Postgres) PrintSummary(w http.ResponseWriter, _ *http.Request) {
 	// Filters out old data and calculates the average number of failures and average duration per day per environment
 	sqlQuery := `
 	SELECT DATE_TRUNC('day', TestTime) AS StartOfDate, EnvName, AVG(NumberOfFail) AS AvgFailedTests, AVG(TotalDuration) AS AvgDuration
