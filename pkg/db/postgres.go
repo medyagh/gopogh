@@ -167,6 +167,7 @@ func (m *Postgres) PrintEnvironmentTestsAndTestCases(w http.ResponseWriter, _ *h
 
 // PrintTestFlake writes the individual test charts to a JSON HTTP response
 func (m *Postgres) PrintTestFlake(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
 	queryValues := r.URL.Query()
 	env := queryValues.Get("env")
 	if env == "" {
@@ -209,6 +210,8 @@ func (m *Postgres) PrintTestFlake(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("failed to execute SQL query for view creation: %v", err), http.StatusInternalServerError)
 		return
 	}
+	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for refreshing materialized view since start of handler", time.Since(start).Seconds())
+
 	// Groups the datetimes together by date, calculating flake percentage and aggregating the individual results/durations for each date
 	sqlQuery := fmt.Sprintf(`
 	SELECT
@@ -228,6 +231,7 @@ func (m *Postgres) PrintTestFlake(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("failed to execute SQL query for flake rate and duration by day chart: %v", err), http.StatusInternalServerError)
 		return
 	}
+	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for flake rate and duration by day chart since start of handler", time.Since(start).Seconds())
 
 	// Groups the datetimes together by week, calculating flake percentage and aggregating the individual results/durations for each date
 	sqlQuery = fmt.Sprintf(`
@@ -247,6 +251,7 @@ func (m *Postgres) PrintTestFlake(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("failed to execute SQL query for flake rate and duration by week chart: %v", err), http.StatusInternalServerError)
 		return
 	}
+	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for flake rate and duration by week chart since start of handler", time.Since(start).Seconds())
 
 	data := map[string]interface{}{
 		"flakeByDay":  flakeByDay,
@@ -264,6 +269,7 @@ func (m *Postgres) PrintTestFlake(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to write JSON data", http.StatusInternalServerError)
 		return
 	}
+	fmt.Printf("\nduration metric: took %f seconds to write json SQL response since start of handler\n\n\n", time.Since(start).Seconds())
 }
 
 // PrintBasicFlake writes the overall environment charts to a JSON HTTP response
@@ -316,7 +322,7 @@ func (m *Postgres) PrintBasicFlake(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("\n\nduration metric: took %f seconds to execute SQL query for refreshing materialized view since start of handler", time.Since(start).Seconds())
+	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for refreshing materialized view since start of handler", time.Since(start).Seconds())
 
 	// Number of days to use to look for "flaky-est" tests.
 	const dateRange = 15
@@ -361,7 +367,7 @@ func (m *Postgres) PrintBasicFlake(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("failed to execute SQL query for flake table: %v", err), http.StatusInternalServerError)
 		return
 	}
-	fmt.Printf("\n\nduration metric: took %f seconds to execute SQL query for flake table since start of handler", time.Since(start).Seconds())
+	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for flake table since start of handler", time.Since(start).Seconds())
 
 	var topTestNames []string
 	for _, row := range flakeRates {
@@ -393,7 +399,7 @@ func (m *Postgres) PrintBasicFlake(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("failed to execute SQL query for by day flake chart: %v", err), http.StatusInternalServerError)
 		return
 	}
-	fmt.Printf("\n\nduration metric: took %f seconds to execute SQL query for day flake chart since start of handler", time.Since(start).Seconds())
+	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for day flake chart since start of handler", time.Since(start).Seconds())
 
 	// Filters to get the top flakiest in the past week, calculating flake rate per week for those tests
 	sqlQuer = fmt.Sprintf(`
@@ -431,7 +437,7 @@ func (m *Postgres) PrintBasicFlake(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("failed to execute SQL query for by week flake chart: %v", err), http.StatusInternalServerError)
 		return
 	}
-	fmt.Printf("\n\nduration metric: took %f seconds to execute SQL query for flake by week chart since start of handler", time.Since(start).Seconds())
+	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for flake by week chart since start of handler", time.Since(start).Seconds())
 
 	// Filters out data prior to 90 days and with the incorrect environment
 	// Then calculates for each date aggregates the duration and number of tests, calculating the average for both
@@ -457,7 +463,7 @@ func (m *Postgres) PrintBasicFlake(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("failed to execute SQL query for environment test count and duration chart: %v", err), http.StatusInternalServerError)
 		return
 	}
-	fmt.Printf("\n\nduration metric: took %f seconds to execute SQL query for env duration chart since start of handler", time.Since(start).Seconds())
+	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for env duration chart since start of handler", time.Since(start).Seconds())
 
 	data := map[string]interface{}{
 		"recentFlakePercentTable": flakeRates,
@@ -477,12 +483,13 @@ func (m *Postgres) PrintBasicFlake(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to write JSON data", http.StatusInternalServerError)
 		return
 	}
-	fmt.Printf("\n\nduration metric: took %f seconds to write json SQL response since start of handler", time.Since(start).Seconds())
+	fmt.Printf("\nduration metric: took %f seconds to write json SQL response since start of handler\n\n\n", time.Since(start).Seconds())
 
 }
 
 // PrintSummary writes the summary chart for all of the environments to a JSON HTTP response
 func (m *Postgres) PrintSummary(w http.ResponseWriter, _ *http.Request) {
+	start := time.Now()
 	// Filters out old data and calculates the average number of failures and average duration per day per environment
 	sqlQuery := `
 	SELECT DATE_TRUNC('day', TestTime) AS StartOfDate, EnvName, AVG(NumberOfFail) AS AvgFailedTests, AVG(TotalDuration) AS AvgDuration
@@ -498,6 +505,7 @@ func (m *Postgres) PrintSummary(w http.ResponseWriter, _ *http.Request) {
 		http.Error(w, fmt.Sprintf("failed to execute SQL query for summary chart: %v", err), http.StatusInternalServerError)
 		return
 	}
+	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for summary duration and failure charts since start of handler", time.Since(start).Seconds())
 
 	// Number of days to use to look for "flaky-est" envs.
 	const dateRange = 15
@@ -545,6 +553,7 @@ func (m *Postgres) PrintSummary(w http.ResponseWriter, _ *http.Request) {
 		http.Error(w, fmt.Sprintf("failed to execute SQL query for flake table: %v", err), http.StatusInternalServerError)
 		return
 	}
+	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for summary failure change table since start of handler", time.Since(start).Seconds())
 
 	data := map[string]interface{}{
 		"summaryAvgFail": summaryAvgFail,
@@ -562,4 +571,5 @@ func (m *Postgres) PrintSummary(w http.ResponseWriter, _ *http.Request) {
 		http.Error(w, "Failed to write JSON data", http.StatusInternalServerError)
 		return
 	}
+	fmt.Printf("\nduration metric: took %f seconds to write json SQL response since start of handler\n\n\n", time.Since(start).Seconds())
 }
