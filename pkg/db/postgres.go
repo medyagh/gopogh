@@ -272,7 +272,8 @@ func (m *Postgres) PrintBasicFlake(w http.ResponseWriter, r *http.Request) {
 	queryValues := r.URL.Query()
 	env := queryValues.Get("env")
 	if env == "" {
-		env = "KVM_Linux"
+		http.Error(w, "missing environment name", http.StatusInternalServerError)
+		return
 	}
 	tests_in_top := queryValues.Get("tests_in_top")
 	if tests_in_top == "" {
