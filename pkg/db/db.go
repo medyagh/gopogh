@@ -33,11 +33,11 @@ type datab interface {
 
 	PrintEnvironmentTestsAndTestCases(http.ResponseWriter, *http.Request)
 
-	PrintBasicFlake(http.ResponseWriter, *http.Request)
+	ServeEnvCharts(http.ResponseWriter, *http.Request)
 
-	PrintSummary(http.ResponseWriter, *http.Request)
+	ServeOverview(http.ResponseWriter, *http.Request)
 
-	PrintTestFlake(http.ResponseWriter, *http.Request)
+	ServeTestCharts(http.ResponseWriter, *http.Request)
 }
 
 // newDB handles which database driver to use and initializes the db

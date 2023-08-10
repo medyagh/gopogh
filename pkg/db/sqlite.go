@@ -119,17 +119,17 @@ func (m *sqlite) Initialize() error {
 func (m *sqlite) PrintEnvironmentTestsAndTestCases(_ http.ResponseWriter, _ *http.Request) {
 }
 
-// PrintBasicFlake writes the overall environment charts to a JSON HTTP response
+// ServeEnvCharts writes the overall environment charts to a JSON HTTP response
 // This is not yet supported for sqlite
-func (m *sqlite) PrintBasicFlake(_ http.ResponseWriter, _ *http.Request) {
+func (m *sqlite) ServeEnvCharts(_ http.ResponseWriter, _ *http.Request) {
 }
 
-// PrintTestFlake writes the individual test charts to a JSON HTTP response
+// ServeTestCharts writes the individual test charts to a JSON HTTP response
 // This is not yet supported for sqlite
-func (m *sqlite) PrintTestFlake(_ http.ResponseWriter, _ *http.Request) {
+func (m *sqlite) ServeTestCharts(_ http.ResponseWriter, _ *http.Request) {
 }
 
-// PrintSummary writes the summary chart for all of the environments to a JSON HTTP response
+// ServeOverview writes the summary chart for all of the environments to a JSON HTTP response
 // This is not yet supported for sqlite
-func (m *sqlite) PrintSummary(_ http.ResponseWriter, _ *http.Request) {
+func (m *sqlite) ServeOverview(_ http.ResponseWriter, _ *http.Request) {
 }

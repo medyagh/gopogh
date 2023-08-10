@@ -165,8 +165,8 @@ func (m *Postgres) PrintEnvironmentTestsAndTestCases(w http.ResponseWriter, _ *h
 	fmt.Fprintf(w, "</body></html>")
 }
 
-// PrintTestFlake writes the individual test charts to a JSON HTTP response
-func (m *Postgres) PrintTestFlake(w http.ResponseWriter, r *http.Request) {
+// ServeTestCharts writes the individual test charts to a JSON HTTP response
+func (m *Postgres) ServeTestCharts(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	queryValues := r.URL.Query()
 	env := queryValues.Get("env")
@@ -272,8 +272,8 @@ func (m *Postgres) PrintTestFlake(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("\nduration metric: took %f seconds to write json SQL response since start of handler\n\n\n", time.Since(start).Seconds())
 }
 
-// PrintBasicFlake writes the overall environment charts to a JSON HTTP response
-func (m *Postgres) PrintBasicFlake(w http.ResponseWriter, r *http.Request) {
+// ServeEnvCharts writes the overall environment charts to a JSON HTTP response
+func (m *Postgres) ServeEnvCharts(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	queryValues := r.URL.Query()
 	env := queryValues.Get("env")
@@ -487,8 +487,8 @@ func (m *Postgres) PrintBasicFlake(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// PrintSummary writes the summary chart for all of the environments to a JSON HTTP response
-func (m *Postgres) PrintSummary(w http.ResponseWriter, _ *http.Request) {
+// ServeOverview writes the summary chart for all of the environments to a JSON HTTP response
+func (m *Postgres) ServeOverview(w http.ResponseWriter, _ *http.Request) {
 	start := time.Now()
 	// Filters out old data and calculates the average number of failures and average duration per day per environment
 	sqlQuery := `
