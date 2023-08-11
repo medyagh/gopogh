@@ -762,15 +762,16 @@ async function init() {
       await new Promise(resolve => google.charts.setOnLoadCallback(resolve));
 
       let url;
+      const basePath = 'http://localhost:8080' // Base Server Path. Modify to actual server path if deploying
       if (desiredEnvironment === undefined) {
           // URL for displaySummaryChart
-          url = 'http://localhost:8080/summary'
+          url = basePath + '/summary'
       } else if (desiredTest === undefined) {
           // URL for displayEnvironmentChart
-          url = 'http://localhost:8080/env' + '?env=' + desiredEnvironment + '&tests_in_top=' + desiredTestNumber;
+          url = basePath + '/env' + '?env=' + desiredEnvironment + '&tests_in_top=' + desiredTestNumber;
       } else {
           // URL for displayTestAndEnvironmentChart
-          url = 'http://localhost:8080/test' + '?env=' + desiredEnvironment + '&test=' + desiredTest;
+          url = basePath + '/test' + '?env=' + desiredEnvironment + '&test=' + desiredTest;
       }
 
       // Fetch data from the determined URL
