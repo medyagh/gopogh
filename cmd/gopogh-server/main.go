@@ -45,6 +45,8 @@ func main() {
 
 	http.HandleFunc("/summary", db.ServeOverview)
 
+	http.HandleFunc("/version", handler.ServeGopoghVersion)
+
 	// Start the HTTP server
 	err = http.ListenAndServe(":8080", nil)
 	if err != nil {

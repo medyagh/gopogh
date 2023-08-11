@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/medyagh/gopogh/pkg/db"
+	"github.com/medyagh/gopogh/pkg/report"
 )
 
 type DB struct {
@@ -124,6 +125,25 @@ func (m *DB) ServeOverview(w http.ResponseWriter, _ *http.Request) {
 	if data == nil {
 		http.Error(w, err.Error(), http.StatusNotImplemented)
 		return
+	}
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		http.Error(w, "Failed to marshal JSON", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	_, err = w.Write(jsonData)
+	if err != nil {
+		http.Error(w, "Failed to write JSON data", http.StatusInternalServerError)
+		return
+	}
+}
+
+// ServeGopoghVersion writes the gopogh version to a json response
+func ServeGopoghVersion(w http.ResponseWriter, _ *http.Request) {
+	data := map[string]interface{}{
+		"version": report.Version,
 	}
 	jsonData, err := json.Marshal(data)
 	if err != nil {
