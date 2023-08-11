@@ -19,6 +19,10 @@ func (m *DB) ServeEnvironmentTestsAndTestCases(w http.ResponseWriter, _ *http.Re
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	if data == nil {
+		http.Error(w, err.Error(), http.StatusNotImplemented)
+		return
+	}
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		http.Error(w, "Failed to marshal JSON", http.StatusInternalServerError)
@@ -50,6 +54,10 @@ func (m *DB) ServeTestCharts(w http.ResponseWriter, r *http.Request) {
 	data, err := m.Database.GetTestCharts(env, test)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if data == nil {
+		http.Error(w, err.Error(), http.StatusNotImplemented)
 		return
 	}
 	jsonData, err := json.Marshal(data)
@@ -108,10 +116,13 @@ func (m *DB) ServeEnvCharts(w http.ResponseWriter, r *http.Request) {
 
 // ServeOverview writes the overview chart for all of the environments to a JSON HTTP response
 func (m *DB) ServeOverview(w http.ResponseWriter, _ *http.Request) {
-
 	data, err := m.Database.GetOverview()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if data == nil {
+		http.Error(w, err.Error(), http.StatusNotImplemented)
 		return
 	}
 	jsonData, err := json.Marshal(data)
