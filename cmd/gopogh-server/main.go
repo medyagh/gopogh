@@ -16,12 +16,6 @@ var useIAMAuth = flag.Bool("use_iam_auth", false, "whether to use IAM to authent
 
 func main() {
 	flag.Parse()
-	if *dbPath == "" {
-		log.Fatalf("The db_path flag is required")
-	}
-	if *dbHost == "" {
-		log.Fatalf("The db_host flag is required")
-	}
 	flagValues := db.FlagValues{
 		Backend:     "postgres",
 		Host:        *dbHost,
