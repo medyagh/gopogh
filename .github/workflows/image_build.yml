@@ -8,9 +8,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Publish to Docker Repository
+    - name: Publish gopogh to Docker Repository
       uses: elgohr/Publish-Docker-Github-Action@v5
       with:
         name: medyagh/gopogh
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+    - name: Publish gopogh-server to Docker Repository
+      uses: elgohr/Publish-Docker-Github-Action@v5
+      with:
+        name: medyagh/gopogh-server
+        dockerfile: Dockerfile.server
         username: ${{ secrets.DOCKER_HUB_USERNAME }}
         password: ${{ secrets.DOCKER_HUB_PASSWORD }}
