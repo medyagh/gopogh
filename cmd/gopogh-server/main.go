@@ -33,7 +33,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	db := handler.HandlerDB{
+	db := handler.DB{
 		Database: datab,
 	}
 	// Create an HTTP server and register the handlers

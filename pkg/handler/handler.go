@@ -9,11 +9,11 @@ import (
 	"github.com/medyagh/gopogh/pkg/db"
 )
 
-type HandlerDB struct {
+type DB struct {
 	Database db.Datab
 }
 
-func (m *HandlerDB) ServeEnvironmentTestsAndTestCases(w http.ResponseWriter, r *http.Request) {
+func (m *DB) ServeEnvironmentTestsAndTestCases(w http.ResponseWriter, _ *http.Request) {
 	data, err := m.Database.GetEnvironmentTestsAndTestCases()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -34,7 +34,7 @@ func (m *HandlerDB) ServeEnvironmentTestsAndTestCases(w http.ResponseWriter, r *
 }
 
 // ServeTestCharts writes the individual test charts to a JSON HTTP response
-func (m *HandlerDB) ServeTestCharts(w http.ResponseWriter, r *http.Request) {
+func (m *DB) ServeTestCharts(w http.ResponseWriter, r *http.Request) {
 	queryValues := r.URL.Query()
 	env := queryValues.Get("env")
 	if env == "" {
@@ -67,7 +67,7 @@ func (m *HandlerDB) ServeTestCharts(w http.ResponseWriter, r *http.Request) {
 }
 
 // ServeEnvCharts writes the overall environment charts to a JSON HTTP response
-func (m *HandlerDB) ServeEnvCharts(w http.ResponseWriter, r *http.Request) {
+func (m *DB) ServeEnvCharts(w http.ResponseWriter, r *http.Request) {
 	queryValues := r.URL.Query()
 	env := queryValues.Get("env")
 	if env == "" {
@@ -103,7 +103,7 @@ func (m *HandlerDB) ServeEnvCharts(w http.ResponseWriter, r *http.Request) {
 }
 
 // ServeOverview writes the overview chart for all of the environments to a JSON HTTP response
-func (m *HandlerDB) ServeOverview(w http.ResponseWriter, _ *http.Request) {
+func (m *DB) ServeOverview(w http.ResponseWriter, _ *http.Request) {
 
 	data, err := m.Database.GetOverview()
 	if err != nil {

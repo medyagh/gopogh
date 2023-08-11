@@ -294,7 +294,7 @@ func (m *Postgres) GetEnvCharts(env string, testsInTop int) (map[string]interfac
 	`, viewName, viewName)
 	var flakeRates []models.DBFlakeRow
 	fmt.Println(sqlQuer)
-	err = m.db.Select(&flakeRates, sqlQuer, 2*dateRange, dateRange-1, 2*dateRange-1) //THIS LINE IS ERRORING ON SOME ENVS. FIX TOMORROW BEFORE PUSH
+	err = m.db.Select(&flakeRates, sqlQuer, 2*dateRange, dateRange-1, 2*dateRange-1)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute SQL query for flake table: %v", err)
 	}
