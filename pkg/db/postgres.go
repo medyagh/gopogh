@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -138,7 +139,7 @@ func (m *Postgres) GetEnvironmentTestsAndTestCases() (map[string]interface{}, er
 		"environmentTests": environmentTests,
 		"testCases":        testCases,
 	}
-	fmt.Printf("\nduration metric: took %f seconds to gather all table data since start of handler\n", time.Since(start).Seconds())
+	log.Printf("\nduration metric: took %f seconds to gather all table data since start of handler\n\n", time.Since(start).Seconds())
 	return data, nil
 }
 
@@ -178,7 +179,7 @@ func (m *Postgres) GetTestCharts(env string, test string) (map[string]interface{
 		return nil, fmt.Errorf("failed to execute SQL query for view creation: %v", err)
 	}
 
-	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for refreshing materialized view since start of handler", time.Since(start).Seconds())
+	log.Printf("\nduration metric: took %f seconds to execute SQL query for refreshing materialized view since start of handler", time.Since(start).Seconds())
 
 	// Groups the datetimes together by date, calculating flake percentage and aggregating the individual results/durations for each date
 	sqlQuery := fmt.Sprintf(`
@@ -199,7 +200,7 @@ func (m *Postgres) GetTestCharts(env string, test string) (map[string]interface{
 		return nil, fmt.Errorf("failed to execute SQL query for flake rate and duration by day chart: %v", err)
 	}
 
-	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for flake rate and duration by day chart since start of handler", time.Since(start).Seconds())
+	log.Printf("\nduration metric: took %f seconds to execute SQL query for flake rate and duration by day chart since start of handler", time.Since(start).Seconds())
 
 	// Groups the datetimes together by week, calculating flake percentage and aggregating the individual results/durations for each date
 	sqlQuery = fmt.Sprintf(`
@@ -218,13 +219,13 @@ func (m *Postgres) GetTestCharts(env string, test string) (map[string]interface{
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute SQL query for flake rate and duration by week chart: %v", err)
 	}
-	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for flake rate and duration by week chart since start of handler", time.Since(start).Seconds())
+	log.Printf("\nduration metric: took %f seconds to execute SQL query for flake rate and duration by week chart since start of handler", time.Since(start).Seconds())
 
 	data := map[string]interface{}{
 		"flakeByDay":  flakeByDay,
 		"flakeByWeek": flakeByWeek,
 	}
-	fmt.Printf("\nduration metric: took %f seconds to gather individual test chart data since start of handler\n", time.Since(start).Seconds())
+	log.Printf("\nduration metric: took %f seconds to gather individual test chart data since start of handler\n\n", time.Since(start).Seconds())
 	return data, nil
 }
 
@@ -253,7 +254,7 @@ func (m *Postgres) GetEnvCharts(env string, testsInTop int) (map[string]interfac
 		return nil, fmt.Errorf("failed to execute SQL query for view creation: %v", err)
 	}
 
-	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for refreshing materialized view since start of handler", time.Since(start).Seconds())
+	log.Printf("\nduration metric: took %f seconds to execute SQL query for refreshing materialized view since start of handler", time.Since(start).Seconds())
 
 	// Number of days to use to look for "flaky-est" tests.
 	const dateRange = 15
@@ -293,12 +294,11 @@ func (m *Postgres) GetEnvCharts(env string, testsInTop int) (map[string]interfac
 	ORDER BY RecentFlakePercentage DESC;
 	`, viewName, viewName)
 	var flakeRates []models.DBFlakeRow
-	fmt.Println(sqlQuer)
 	err = m.db.Select(&flakeRates, sqlQuer, 2*dateRange, dateRange-1, 2*dateRange-1)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute SQL query for flake table: %v", err)
 	}
-	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for flake table since start of handler", time.Since(start).Seconds())
+	log.Printf("\nduration metric: took %f seconds to execute SQL query for flake table since start of handler", time.Since(start).Seconds())
 
 	var topTestNames []string
 	for _, row := range flakeRates {
@@ -329,7 +329,7 @@ func (m *Postgres) GetEnvCharts(env string, testsInTop int) (map[string]interfac
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute SQL query for by day flake chart: %v", err)
 	}
-	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for day flake chart since start of handler", time.Since(start).Seconds())
+	log.Printf("\nduration metric: took %f seconds to execute SQL query for day flake chart since start of handler", time.Since(start).Seconds())
 
 	// Filters to get the top flakiest in the past week, calculating flake rate per week for those tests
 	sqlQuer = fmt.Sprintf(`
@@ -366,7 +366,7 @@ func (m *Postgres) GetEnvCharts(env string, testsInTop int) (map[string]interfac
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute SQL query for by week flake chart: %v", err)
 	}
-	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for flake by week chart since start of handler", time.Since(start).Seconds())
+	log.Printf("\nduration metric: took %f seconds to execute SQL query for flake by week chart since start of handler", time.Since(start).Seconds())
 
 	// Filters out data prior to 90 days and with the incorrect environment
 	// Then calculates for each date aggregates the duration and number of tests, calculating the average for both
@@ -391,7 +391,7 @@ func (m *Postgres) GetEnvCharts(env string, testsInTop int) (map[string]interfac
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute SQL query for environment test count and duration chart: %v", err)
 	}
-	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for env duration chart since start of handler", time.Since(start).Seconds())
+	log.Printf("\nduration metric: took %f seconds to execute SQL query for env duration chart since start of handler", time.Since(start).Seconds())
 
 	data := map[string]interface{}{
 		"recentFlakePercentTable": flakeRates,
@@ -399,7 +399,7 @@ func (m *Postgres) GetEnvCharts(env string, testsInTop int) (map[string]interfac
 		"flakeRateByDay":          flakeRateByDay,
 		"countsAndDurations":      countsAndDurations,
 	}
-	fmt.Printf("\nduration metric: took %f seconds to gather env chart data since start of handler\n", time.Since(start).Seconds())
+	log.Printf("\nduration metric: took %f seconds to gather env chart data since start of handler\n\n", time.Since(start).Seconds())
 	return data, nil
 }
 
@@ -420,7 +420,7 @@ func (m *Postgres) GetOverview() (map[string]interface{}, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute SQL query for summary chart: %v", err)
 	}
-	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for summary duration and failure charts since start of handler", time.Since(start).Seconds())
+	log.Printf("\nduration metric: took %f seconds to execute SQL query for summary duration and failure charts since start of handler", time.Since(start).Seconds())
 
 	// Number of days to use to look for "flaky-est" envs.
 	const dateRange = 15
@@ -467,12 +467,12 @@ func (m *Postgres) GetOverview() (map[string]interface{}, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute SQL query for flake table: %v", err)
 	}
-	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for summary failure change table since start of handler", time.Since(start).Seconds())
+	log.Printf("\nduration metric: took %f seconds to execute SQL query for summary failure change table since start of handler", time.Since(start).Seconds())
 
 	data := map[string]interface{}{
 		"summaryAvgFail": summaryAvgFail,
 		"summaryTable":   summaryTable,
 	}
-	fmt.Printf("\nduration metric: took %f seconds to gather summary data since start of handler\n", time.Since(start).Seconds())
+	log.Printf("\nduration metric: took %f seconds to gather summary data since start of handler\n\n", time.Since(start).Seconds())
 	return data, nil
 }
