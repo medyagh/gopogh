@@ -1,10 +1,7 @@
 package db
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -120,71 +117,50 @@ func (m *Postgres) Initialize() error {
 	return nil
 }
 
-// PrintEnvironmentTestsAndTestCases writes the environment tests and test cases tables to an HTTP response in a combined page
-func (m *Postgres) PrintEnvironmentTestsAndTestCases(w http.ResponseWriter, _ *http.Request) {
+// GetEnvironmentTestsAndTestCases writes the database tables to a map with the keys environmentTests and testCases
+func (m *Postgres) GetEnvironmentTestsAndTestCases() (map[string]interface{}, error) {
+	start := time.Now()
+
 	var environmentTests []models.DBEnvironmentTest
 	var testCases []models.DBTestCase
 
 	err := m.db.Select(&environmentTests, "SELECT * FROM db_environment_tests")
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to execute SQL query for environment tests: %v", err), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to execute SQL query for environment tests: %v", err)
 	}
 
 	err = m.db.Select(&testCases, "SELECT * FROM db_test_cases")
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to execute SQL query for test cases: %v", err), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to execute SQL query for test cases: %v", err)
+
 	}
-
-	// Write the response header to be html
-	w.Header().Set("Content-Type", "text/html")
-
-	// Write the HTML page structure
-	fmt.Fprintf(w, "<html><head><title>Environment Tests and Test Cases</title></head><body>")
-
-	// Environment tests table
-	fmt.Fprintf(w, "<h1>Environment Tests</h1><table>")
-	fmt.Fprintf(w, "<thead><tr><th>CommitID</th><th>EnvName</th><th>GopoghTime</th><th>TestTime</th><th>NumberOfFail</th><th>NumberOfPass</th><th>NumberOfSkip</th><th>TotalDuration</th></tr></thead>")
-	for _, row := range environmentTests {
-		fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%d</td><td>%d</td><td>%d</td><td>%f</td></tr>",
-			row.CommitID, row.EnvName, row.GopoghTime, row.TestTime, row.NumberOfFail, row.NumberOfPass, row.NumberOfSkip, row.TotalDuration)
+	data := map[string]interface{}{
+		"environmentTests": environmentTests,
+		"testCases":        testCases,
 	}
-	fmt.Fprintf(w, "</table>")
-
-	// Test cases table
-	fmt.Fprintf(w, "<h1>Test Cases</h1><table>")
-	fmt.Fprintf(w, "<thead><tr><th>PR</th><th>CommitID</th><th>EnvName</th><th>TestName</th><th>Result</th><th>TestTime</th><th>Duration</th></tr></thead>")
-	for _, row := range testCases {
-		fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%f</td></tr>",
-			row.PR, row.CommitID, row.EnvName, row.TestName, row.Result, row.TestTime, row.Duration)
-	}
-	fmt.Fprintf(w, "</table>")
-
-	// Close the HTML page structure
-	fmt.Fprintf(w, "</body></html>")
+	fmt.Printf("\nduration metric: took %f seconds to gather all table data since start of handler\n", time.Since(start).Seconds())
+	return data, nil
 }
 
-// ServeTestCharts writes the individual test charts to a JSON HTTP response
-func (m *Postgres) ServeTestCharts(w http.ResponseWriter, r *http.Request) {
+func (m *Postgres) createMaterializedView(env string, viewName string) error {
+	createView := fmt.Sprintf(`
+	CREATE MATERIALIZED VIEW IF NOT EXISTS %s AS 
+		SELECT * FROM db_test_cases
+		WHERE Result != 'skip' AND EnvName = '%s' AND TestTime >= NOW() - INTERVAL '90 days'
+	`, viewName, env)
+
+	_, err := m.db.Exec(createView)
+	return err
+}
+
+// GetTestCharts writes the individual test chart data to a map with the keys flakeByDay and flakeByWeek
+func (m *Postgres) GetTestCharts(env string, test string) (map[string]interface{}, error) {
 	start := time.Now()
-	queryValues := r.URL.Query()
-	env := queryValues.Get("env")
-	if env == "" {
-		http.Error(w, "missing environment name", http.StatusInternalServerError)
-		return
-	}
-	test := queryValues.Get("test")
-	if test == "" {
-		http.Error(w, "missing test name", http.StatusInternalServerError)
-		return
-	}
 
 	var validEnvs []string
 	err := m.db.Select(&validEnvs, "SELECT DISTINCT EnvName FROM db_environment_tests")
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to execute SQL query for list of valid environments: %v", err), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to execute SQL query for list of valid environments: %v", err)
 	}
 	isValidEnv := false
 	for _, e := range validEnvs {
@@ -193,23 +169,15 @@ func (m *Postgres) ServeTestCharts(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if !isValidEnv {
-		http.Error(w, fmt.Sprintf("invalid environment. Not found in database: %v", err), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("invalid environment. Not found in database: %v", err)
 	}
 
 	viewName := fmt.Sprintf("\"lastn_data_%s\"", env)
-
-	createView := fmt.Sprintf(`
-	CREATE MATERIALIZED VIEW IF NOT EXISTS %s AS 
-		SELECT * FROM db_test_cases
-		WHERE Result != 'skip' AND EnvName = '%s' AND TestTime >= NOW() - INTERVAL '90 days'
-	`, viewName, env)
-
-	_, err = m.db.Exec(createView)
+	err = m.createMaterializedView(env, viewName)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to execute SQL query for view creation: %v", err), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to execute SQL query for view creation: %v", err)
 	}
+
 	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for refreshing materialized view since start of handler", time.Since(start).Seconds())
 
 	// Groups the datetimes together by date, calculating flake percentage and aggregating the individual results/durations for each date
@@ -228,9 +196,9 @@ func (m *Postgres) ServeTestCharts(w http.ResponseWriter, r *http.Request) {
 	var flakeByDay []models.DBTestRateAndDuration
 	err = m.db.Select(&flakeByDay, sqlQuery, test)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to execute SQL query for flake rate and duration by day chart: %v", err), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to execute SQL query for flake rate and duration by day chart: %v", err)
 	}
+
 	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for flake rate and duration by day chart since start of handler", time.Since(start).Seconds())
 
 	// Groups the datetimes together by week, calculating flake percentage and aggregating the individual results/durations for each date
@@ -248,8 +216,7 @@ func (m *Postgres) ServeTestCharts(w http.ResponseWriter, r *http.Request) {
 	var flakeByWeek []models.DBTestRateAndDuration
 	err = m.db.Select(&flakeByWeek, sqlQuery, test)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to execute SQL query for flake rate and duration by week chart: %v", err), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to execute SQL query for flake rate and duration by week chart: %v", err)
 	}
 	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for flake rate and duration by week chart since start of handler", time.Since(start).Seconds())
 
@@ -257,45 +224,18 @@ func (m *Postgres) ServeTestCharts(w http.ResponseWriter, r *http.Request) {
 		"flakeByDay":  flakeByDay,
 		"flakeByWeek": flakeByWeek,
 	}
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		http.Error(w, "Failed to marshal JSON", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	_, err = w.Write(jsonData)
-	if err != nil {
-		http.Error(w, "Failed to write JSON data", http.StatusInternalServerError)
-		return
-	}
-	fmt.Printf("\nduration metric: took %f seconds to write json SQL response since start of handler\n\n\n", time.Since(start).Seconds())
+	fmt.Printf("\nduration metric: took %f seconds to gather individual test chart data since start of handler\n", time.Since(start).Seconds())
+	return data, nil
 }
 
-// ServeEnvCharts writes the overall environment charts to a JSON HTTP response
-func (m *Postgres) ServeEnvCharts(w http.ResponseWriter, r *http.Request) {
+// GetEnvCharts writes the overall environment charts to a map with the keys recentFlakePercentTable, flakeRateByWeek, flakeRateByDay, and countsAndDurations
+func (m *Postgres) GetEnvCharts(env string, testsInTop int) (map[string]interface{}, error) {
 	start := time.Now()
-	queryValues := r.URL.Query()
-	env := queryValues.Get("env")
-	if env == "" {
-		http.Error(w, "missing environment name", http.StatusInternalServerError)
-		return
-	}
-	testsInTop := queryValues.Get("tests_in_top")
-	if testsInTop == "" {
-		testsInTop = "10"
-	}
-	numTests, err := strconv.Atoi(testsInTop)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("invalid number of top tests to use: %v", err), http.StatusInternalServerError)
-		return
-	}
 
 	var validEnvs []string
-	err = m.db.Select(&validEnvs, "SELECT DISTINCT EnvName FROM db_environment_tests")
+	err := m.db.Select(&validEnvs, "SELECT DISTINCT EnvName FROM db_environment_tests")
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to execute SQL query for list of valid environments: %v", err), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to execute SQL query for list of valid environments: %v", err)
 	}
 	isValidEnv := false
 	for _, e := range validEnvs {
@@ -304,22 +244,13 @@ func (m *Postgres) ServeEnvCharts(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if !isValidEnv {
-		http.Error(w, fmt.Sprintf("invalid environment. Not found in database: %v", err), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("invalid environment. Not found in database: %v", err)
 	}
 
 	viewName := fmt.Sprintf("\"lastn_data_%s\"", env)
-
-	createView := fmt.Sprintf(`
-	CREATE MATERIALIZED VIEW IF NOT EXISTS %s AS 
-		SELECT * FROM db_test_cases
-		WHERE Result != 'skip' AND EnvName = '%s' AND TestTime >= NOW() - INTERVAL '90 days'
-	`, viewName, env)
-
-	_, err = m.db.Exec(createView)
+	err = m.createMaterializedView(env, viewName)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to execute SQL query for view creation: %v", err), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to execute SQL query for view creation: %v", err)
 	}
 
 	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for refreshing materialized view since start of handler", time.Since(start).Seconds())
@@ -362,17 +293,17 @@ func (m *Postgres) ServeEnvCharts(w http.ResponseWriter, r *http.Request) {
 	ORDER BY RecentFlakePercentage DESC;
 	`, viewName, viewName)
 	var flakeRates []models.DBFlakeRow
-	err = m.db.Select(&flakeRates, sqlQuer, 2*dateRange, dateRange-1, 2*dateRange-1)
+	fmt.Println(sqlQuer)
+	err = m.db.Select(&flakeRates, sqlQuer, 2*dateRange, dateRange-1, 2*dateRange-1) //THIS LINE IS ERRORING ON SOME ENVS. FIX TOMORROW BEFORE PUSH
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to execute SQL query for flake table: %v", err), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to execute SQL query for flake table: %v", err)
 	}
 	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for flake table since start of handler", time.Since(start).Seconds())
 
 	var topTestNames []string
 	for _, row := range flakeRates {
 		topTestNames = append(topTestNames, row.TestName)
-		if len(topTestNames) >= numTests {
+		if len(topTestNames) >= testsInTop {
 			break
 		}
 	}
@@ -396,8 +327,7 @@ func (m *Postgres) ServeEnvCharts(w http.ResponseWriter, r *http.Request) {
 	var flakeRateByDay []models.DBFlakeBy
 	err = m.db.Select(&flakeRateByDay, sqlQuer)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to execute SQL query for by day flake chart: %v", err), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to execute SQL query for by day flake chart: %v", err)
 	}
 	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for day flake chart since start of handler", time.Since(start).Seconds())
 
@@ -432,10 +362,9 @@ func (m *Postgres) ServeEnvCharts(w http.ResponseWriter, r *http.Request) {
 	ORDER BY StartOfDate DESC;
 	`, viewName, viewName, viewName)
 	var flakeRateByWeek []models.DBFlakeBy
-	err = m.db.Select(&flakeRateByWeek, sqlQuer, numTests)
+	err = m.db.Select(&flakeRateByWeek, sqlQuer, testsInTop)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to execute SQL query for by week flake chart: %v", err), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to execute SQL query for by week flake chart: %v", err)
 	}
 	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for flake by week chart since start of handler", time.Since(start).Seconds())
 
@@ -460,8 +389,7 @@ func (m *Postgres) ServeEnvCharts(w http.ResponseWriter, r *http.Request) {
 	var countsAndDurations []models.DBEnvDuration
 	err = m.db.Select(&countsAndDurations, sqlQuer, env)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to execute SQL query for environment test count and duration chart: %v", err), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to execute SQL query for environment test count and duration chart: %v", err)
 	}
 	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for env duration chart since start of handler", time.Since(start).Seconds())
 
@@ -471,24 +399,12 @@ func (m *Postgres) ServeEnvCharts(w http.ResponseWriter, r *http.Request) {
 		"flakeRateByDay":          flakeRateByDay,
 		"countsAndDurations":      countsAndDurations,
 	}
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		http.Error(w, "Failed to marshal JSON", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	_, err = w.Write(jsonData)
-	if err != nil {
-		http.Error(w, "Failed to write JSON data", http.StatusInternalServerError)
-		return
-	}
-	fmt.Printf("\nduration metric: took %f seconds to write json SQL response since start of handler\n\n\n", time.Since(start).Seconds())
-
+	fmt.Printf("\nduration metric: took %f seconds to gather env chart data since start of handler\n", time.Since(start).Seconds())
+	return data, nil
 }
 
-// ServeOverview writes the summary chart for all of the environments to a JSON HTTP response
-func (m *Postgres) ServeOverview(w http.ResponseWriter, _ *http.Request) {
+// GetOverview writes the overview charts to a map with the keys summaryAvgFail and summaryTable
+func (m *Postgres) GetOverview() (map[string]interface{}, error) {
 	start := time.Now()
 	// Filters out old data and calculates the average number of failures and average duration per day per environment
 	sqlQuery := `
@@ -502,8 +418,7 @@ func (m *Postgres) ServeOverview(w http.ResponseWriter, _ *http.Request) {
 	var summaryAvgFail []models.DBSummaryAvgFail
 	err := m.db.Select(&summaryAvgFail, sqlQuery)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to execute SQL query for summary chart: %v", err), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to execute SQL query for summary chart: %v", err)
 	}
 	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for summary duration and failure charts since start of handler", time.Since(start).Seconds())
 
@@ -550,8 +465,7 @@ func (m *Postgres) ServeOverview(w http.ResponseWriter, _ *http.Request) {
 	var summaryTable []models.DBSummaryTable
 	err = m.db.Select(&summaryTable, sqlQuery, 2*dateRange, dateRange-1, 2*dateRange-1)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to execute SQL query for flake table: %v", err), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to execute SQL query for flake table: %v", err)
 	}
 	fmt.Printf("\nduration metric: took %f seconds to execute SQL query for summary failure change table since start of handler", time.Since(start).Seconds())
 
@@ -559,17 +473,6 @@ func (m *Postgres) ServeOverview(w http.ResponseWriter, _ *http.Request) {
 		"summaryAvgFail": summaryAvgFail,
 		"summaryTable":   summaryTable,
 	}
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		http.Error(w, "Failed to marshal JSON", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	_, err = w.Write(jsonData)
-	if err != nil {
-		http.Error(w, "Failed to write JSON data", http.StatusInternalServerError)
-		return
-	}
-	fmt.Printf("\nduration metric: took %f seconds to write json SQL response since start of handler\n\n\n", time.Since(start).Seconds())
+	fmt.Printf("\nduration metric: took %f seconds to gather summary data since start of handler\n", time.Since(start).Seconds())
+	return data, nil
 }

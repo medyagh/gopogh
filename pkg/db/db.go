@@ -2,7 +2,6 @@ package db
 
 import (
 	"fmt"
-	"net/http"
 	"os"
 
 	"github.com/medyagh/gopogh/pkg/models"
@@ -25,23 +24,23 @@ type config struct {
 	useIAMAuth bool
 }
 
-// datab is the database interface we support
-type datab interface {
+// Datab is the database interface we support
+type Datab interface {
 	Set(models.DBEnvironmentTest, []models.DBTestCase) error
 
 	Initialize() error
 
-	PrintEnvironmentTestsAndTestCases(http.ResponseWriter, *http.Request)
+	GetEnvironmentTestsAndTestCases() (map[string]interface{}, error)
 
-	ServeEnvCharts(http.ResponseWriter, *http.Request)
+	GetEnvCharts(string, int) (map[string]interface{}, error)
 
-	ServeOverview(http.ResponseWriter, *http.Request)
+	GetOverview() (map[string]interface{}, error)
 
-	ServeTestCharts(http.ResponseWriter, *http.Request)
+	GetTestCharts(string, string) (map[string]interface{}, error)
 }
 
 // newDB handles which database driver to use and initializes the db
-func newDB(cfg config) (datab, error) {
+func newDB(cfg config) (Datab, error) {
 	switch cfg.dbType {
 	case "sqlite":
 		return newSQLite(cfg)
@@ -54,7 +53,7 @@ func newDB(cfg config) (datab, error) {
 
 // FromEnv configures and returns a database instance.
 // backend and path parameters are default config, otherwise gets config from the environment variables DB_BACKEND and DB_PATH
-func FromEnv(fv FlagValues) (c datab, err error) {
+func FromEnv(fv FlagValues) (c Datab, err error) {
 	backend, err := getFlagOrEnv(fv.Backend, "DB_BACKEND")
 	if err != nil {
 		return nil, err
