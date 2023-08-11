@@ -124,12 +124,12 @@ func (m *Postgres) GetEnvironmentTestsAndTestCases() (map[string]interface{}, er
 	var environmentTests []models.DBEnvironmentTest
 	var testCases []models.DBTestCase
 
-	err := m.db.Select(&environmentTests, "SELECT * FROM db_environment_tests")
+	err := m.db.Select(&environmentTests, "SELECT * FROM db_environment_tests LIMIT 100")
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute SQL query for environment tests: %v", err)
 	}
 
-	err = m.db.Select(&testCases, "SELECT * FROM db_test_cases")
+	err = m.db.Select(&testCases, "SELECT * FROM db_test_cases LIMIT 100")
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute SQL query for test cases: %v", err)
 
