@@ -2,7 +2,6 @@ package db
 
 import (
 	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
 
@@ -114,7 +113,26 @@ func (m *sqlite) Initialize() error {
 	return nil
 }
 
-// PrintEnvironmentTestsAndTestCases writes the environment tests and test cases tables to an HTTP response in a combined page
+// GetEnvironmentTestsAndTestCases writes the database tables to a map with the keys environmentTests and testCases
 // This is not yet supported for sqlite
-func (m *sqlite) PrintEnvironmentTestsAndTestCases(_ http.ResponseWriter, _ *http.Request) {
+func (m *sqlite) GetEnvironmentTestsAndTestCases() (map[string]interface{}, error) {
+	return nil, nil
+}
+
+// GetEnvCharts writes the overall environment charts to a map with the keys recentFlakePercentTable, flakeRateByWeek, flakeRateByDay, and countsAndDurations
+// This is not yet supported for sqlite
+func (m *sqlite) GetEnvCharts(_ string, _ int) (map[string]interface{}, error) {
+	return nil, nil
+}
+
+// GetTestCharts writes the individual test chart data to a map with the keys flakeByDay and flakeByWeek
+// This is not yet supported for sqlite
+func (m *sqlite) GetTestCharts(_ string, _ string) (map[string]interface{}, error) {
+	return nil, nil
+}
+
+// GetOverview writes the overview charts to a map with the keys summaryAvgFail and summaryTable
+// This is not yet supported for sqlite
+func (m *sqlite) GetOverview() (map[string]interface{}, error) {
+	return nil, nil
 }

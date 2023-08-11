@@ -14,7 +14,7 @@ import (
 )
 
 // NewCloudSQL returns a new Google Cloud SQL database
-func NewCloudSQL(cfg config) (datab, error) {
+func NewCloudSQL(cfg config) (Datab, error) {
 	switch cfg.dbType {
 	case "postgres":
 		return newCloudPostgres(cfg)

@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/medyagh/gopogh/pkg/db"
+	"github.com/medyagh/gopogh/pkg/handler"
 )
 
 var dbPath = flag.String("db_path", "", "path to postgres db in the form of 'user=DB_USER dbname=DB_NAME password=DB_PASS'")
@@ -28,12 +29,23 @@ func main() {
 		UseCloudSQL: *useCloudSQL,
 		UseIAMAuth:  *useIAMAuth,
 	}
-	db, err := db.FromEnv(flagValues)
+	datab, err := db.FromEnv(flagValues)
 	if err != nil {
 		log.Fatal(err)
 	}
+	db := handler.DB{
+		Database: datab,
+	}
 	// Create an HTTP server and register the handlers
-	http.HandleFunc("/db", db.PrintEnvironmentTestsAndTestCases)
+	http.HandleFunc("/db", db.ServeEnvironmentTestsAndTestCases)
+
+	http.HandleFunc("/env", db.ServeEnvCharts)
+
+	http.HandleFunc("/test", db.ServeTestCharts)
+
+	http.HandleFunc("/summary", db.ServeOverview)
+
+	http.HandleFunc("/version", handler.ServeGopoghVersion)
 
 	// Start the HTTP server
 	err = http.ListenAndServe(":8080", nil)
