@@ -88,6 +88,10 @@ func (m *DB) ServeEnvCharts(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	if data == nil {
+		http.Error(w, err.Error(), http.StatusNotImplemented)
+		return
+	}
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		http.Error(w, "Failed to marshal JSON", http.StatusInternalServerError)
