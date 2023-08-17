@@ -221,9 +221,29 @@ func (m *Postgres) GetTestCharts(env string, test string) (map[string]interface{
 	}
 	log.Printf("\nduration metric: took %f seconds to execute SQL query for flake rate and duration by week chart since start of handler", time.Since(start).Seconds())
 
+	// Groups the datetimes together by month, calculating flake percentage and aggregating the individual results/durations for each date
+	sqlQuery = fmt.Sprintf(`
+	SELECT
+	DATE_TRUNC('month', TestTime) AS StartOfDate,
+	AVG(Duration) AS AvgDuration,
+	ROUND(COALESCE(AVG(CASE WHEN Result = 'fail' THEN 1 ELSE 0 END) * 100, 0), 2) AS FlakePercentage,
+	STRING_AGG(CommitID || ': ' || Result || ': ' || Duration, ', ') AS CommitResultsAndDurations
+	FROM %s 
+	WHERE TestName = $1
+	GROUP BY StartOfDate
+	ORDER BY StartOfDate DESC
+	`, viewName)
+	var flakeByMonth []models.DBTestRateAndDuration
+	err = m.db.Select(&flakeByMonth, sqlQuery, test)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute SQL query for flake rate and duration by month chart: %v", err)
+	}
+	log.Printf("\nduration metric: took %f seconds to execute SQL query for flake rate and duration by month chart since start of handler", time.Since(start).Seconds())
+
 	data := map[string]interface{}{
-		"flakeByDay":  flakeByDay,
-		"flakeByWeek": flakeByWeek,
+		"flakeByDay":   flakeByDay,
+		"flakeByWeek":  flakeByWeek,
+		"flakeByMonth": flakeByMonth,
 	}
 	log.Printf("\nduration metric: took %f seconds to gather individual test chart data since start of handler\n\n", time.Since(start).Seconds())
 	return data, nil
