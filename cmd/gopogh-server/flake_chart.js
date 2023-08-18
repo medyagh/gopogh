@@ -279,6 +279,98 @@ function displayTestAndEnvironmentChart(data, query) {
   chartsContainer.appendChild(flakeRateWeekContainer);
   const wChart = new google.visualization.LineChart(flakeRateWeekContainer);
   wChart.draw(weekChart, weekOptions);
+
+  const monthData = data.flakeByMonth
+  const monthChart = new google.visualization.DataTable();
+  monthChart.addColumn('date', 'Date');
+  monthChart.addColumn('number', 'Flake Percentage');
+  monthChart.addColumn({
+      type: 'string',
+      role: 'tooltip',
+      'p': {
+          'html': true
+      }
+  });
+  monthChart.addColumn('number', 'Duration');
+  monthChart.addColumn({
+      type: 'string',
+      role: 'tooltip',
+      'p': {
+          'html': true
+      }
+  });
+
+  console.log(monthChart)
+  monthChart.addRows(
+      monthData
+      .map(groupData => {
+          let dataArr = groupData.commitResultsAndDurations.split(',')
+          dataArr = dataArr.map((commit) => commit.split(":"))
+          const resultArr = dataArr.map((commit) => ({
+              id: commit[commit.length - 3],
+              status: (commit[commit.length - 2]).trim()
+          }))
+          const durationArr = dataArr.map((commit) => ({
+              id: commit[commit.length - 3],
+              status: (commit[commit.length - 2]).trim(),
+              duration: (commit[commit.length - 1]).trim()
+          }))
+
+          return [
+              new Date(groupData.startOfDate),
+              groupData.flakePercentage,
+              `<div style="padding: 1rem; font-family: 'Arial'; font-size: 14">
+          <b>Date:</b> ${groupData.startOfDate.toLocaleString([], {dateStyle: 'medium'})}<br>
+          <b>Flake Percentage:</b> ${groupData.flakePercentage.toFixed(2)}%<br>
+          <b>Jobs:</b><br>
+          ${resultArr.map(({ id, status }) => `  - <a href="${testGopoghLink(id, query.env, query.test, status)}">${id}</a> (${status})`).join("<br>")}
+          </div>`,
+              groupData.avgDuration,
+              `<div style="padding: 1rem; font-family: 'Arial'; font-size: 14">
+          <b>Date:</b> ${groupData.startOfDate.toLocaleString([], {dateStyle: 'medium'})}<br>
+          <b>Average Duration:</b> ${groupData.avgDuration.toFixed(2)}s<br>
+          <b>Jobs:</b><br>
+          ${durationArr.map(({ id, duration, status }) => `  - <a href="${testGopoghLink(id, query.env, query.test, status)}">${id}</a> (${duration}s)`).join("<br>")}
+          </div>`,
+          ]
+      })
+  );
+  const monthOptions = {
+      title: `Flake rate and duration by month of ${query.test} on ${query.env}`,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      pointSize: 10,
+      pointShape: "circle",
+      series: {
+          0: {
+              targetAxisIndex: 0
+          },
+          1: {
+              targetAxisIndex: 1
+          },
+      },
+      vAxes: {
+          0: {
+              title: "Flake rate",
+              minValue: 0,
+              maxValue: 100
+          },
+          1: {
+              title: "Duration (seconds)"
+          },
+      },
+      colors: ['#dc3912', '#3366cc'],
+      tooltip: {
+          trigger: "selection",
+          isHtml: true
+      }
+  };
+  const flakeRateMonthContainer = document.createElement("div");
+  flakeRateMonthContainer.style.width = "100vw";
+  flakeRateMonthContainer.style.height = "100vh";
+  chartsContainer.appendChild(flakeRateMonthContainer);
+  const mChart = new google.visualization.LineChart(flakeRateMonthContainer);
+  mChart.draw(monthChart, monthOptions);
 }
 
 function displaySummaryChart(data) {
