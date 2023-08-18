@@ -68,11 +68,18 @@ jobs:
               mac os
               curl -LO https://github.com/medyagh/gopogh/releases/download/${{ github.ref }}/gopogh-darwin-amd64 && sudo install gopogh-darwin-amd64 /usr/local/bin/gopogh
           files: ./out/*
-      - name: Publish to Docker Repository
+      - name: Publish gopogh to Docker Repository
         uses: elgohr/Publish-Docker-Github-Action@v5
         with:
           name: medyagh/gopogh
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
           tag_names: true
-
+      - name: Publish gopogh-server to Docker Repository
+        uses: elgohr/Publish-Docker-Github-Action@v5
+        with:
+          name: medyagh/gopogh-server
+          dockerfile: Dockerfile.server
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          tag_names: true
