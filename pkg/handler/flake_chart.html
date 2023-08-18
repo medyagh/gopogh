@@ -901,7 +901,7 @@ async function init() {
       } else {
           displayTestAndEnvironmentChart(data, query);
       }
-      url = basePath + '/version'
+      url = '/version'
 
       const verResponse = await fetch(url);
       if (!verResponse.ok) {
