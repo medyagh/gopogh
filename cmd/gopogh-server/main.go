@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"flag"
 	"log"
 	"net/http"
@@ -31,6 +32,7 @@ func main() {
 		Database: datab,
 	}
 	// Create an HTTP server and register the handlers
+
 	http.HandleFunc("/db", db.ServeEnvironmentTestsAndTestCases)
 
 	http.HandleFunc("/env", db.ServeEnvCharts)
@@ -40,6 +42,8 @@ func main() {
 	http.HandleFunc("/summary", db.ServeOverview)
 
 	http.HandleFunc("/version", handler.ServeGopoghVersion)
+
+	http.HandleFunc("/", handler.ServeHTML)
 
 	// Start the HTTP server
 	err = http.ListenAndServe(":8080", nil)

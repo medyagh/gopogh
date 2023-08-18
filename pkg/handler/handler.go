@@ -1,6 +1,7 @@
 package handler
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -13,6 +14,9 @@ import (
 type DB struct {
 	Database db.Datab
 }
+
+//go:embed flake_chart.html
+var flakeChartHTML string
 
 func (m *DB) ServeEnvironmentTestsAndTestCases(w http.ResponseWriter, _ *http.Request) {
 	data, err := m.Database.GetEnvironmentTestsAndTestCases()
@@ -157,4 +161,10 @@ func ServeGopoghVersion(w http.ResponseWriter, _ *http.Request) {
 		http.Error(w, "Failed to write JSON data", http.StatusInternalServerError)
 		return
 	}
+}
+
+func ServeHTML(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	fmt.Fprint(w, flakeChartHTML)
 }

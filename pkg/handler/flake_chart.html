@@ -1,4 +1,15 @@
-// Displays an error message to the UI. Any previous message will be erased.
+<html>
+  <head>
+    <meta http-equiv="CacheControl" content="no-cache, no-store, must-revalidate"/>
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <meta http-equiv="Expires" content="0"/>
+    
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js'></script>
+    <!-- Include sort types you need -->
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/sorts/tablesort.number.min.js'></script>
+    <script type="text/javascript">
+      // Displays an error message to the UI. Any previous message will be erased.
 function displayError(message) {
   // Clear the body of all children.
   while (document.body.firstChild) {
@@ -862,7 +873,7 @@ async function init() {
       await new Promise(resolve => google.charts.setOnLoadCallback(resolve));
 
       let url;
-      const basePath = 'http://localhost:8080' // Base Server Path. Modify to actual server path if deploying
+      const basePath = ':8080' // Base Server Path. Modify to actual server path if deploying
       if (desiredEnvironment === undefined) {
           // URL for displaySummaryChart
           url = basePath + '/summary'
@@ -906,3 +917,23 @@ async function init() {
 }
 
 init();
+    </script>
+    <style>
+      table {
+        border: 1px solid gray;
+        margin-left: auto;
+        margin-right: auto;
+        border-collapse: collapse;
+      }
+      td, th {
+        border-bottom: 1px solid gray;
+        padding: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="dropdown_container"></div>
+    <div id="chart_div"></div>
+    <div id="version_div"></div>
+  </body>
+</html>
