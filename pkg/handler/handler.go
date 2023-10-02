@@ -120,8 +120,13 @@ func (m *DB) ServeEnvCharts(w http.ResponseWriter, r *http.Request) {
 }
 
 // ServeOverview writes the overview chart for all of the environments to a JSON HTTP response
-func (m *DB) ServeOverview(w http.ResponseWriter, _ *http.Request) {
-	data, err := m.Database.GetOverview()
+func (m *DB) ServeOverview(w http.ResponseWriter, r *http.Request) {
+	dateRange, err := strconv.Atoi(r.URL.Query().Get("date_range"))
+	if err != nil {
+		dateRange = 15
+	}
+
+	data, err := m.Database.GetOverview(dateRange)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -34,7 +34,7 @@ type Datab interface {
 
 	GetEnvCharts(string, int) (map[string]interface{}, error)
 
-	GetOverview() (map[string]interface{}, error)
+	GetOverview(dataRange int) (map[string]interface{}, error)
 
 	GetTestCharts(string, string) (map[string]interface{}, error)
 }

@@ -38,8 +38,38 @@ function parseUrlQuery(query) {
       return [unescape(keyValue[0]), unescape(keyValue[1])];
   }));
 }
+function createDateRangeSelectForFailTable(table){
+  let tableCapturedByLambda = table
+  let dateSelect = document.createElement("select")
+  dateSelect.innerHTML = "<option value=3>3</option> <option value=7>7</option>  <option value=15 selected='selected'>15</option>"
+  dateSelect.addEventListener('click', async function (event) {
+    // stop the onClick event from propagation to its parent 
+    event.stopPropagation();
+  }, false);  
+  dateSelect.addEventListener("change", async function(event){
+    // when a new date range is selected
+    // fetch new data and replace old table with new table
+    const parent = tableCapturedByLambda.parentElement
+    const dateRange = dateSelect.options[dateSelect.selectedIndex].value
+    const response = await fetch("/summary?date_range="+dateRange);
+      if (!response.ok) {
+          throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      let newTable = createRecentNumberOfFailTable(data.summaryTable, dateRange)
+      parent.replaceChild(newTable, tableCapturedByLambda)
+      tableCapturedByLambda = newTable
+  })
+  let wrapper = document.createElement("div")
+  wrapper.style.width = "100%"
+  wrapper.style.textAlign = "center"
+  wrapper.innerHTML = "Show Growth within "
+  wrapper.insertAdjacentElement("beforeend", dateSelect)
+  wrapper.insertAdjacentHTML("beforeend", " days")
 
-function createRecentNumberOfFailTable(summaryTable) {
+  return wrapper
+}
+function createRecentNumberOfFailTable(summaryTable, dateRange=15) {
   const createCell = (elementType, text) => {
       const element = document.createElement(elementType);
       element.innerHTML = text;
@@ -50,7 +80,7 @@ function createRecentNumberOfFailTable(summaryTable) {
   tableHeaderRow.appendChild(createCell("th", "Rank"));
   tableHeaderRow.appendChild(createCell("th", "Env Name")).style.textAlign = "left";
   tableHeaderRow.appendChild(createCell("th", "Recent Number of Fails"));
-  tableHeaderRow.appendChild(createCell("th", "Growth (since last 15 days)"));
+  tableHeaderRow.appendChild(createCell("th", `Growth (since last ${dateRange} days)`));
   table.appendChild(tableHeaderRow);
   const tableBody = document.createElement("tbody");
   for (let i = 0; i < summaryTable.length; i++) {
@@ -521,8 +551,10 @@ function displaySummaryChart(data) {
   const durationChart = new google.visualization.LineChart(summaryDurContainer);
   durationChart.draw(durChart, durOptions);
 
-
-  chartsContainer.appendChild(createRecentNumberOfFailTable(data.summaryTable))
+  const table=createRecentNumberOfFailTable(data.summaryTable)
+  const select=createDateRangeSelectForFailTable(table)
+  chartsContainer.appendChild(select)
+  chartsContainer.appendChild(table)
 }
 
 function displayEnvironmentChart(data, query) {
