@@ -3,7 +3,7 @@ module github.com/medyagh/gopogh
 go 1.20
 
 require (
-	cloud.google.com/go/cloudsqlconn v1.4.5
+	cloud.google.com/go/cloudsqlconn v1.5.0
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.13
 	github.com/jackc/pgx/v4 v4.18.1
 	github.com/jmoiron/sqlx v1.3.5
