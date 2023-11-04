@@ -92,3 +92,6 @@ azure_blob_connection_string: ## set this env export AZURE_STORAGE_CONNECTION_ST
 .PHONY: bump-version
 bump-version:
 	sed -i 's/var Version = \".*\"/var Version = \"$(VERSION)\"/' pkg/report/types.go
+
+load-fake-db:
+	./hack/fakedb.sh $(RECORD_PATH)
