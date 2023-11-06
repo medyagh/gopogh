@@ -11,3 +11,4 @@ testdata/docker-test/testout.json
 testdata/docker-test/testout.html
 ./gopogh
 cmd/gopogh-server/gopogh-server
+.vscode

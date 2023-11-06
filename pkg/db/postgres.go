@@ -424,7 +424,8 @@ func (m *Postgres) GetEnvCharts(env string, testsInTop int) (map[string]interfac
 }
 
 // GetOverview writes the overview charts to a map with the keys summaryAvgFail and summaryTable
-func (m *Postgres) GetOverview() (map[string]interface{}, error) {
+func (m *Postgres) GetOverview(dateRange int) (map[string]interface{}, error) {
+	// dateRange is the number of days to use to look for "flaky-est" envs.
 	start := time.Now()
 	// Filters out old data and calculates the average number of failures and average duration per day per environment
 	sqlQuery := `
@@ -441,9 +442,6 @@ func (m *Postgres) GetOverview() (map[string]interface{}, error) {
 		return nil, fmt.Errorf("failed to execute SQL query for summary chart: %v", err)
 	}
 	log.Printf("\nduration metric: took %f seconds to execute SQL query for summary duration and failure charts since start of handler", time.Since(start).Seconds())
-
-	// Number of days to use to look for "flaky-est" envs.
-	const dateRange = 15
 
 	// Filters out data from prior to 90 days
 	// Then computes average number of fails for each environment for each time frame

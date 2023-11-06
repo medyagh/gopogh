@@ -133,6 +133,6 @@ func (m *sqlite) GetTestCharts(_ string, _ string) (map[string]interface{}, erro
 
 // GetOverview writes the overview charts to a map with the keys summaryAvgFail and summaryTable
 // This is not yet supported for sqlite
-func (m *sqlite) GetOverview() (map[string]interface{}, error) {
+func (m *sqlite) GetOverview(int) (map[string]interface{}, error) {
 	return nil, nil
 }
