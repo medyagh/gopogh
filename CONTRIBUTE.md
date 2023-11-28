@@ -1,6 +1,6 @@
 # Contribute Guide
-# 1. Gopogh-server
-# 1.1 Test in a local database
+## 1. Gopogh-server
+### 1.1 Test in a local database
 In reality gopogh server uses the CloudSQL, which may cause some problems for developers if they want to test it locally on a PC. Besides lacking actual data can also influence the local development. Here we provide a guide for to generate a fake database locally with the actual data provided.
 
 ### 1.1.1 get the dumped database
