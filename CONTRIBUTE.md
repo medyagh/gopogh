@@ -34,5 +34,5 @@ It runs the shell script hack/fakedb.sh, which
 *NB: The original dumped DB record is too big and it may take a long time to modify all the records. If that time it no acceptable for you, you can shrink the DB record by yourself*
 
 #### Why we need to modify the timestamp
-Gopogh server only present test records within 90 days. So if you only use the database record, which ends at 2023/09/07, you will see noting. So what we do in that golang script is to find out the duration between today and the latest timestamp, and add the duration to all the records (e.g. if today was 1013/10/07 then we would add 30days to all the timestamps in all the records) 
+Gopogh server only present test records within 90 days. So if you only use the database record, which ends at 2023/09/07, you will see nothing. So what we do in that golang script is to find out the duration between today and the latest timestamp, and add the duration to all the records (e.g. if today was 1013/10/07 then we would add 30days to all the timestamps in all the records) 
 
