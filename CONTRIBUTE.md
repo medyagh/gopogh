@@ -6,7 +6,7 @@ In reality gopogh server uses the CloudSQL, which may cause some problems for de
 ### 1.1.1 get the dumped database
 [Here](https://storage.googleapis.com/minikube-flake-rate/Backup_Cloud_SQL_Export_2023-10-09%20(11%3A18%3A19).sql) you can download the dumped databse
 
-*NB: This file is about 4.6G. If this database record is too big for your local db, you can modify shirnk them with SQL DELETE command by yourself*
+*NB: This file is about 4.6G. If this database record is too big for your local db, you can modify shrink them with SQL DELETE command by yourself*
 
 
 ### 1.1.2 start a postgres database locally
