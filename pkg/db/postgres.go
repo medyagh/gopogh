@@ -150,15 +150,8 @@ func (m *Postgres) createMaterializedView(env string, viewName string) error {
 		WHERE Result != 'skip' AND EnvName = '%s' AND TestTime >= NOW() - INTERVAL '90 days'
 	`, viewName, env)
 
-	if _, err := m.db.Exec(createView); err != nil {
-		return err
-	}
-	// refresh the materialzed view
-	refreshView := fmt.Sprintf("REFRESH MATERIALIZED VIEW %s ;", viewName)
-	if _, err := m.db.Exec(refreshView); err != nil {
-		return err
-	}
-	return nil
+	_, err := m.db.Exec(createView)
+	return err
 }
 
 // GetTestCharts writes the individual test chart data to a map with the keys flakeByDay and flakeByWeek
