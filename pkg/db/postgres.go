@@ -153,9 +153,11 @@ func (m *Postgres) createMaterializedView(env string, viewName string) error {
 	if _, err := m.db.Exec(createView); err != nil {
 		return err
 	}
-	// refresh the materialzed view
-	refreshView := fmt.Sprintf("REFRESH MATERIALIZED VIEW %s ;", viewName)
-	if _, err := m.db.Exec(refreshView); err != nil {
+
+	// if we add a new test environment the service account will be the owner of the newly created materalized view above
+	// but we require postgres to be the owner for the cron that refreshes the materialized view to run
+	alterOwner := fmt.Sprintf("ALTER MATERIALIZED VIEW %s OWNER TO postgres;", viewName)
+	if _, err := m.db.Exec(alterOwner); err != nil {
 		return err
 	}
 	return nil
