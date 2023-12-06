@@ -19,7 +19,7 @@ out/gopogh:
 
 .PHONY: out/gopogh-darwin-arm64
 out/gopogh-darwin-arm64:
-	GOOS=darwin GOARCH=arm6 $(BUILD_GOPOGH) $@ $(GOPOGH_CMD)
+	GOOS=darwin GOARCH=arm64 $(BUILD_GOPOGH) $@ $(GOPOGH_CMD)
 
 .PHONY: out/gopogh-darwin-amd64
 out/gopogh-darwin-amd64:
@@ -52,7 +52,7 @@ out/gopogh-server:
 
 .PHONY: out/gopogh-server-darwin-arm64
 out/gopogh-server-darwin-arm64:
-        GOOS=darwin GOARCH=arm6 $(BUILD_GOPOGH) $@ $(GOPOGH_SERVER_CMD)
+        GOOS=darwin GOARCH=arm64 $(BUILD_GOPOGH) $@ $(GOPOGH_SERVER_CMD)
 
 .PHONY: out/gopogh-server-darwin-amd64
 out/gopogh-server-darwin-amd64:
