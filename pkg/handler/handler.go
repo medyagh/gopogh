@@ -152,7 +152,7 @@ func (m *DB) ServeOverview(w http.ResponseWriter, r *http.Request) {
 // ServeGopoghVersion writes the gopogh version to a json response
 func ServeGopoghVersion(w http.ResponseWriter, _ *http.Request) {
 	data := map[string]interface{}{
-		"version": report.Version,
+		"version": report.Version(),
 	}
 	jsonData, err := json.Marshal(data)
 	if err != nil {
