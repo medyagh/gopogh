@@ -3,7 +3,7 @@ module github.com/medyagh/gopogh
 go 1.20
 
 require (
-	cloud.google.com/go/cloudsqlconn v1.5.1
+	cloud.google.com/go/cloudsqlconn v1.5.2
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.15
 	github.com/jackc/pgx/v4 v4.18.1
 	github.com/jmoiron/sqlx v1.3.5
@@ -55,9 +55,9 @@ require (
 	golang.org/x/oauth2 v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	google.golang.org/api v0.152.0 // indirect
+	google.golang.org/api v0.153.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20231120223509-83a465c0220f // indirect
-	google.golang.org/grpc v1.59.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20231211222908-989df2bf70f3 // indirect
+	google.golang.org/grpc v1.60.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 )
