@@ -35,7 +35,7 @@ var (
 func main() {
 	flag.Parse()
 	if *version {
-		fmt.Printf("Version %s Build %s", report.Version, report.Build)
+		fmt.Printf("Version %s Build %s", report.Version(), report.Build)
 	}
 
 	if *inPath == "" {

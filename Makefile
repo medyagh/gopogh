@@ -2,35 +2,77 @@ BINARY=/out/gopogh
 GIT_TAG=`git describe --tags`
 COMMIT_NO := $(shell git rev-parse HEAD 2> /dev/null || true)
 BUILD ?= $(if $(shell git status --porcelain --untracked-files=no),"${COMMIT_NO}-dirty","${COMMIT_NO}")
-LDFLAGS :=-X github.com/medyagh/gopogh/pkg/report.Build=${BUILD}
-VERSION := v0.17.0
+LDFLAGS :=-X github.com/medyagh/gopogh/pkg/report.Build=${BUILD} -X github.com/medyagh/gopogh/pkg/report.version=${GIT_TAG}
 MK_REPO=github.com/kubernetes/minikube/
 DUMMY_COMMIT_NUM=0c07e808219403a7241ee5a0fc6a85a897594339
 DUMMY_COMMIT2_NUM=0168d63fc8c165681b1cad1801eadd6bbe2c8a5c
+
+BUILD_GOPOGH := CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -a -o
+GOPOGH_CMD := github.com/medyagh/gopogh/cmd/gopogh
 
 .PHONY: build
 build: out/gopogh
 
 .PHONY: out/gopogh
-out/gopogh: 
-	CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
+out/gopogh:
+	$(BUILD_GOPOGH) $@ $(GOPOGH_CMD)
 
+.PHONY: out/gopogh-darwin-arm64
 out/gopogh-darwin-arm64:
-	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
+	GOOS=darwin GOARCH=arm64 $(BUILD_GOPOGH) $@ $(GOPOGH_CMD)
 
+.PHONY: out/gopogh-darwin-amd64
 out/gopogh-darwin-amd64:
-	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
+	GOOS=darwin GOARCH=amd64 $(BUILD_GOPOGH) $@ $(GOPOGH_CMD)
 
-out/gopogh-linux-amd64: 
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
+.PHONY: out/gopogh-linux-amd64
+out/gopogh-linux-amd64:
+	GOOS=linux GOARCH=amd64 $(BUILD_GOPOGH) $@ $(GOPOGH_CMD)
 
-out/gopogh-linux-arm: 
-	CGO_ENABLED=0 GOOS=linux GOARCH=arm go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
+.PHONY: out/gopogh-linux-arm
+out/gopogh-linux-arm:
+	GOOS=linux GOARCH=arm $(BUILD_GOPOGH) $@ $(GOPOGH_CMD)
 
+.PHONY: out/gopogh-linux-arm64
 out/gopogh-linux-arm64:
-	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
-out/gopogh.exe: 
-	CGO_ENABLED=0 GOOS=windows GOARCH=amd64  go build -ldflags="$(LDFLAGS)" -a -o $@ github.com/medyagh/gopogh/cmd/gopogh
+	GOOS=linux GOARCH=arm64 $(BUILD_GOPOGH) $@ $(GOPOGH_CMD)
+
+.PHONY: out/gopogh.exe
+out/gopogh.exe:
+	GOOS=windows GOARCH=amd64 $(BUILD_GOPOGH) $@ $(GOPOGH_CMD)
+
+GOPOGH_SERVER_CMD := github.com/medyagh/gopogh/cmd/gopogh-server
+
+.PHONY: server
+server: out/gopogh-server
+
+.PHONY: out/gopogh-server
+out/gopogh-server:
+	$(BUILD_GOPOGH) $@ $(GOPOGH_SERVER_CMD)
+
+.PHONY: out/gopogh-server-darwin-arm64
+out/gopogh-server-darwin-arm64:
+        GOOS=darwin GOARCH=arm64 $(BUILD_GOPOGH) $@ $(GOPOGH_SERVER_CMD)
+
+.PHONY: out/gopogh-server-darwin-amd64
+out/gopogh-server-darwin-amd64:
+        GOOS=darwin GOARCH=amd64 $(BUILD_GOPOGH) $@ $(GOPOGH_SERVER_CMD)
+
+.PHONY: out/gopogh-server-linux-amd64
+out/gopogh-server-linux-amd64:
+        GOOS=linux GOARCH=amd64 $(BUILD_GOPOGH) $@ $(GOPOGH_SERVER_CMD)
+
+.PHONY: out/gopogh-server-linux-arm
+out/gopogh-server-linux-arm:
+        GOOS=linux GOARCH=arm $(BUILD_GOPOGH) $@ $(GOPOGH_SERVER_CMD)
+
+.PHONY: out/gopogh-server-linux-arm64
+out/gopogh-server-linux-arm64:
+        GOOS=linux GOARCH=arm64 $(BUILD_GOPOGH) $@ $(GOPOGH_SERVER_CMD)
+
+.PHONY: out/gopogh-server.exe
+out/gopogh-server.exe:
+        GOOS=windows GOARCH=amd64 $(BUILD_GOPOGH) $@ $(GOPOGH_SERVER_CMD)
 
 # gopogh requires a json input, uses go tool test2json to convert to json
 generate_json:
@@ -87,11 +129,6 @@ test-in-docker:
 .PHONY: azure_blob_connection_string
 azure_blob_connection_string: ## set this env export AZURE_STORAGE_CONNECTION_STRING=$(az storage account show-connection-string -n $AZ_STORAGE -g $AZ_RG --query connectionString -o tsv)
 	az storage account show-connection-string -n ${AZ_STORAGE} -g ${AZ_RG} --query connectionString -o tsv
-
-
-.PHONY: bump-version
-bump-version:
-	sed -i 's/var Version = \".*\"/var Version = \"$(VERSION)\"/' pkg/report/types.go
 
 load-fake-db:
 	./hack/fakedb.sh $(RECORD_PATH)

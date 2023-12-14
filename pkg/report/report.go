@@ -70,7 +70,7 @@ func (c DisplayContent) ShortSummary() ([]byte, error) {
 	ss.NumberOfTests = ss.NumberOfFail + ss.NumberOfPass + ss.NumberOfSkip
 	ss.TotalDuration = c.TotalDuration
 	ss.Detail = c.Detail
-	ss.GopoghVersion = Version
+	ss.GopoghVersion = Version()
 	ss.GopoghBuild = Build
 	return json.MarshalIndent(ss, "", "    ")
 }
@@ -190,7 +190,7 @@ func Generate(report models.ReportDetail, groups []models.TestGroup) (DisplayCon
 		Results:       rs,
 		TotalTests:    testsNumber,
 		TotalDuration: math.Round(endTime.Sub(startTime).Seconds()*100) / 100,
-		BuildVersion:  Version + "_" + Build,
+		BuildVersion:  Version() + "_" + Build,
 		CreatedOn:     time.Now(),
 		Detail:        report,
 		TestTime:      startTime,
