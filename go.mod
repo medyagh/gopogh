@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	cloud.google.com/go/cloudsqlconn v1.6.0
-	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.15
+	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.16
 	github.com/jackc/pgx/v4 v4.18.1
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.9

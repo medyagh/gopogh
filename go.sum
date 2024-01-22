@@ -6,8 +6,8 @@ cloud.google.com/go/compute v1.23.3/go.mod h1:VCgBUoMnIVIR0CscqQiPJLAG25E3ZRZMzc
 cloud.google.com/go/compute/metadata v0.2.3 h1:mg4jlk7mCAj6xXp9UJ4fjI9VUI5rubuGBW5aJ7UnBMY=
 cloud.google.com/go/compute/metadata v0.2.3/go.mod h1:VAV5nSsACxMJvgaAuX6Pk2AawlZn8kiOGuCv6gTkwuA=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
-github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.15 h1:7VpdhpAaNeplth/YEdmtrqfeJgFsRBOxxRyjrozksgA=
-github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.15/go.mod h1:3g3UWOGAuHmmiroIbIgM0Nb/N/eVpiEQ3LMdrkYGOyw=
+github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.16 h1:gCxB0uynRIoPZxAQ+LOp+OIvorqsFuKqTUq+EomIAzY=
+github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.16/go.mod h1:wa2mRxdVa5tjgSREvElo+9PgDUXCvEF0KDTDw5dj8+g=
 github.com/Masterminds/semver/v3 v3.1.1 h1:hLg3sBzpNErnxhQtUy/mmLR2I9foDujNK030IGemrRc=
 github.com/Masterminds/semver/v3 v3.1.1/go.mod h1:VPu/7SZ7ePZ3QOrcuXROw5FAcLl4a0cBrbBpGY/8hQs=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
