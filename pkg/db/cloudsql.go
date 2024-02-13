@@ -58,7 +58,7 @@ func iamAuth(cfg config) (*sqlx.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parsing config: %v", err)
 	}
-	config.DialFunc = func(ctx context.Context, network, instance string) (net.Conn, error) {
+	config.DialFunc = func(ctx context.Context, _, _ string) (net.Conn, error) {
 		return d.Dial(ctx, cfg.host)
 	}
 	dbURI := stdlib.RegisterConnConfig(config)
