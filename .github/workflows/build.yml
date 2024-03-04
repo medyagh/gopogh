@@ -3,6 +3,7 @@ on:
     paths:
       - "**.go"
       - "**.yml"
+      - "go.mod"
   push:
     branches:
       - master
