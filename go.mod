@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	cloud.google.com/go/cloudsqlconn v1.8.1
-	github.com/GoogleCloudPlatform/cloudsql-proxy v1.34.0
+	github.com/GoogleCloudPlatform/cloudsql-proxy v1.34.1
 	github.com/jackc/pgx/v4 v4.18.3
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.9
@@ -56,7 +56,7 @@ require (
 	golang.org/x/oauth2 v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	google.golang.org/api v0.169.0 // indirect
+	google.golang.org/api v0.170.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240311173647-c811ad7063a7 // indirect
 	google.golang.org/grpc v1.62.1 // indirect
