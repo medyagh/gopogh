@@ -8,7 +8,7 @@ require (
 	github.com/jackc/pgx/v4 v4.18.3
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.9
-	modernc.org/sqlite v1.29.7
+	modernc.org/sqlite v1.29.8
 )
 
 require (
