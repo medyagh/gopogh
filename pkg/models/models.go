@@ -98,7 +98,10 @@ type DBSummaryAvgFail struct {
 
 // DBSummaryTable represents a row in the summary number of fail table
 type DBSummaryTable struct {
-	EnvName            string  `json:"envName"`
-	RecentNumberOfFail float32 `json:"recentNumberOfFail"`
-	Growth             float32 `json:"growth"`
+	EnvName              string  `json:"envName"`
+	RecentNumberOfFail   float32 `json:"recentNumberOfFail"`
+	Growth               float32 `json:"growth"`
+	TestDuration         float32 `json:"testDuration"`
+	PreviousTestDuration float32 `json:"previousTestDuration"`
+	TestDurationGrowth   float32 `json:"testDurationGrowth"`
 }

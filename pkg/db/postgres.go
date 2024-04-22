@@ -478,14 +478,16 @@ func (m *Postgres) GetOverview(dateRange int) (map[string]interface{}, error) {
 		OFFSET $3
 		LIMIT 1
 	), temp AS (
-	SELECT EnvName,
+	SELECT data.EnvName,
 	ROUND(COALESCE(AVG(CASE WHEN TestTime > (SELECT Date FROM recentCutoff) THEN NumberOfFail END), 0), 2) AS RecentNumberOfFail,
-	ROUND(COALESCE(AVG(CASE WHEN TestTime <= (SELECT Date FROM recentCutoff) AND TestTime > (SELECT Date FROM prevCutoff) THEN NumberOfFail END), 0), 2) AS PrevNumberOfFail
+	ROUND(COALESCE(AVG(CASE WHEN TestTime <= (SELECT Date FROM recentCutoff) AND TestTime > (SELECT Date FROM prevCutoff) THEN NumberOfFail END), 0), 2) AS PrevNumberOfFail,
+	COALESCE((SELECT TotalDuration FROM data As B WHERE B.EnvName=data.EnvName ORDER BY TestTime DESC LIMIT 1),0)As TestDuration,
+	COALESCE((SELECT TotalDuration FROM data As B WHERE B.EnvName=data.EnvName ORDER BY TestTime DESC OFFSET 1 LIMIT 1),0)As PreviousTestDuration
 	FROM data
 	GROUP BY EnvName
 	ORDER BY RecentNumberOfFail DESC
 	)
-	SELECT EnvName, RecentNumberOfFail, RecentNumberOfFail - PrevNumberOfFail AS Growth
+	SELECT EnvName, RecentNumberOfFail, RecentNumberOfFail - PrevNumberOfFail AS Growth, TestDuration,PreviousTestDuration, TestDuration-PreviousTestDuration AS TestDurationGROWTH
 	FROM temp
 	ORDER BY RecentNumberOfFail DESC;
 	`
