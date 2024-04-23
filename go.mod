@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/cloudsqlconn v1.9.0
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.35.1
 	github.com/jackc/pgx/v4 v4.18.3
-	github.com/jmoiron/sqlx v1.3.5
+	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.10.9
 	modernc.org/sqlite v1.29.8
 )
