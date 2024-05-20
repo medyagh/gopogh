@@ -91,16 +91,17 @@ function createRecentNumberOfFailTable(summaryTable, dateRange=15) {
           recentNumberOfFail,
           growth,
           testDuration,
-          //previousTestDuration,
+          previousTestDuration,
           testDurationGrowth
       } = summaryTable[i];
+      const testDurationGrowthPercentage = (previousTestDuration===0)?0:(testDurationGrowth*100/previousTestDuration)
       const row = document.createElement("tr");
       row.appendChild(createCell("td", "" + (i + 1))).style.textAlign = "center";
       row.appendChild(createCell("td", `<a href="${window.location.pathname}?env=${envName}">${envName}</a>`));
       row.appendChild(createCell("td", recentNumberOfFail)).style.textAlign = "right";
       row.appendChild(createCell("td", `<span style="color: ${growth === 0 ? "black" : (growth > 0 ? "red" : "green")}">${growth > 0 ? '+' + growth : growth}</span>`)).style.textAlign = "right";
       row.appendChild(createCell("td", testDuration)).style.textAlign = "right";
-      row.appendChild(createCell("td", `<span style="color: ${testDurationGrowth === 0 ? "black" : (testDurationGrowth > 0 ? "red" : "green")}">${testDurationGrowth > 0 ? '+' + testDurationGrowth : testDurationGrowth}</span>`)).style.textAlign = "right";
+      row.appendChild(createCell("td", `<span style="color: ${testDurationGrowthPercentage === 0 ? "black" : (testDurationGrowthPercentage > 0 ? "red" : "green")}">${testDurationGrowthPercentage > 0 ? '+' + testDurationGrowthPercentage.toFixed(3) : testDurationGrowthPercentage.toFixed(3)} %</span>`)).style.textAlign = "right";
       tableBody.appendChild(row);
   }
   table.appendChild(tableBody);
