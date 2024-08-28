@@ -28,6 +28,10 @@ const testGopoghLink = (jobId, environment, testName, status) => {
   return `https://storage.googleapis.com/minikube-builds/logs/master/${jobId}/${environment}.html${testName ? `#${status}_${testName}` : ``}`;
 }
 
+function sortByID(a, b) {
+  return a.id - b.id;
+}
+
 // Parse URL search `query` into [{key, value}].
 function parseUrlQuery(query) {
   if (query[0] === '?') {
@@ -188,14 +192,14 @@ function displayTestAndEnvironmentChart(data, query) {
           <b>Date:</b> ${groupData.startOfDate.toLocaleString([], {dateStyle: 'medium'})}<br>
           <b>Flake Percentage:</b> ${groupData.flakePercentage.toFixed(2)}%<br>
           <b>Jobs:</b><br>
-          ${resultArr.map(({ id, status }) => `  - <a href="${testGopoghLink(id, query.env, query.test, status)}">${id}</a> (${status})`).join("<br>")}
+          ${resultArr.sort(sortByID).map(({ id, status }) => `  - <a href="${testGopoghLink(id, query.env, query.test, status)}">${id}</a> (${status})`).join("<br>")}
           </div>`,
               groupData.avgDuration,
               `<div style="padding: 1rem; font-family: 'Arial'; font-size: 14">
           <b>Date:</b> ${groupData.startOfDate.toLocaleString([], {dateStyle: 'medium'})}<br>
           <b>Average Duration:</b> ${groupData.avgDuration.toFixed(2)}s<br>
           <b>Jobs:</b><br>
-          ${durationArr.map(({ id, duration, status }) => `  - <a href="${testGopoghLink(id, query.env, query.test, status)}">${id}</a> (${duration}s)`).join("<br>")}
+          ${durationArr.sort(sortByID).map(({ id, duration, status }) => `  - <a href="${testGopoghLink(id, query.env, query.test, status)}">${id}</a> (${duration}s)`).join("<br>")}
           </div>`,
           ]
       })
@@ -280,14 +284,14 @@ function displayTestAndEnvironmentChart(data, query) {
           <b>Date:</b> ${groupData.startOfDate.toLocaleString([], {dateStyle: 'medium'})}<br>
           <b>Flake Percentage:</b> ${groupData.flakePercentage.toFixed(2)}%<br>
           <b>Jobs:</b><br>
-          ${resultArr.map(({ id, status }) => `  - <a href="${testGopoghLink(id, query.env, query.test, status)}">${id}</a> (${status})`).join("<br>")}
+          ${resultArr.sort(sortByID).map(({ id, status }) => `  - <a href="${testGopoghLink(id, query.env, query.test, status)}">${id}</a> (${status})`).join("<br>")}
           </div>`,
               groupData.avgDuration,
               `<div style="padding: 1rem; font-family: 'Arial'; font-size: 14">
           <b>Date:</b> ${groupData.startOfDate.toLocaleString([], {dateStyle: 'medium'})}<br>
           <b>Average Duration:</b> ${groupData.avgDuration.toFixed(2)}s<br>
           <b>Jobs:</b><br>
-          ${durationArr.map(({ id, duration, status }) => `  - <a href="${testGopoghLink(id, query.env, query.test, status)}">${id}</a> (${duration}s)`).join("<br>")}
+          ${durationArr.sort(sortByID).map(({ id, duration, status }) => `  - <a href="${testGopoghLink(id, query.env, query.test, status)}">${id}</a> (${duration}s)`).join("<br>")}
           </div>`,
           ]
       })
@@ -372,14 +376,14 @@ function displayTestAndEnvironmentChart(data, query) {
           <b>Date:</b> ${groupData.startOfDate.toLocaleString([], {dateStyle: 'medium'})}<br>
           <b>Flake Percentage:</b> ${groupData.flakePercentage.toFixed(2)}%<br>
           <b>Jobs:</b><br>
-          ${resultArr.map(({ id, status }) => `  - <a href="${testGopoghLink(id, query.env, query.test, status)}">${id}</a> (${status})`).join("<br>")}
+          ${resultArr.sort(sortByID).map(({ id, status }) => `  - <a href="${testGopoghLink(id, query.env, query.test, status)}">${id}</a> (${status})`).join("<br>")}
           </div>`,
               groupData.avgDuration,
               `<div style="padding: 1rem; font-family: 'Arial'; font-size: 14">
           <b>Date:</b> ${groupData.startOfDate.toLocaleString([], {dateStyle: 'medium'})}<br>
           <b>Average Duration:</b> ${groupData.avgDuration.toFixed(2)}s<br>
           <b>Jobs:</b><br>
-          ${durationArr.map(({ id, duration, status }) => `  - <a href="${testGopoghLink(id, query.env, query.test, status)}">${id}</a> (${duration}s)`).join("<br>")}
+          ${durationArr.sort(sortByID).map(({ id, duration, status }) => `  - <a href="${testGopoghLink(id, query.env, query.test, status)}">${id}</a> (${duration}s)`).join("<br>")}
           </div>`,
           ]
       })
@@ -629,7 +633,7 @@ function displayEnvironmentChart(data, query) {
           <b>Date:</b> ${dateTime.toLocaleString([], {dateStyle: 'medium'})}<br>
           <b>Flake Percentage:</b> ${+fp.toFixed(2)}%<br>
           <b>Jobs:</b><br>
-          ${commitArr.map(({ id, status }) => `  - <a href="${testGopoghLink(id, query.env, name, status)}">${id}</a> (${status})`).join("<br>")}
+          ${commitArr.sort(sortByID).map(({ id, status }) => `  - <a href="${testGopoghLink(id, query.env, name, status)}">${id}</a> (${status})`).join("<br>")}
           </div>`
           ]
       }
@@ -726,7 +730,7 @@ function displayEnvironmentChart(data, query) {
           <b>Date:</b> ${dateTime.toLocaleString([], {dateStyle: 'medium'})}<br>
           <b>Flake Percentage:</b> ${+fp.toFixed(2)}%<br>
           <b>Jobs:</b><br>
-          ${commitArr.map(({ id, status }) => `  - <a href="${testGopoghLink(id, query.env, name, status)}">${id}</a> (${status})`).join("<br>")}
+          ${commitArr.sort(sortByID).map(({ id, status }) => `  - <a href="${testGopoghLink(id, query.env, name, status)}">${id}</a> (${status})`).join("<br>")}
           </div>`
               ];
           }
