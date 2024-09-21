@@ -132,13 +132,15 @@ function createRecentFlakePercentageTable(recentFlakePercentTable, query) {
   for (let i = 0; i < recentFlakePercentTable.length; i++) {
       const {
           testName,
+	      failedTestNum,
+          totalTestNum,
           recentFlakePercentage,
           growthRate
       } = recentFlakePercentTable[i];
       const row = document.createElement("tr");
       row.appendChild(createCell("td", "" + (i + 1))).style.textAlign = "center";
       row.appendChild(createCell("td", `<a href="${window.location.pathname}?env=${query.env}&test=${testName}">${testName}</a>`));
-      row.appendChild(createCell("td", recentFlakePercentage + "%")).style.textAlign = "right";
+      row.appendChild(createCell("td", recentFlakePercentage + "%(" + failedTestNum + "/" + totalTestNum + ")")).style.textAlign = "right";
       row.appendChild(createCell("td", `<span style="color: ${growthRate === 0 ? "black" : (growthRate > 0 ? "red" : "green")}">${growthRate > 0 ? '+' + growthRate : growthRate}%</span>`));
       tableBody.appendChild(row);
   }
