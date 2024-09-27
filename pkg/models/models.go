@@ -61,6 +61,8 @@ type DBFlakeRow struct {
 	TestName              string  `json:"testName"`
 	RecentFlakePercentage float32 `json:"recentFlakePercentage"`
 	GrowthRate            float32 `json:"growthRate"`
+	FailedTestNum         float32 `json:"failedTestNum"`
+	TotalTestNum          float32 `json:"totalTestNum"`
 }
 
 // DBFlakeBy represents a "row" in the flake rate by _ of top 10 of recent test flakiness charts

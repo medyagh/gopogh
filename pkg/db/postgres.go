@@ -312,13 +312,15 @@ func (m *Postgres) GetEnvCharts(env string, testsInTop int) (map[string]interfac
 		LIMIT 1
 	), temp AS (
 	SELECT TestName,
+	SUM(CASE WHEN Result = 'fail' AND TestTime > (SELECT Date FROM recentCutoff) THEN 1 ELSE 0 END) As FailedTestNum,
+	SUM(CASE WHEN TestTime > (SELECT Date FROM recentCutoff) THEN 1 ELSE 0 END) As TotalTestNum,
 	ROUND(COALESCE(AVG(CASE WHEN TestTime > (SELECT Date FROM recentCutoff) THEN CASE WHEN Result = 'fail' THEN 1 ELSE 0 END END) * 100, 0), 2) AS RecentFlakePercentage,
 	ROUND(COALESCE(AVG(CASE WHEN TestTime <= (SELECT Date FROM recentCutoff) AND TestTime > (SELECT Date FROM prevCutoff) THEN CASE WHEN Result = 'fail' THEN 1 ELSE 0 END END) * 100, 0), 2) AS PrevFlakePercentage
 	FROM %s
 	GROUP BY TestName
 	ORDER BY RecentFlakePercentage DESC
 	)
-	SELECT TestName, RecentFlakePercentage, RecentFlakePercentage - PrevFlakePercentage AS GrowthRate
+	SELECT TestName, RecentFlakePercentage, RecentFlakePercentage - PrevFlakePercentage AS GrowthRate, FailedTestNum, TotalTestNum
 	FROM temp
 	ORDER BY RecentFlakePercentage DESC;
 	`, viewName, viewName)
