@@ -32,6 +32,10 @@ function sortByID(a, b) {
   return a.id - b.id;
 }
 
+function sortByRootJob(a, b) {
+  return a.rootJob - b.rootJob;
+}
+
 // Parse URL search `query` into [{key, value}].
 function parseUrlQuery(query) {
   if (query[0] === '?') {
@@ -809,14 +813,14 @@ function displayEnvironmentChart(data, query) {
         <b>Date:</b> ${dateInfo.startOfDate.toLocaleString([], {dateStyle: 'medium'})}<br>
         <b>Test Count (averaged): </b> ${+dateInfo.testCount.toFixed(2)}<br>
         <b>Jobs:</b><br>
-        ${countArr.map(job => `  - <a href="${testGopoghLink(job.rootJob, query.env)}">${job.rootJob}</a> Test count: ${job.testCount}`).join("<br>")}
+        ${countArr.sort(sortByRootJob).map(job => `  - <a href="${testGopoghLink(job.rootJob, query.env)}">${job.rootJob}</a> Test count: ${job.testCount}`).join("<br>")}
       </div>`,
                   dateInfo.duration,
                   `<div style="padding: 1rem; font-family: 'Arial'; font-size: 14">
         <b>Date:</b> ${dateInfo.startOfDate.toLocaleString([], {dateStyle: 'medium'})}<br>
         <b>Total Duration (averaged): </b> ${+dateInfo.duration.toFixed(2)}<br>
         <b>Jobs:</b><br>
-        ${durationArr.map(job => `  - <a href="${testGopoghLink(job.rootJob, query.env)}">${job.rootJob}</a> Total Duration: ${+job.totalDuration.toFixed(2)}s`).join("<br>")}
+        ${durationArr.sort(sortByRootJob).map(job => `  - <a href="${testGopoghLink(job.rootJob, query.env)}">${job.rootJob}</a> Total Duration: ${+job.totalDuration.toFixed(2)}s`).join("<br>")}
       </div>`,
               ]
           }));
