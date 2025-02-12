@@ -1,7 +1,6 @@
 module github.com/medyagh/gopogh
 
-go 1.21
-toolchain go1.22.5
+go 1.23
 
 require (
 	cloud.google.com/go/cloudsqlconn v1.13.2
