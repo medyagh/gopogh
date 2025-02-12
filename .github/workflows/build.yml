@@ -41,3 +41,9 @@ jobs:
           echo "https://gopogh.blob.core.windows.net/gopogh/${{github.event.number}}/${{ steps.shortsha.outputs.sha8 }}/output.html"
           echo "https://gopogh.blob.core.windows.net/gopogh/${{github.event.number}}/${{ steps.shortsha.outputs.sha8 }}/output.html"
           echo "*******************************************************"
+      - name: Upload Test output
+        uses: actions/upload-artifact@v4
+        with:
+          name: "html test output"
+          path: ./out/*.html
+
