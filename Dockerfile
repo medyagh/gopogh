@@ -1,4 +1,5 @@
 FROM golang:1.24-alpine
+LABEL org.opencontainers.image.source="https://github.com/medyagh/gopogh"
 WORKDIR /src/
 COPY ./ ./
 RUN apk -U add make git

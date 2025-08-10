@@ -8,6 +8,7 @@ COPY pkg ./pkg
 RUN make server
 
 FROM alpine:3
+LABEL org.opencontainers.image.source https://github.com/medyagh/gopogh
 WORKDIR /
 RUN apk add --no-cache ca-certificates
 COPY --from=builder /app/out/gopogh-server /gopogh-server
