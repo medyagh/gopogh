@@ -5,7 +5,7 @@ go 1.24
 toolchain go1.24.1
 
 require (
-	cloud.google.com/go/cloudsqlconn v1.18.0
+	cloud.google.com/go/cloudsqlconn v1.18.1
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.37.8
 	github.com/jackc/pgx/v4 v4.18.3
 	github.com/jmoiron/sqlx v1.4.0
