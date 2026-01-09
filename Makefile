@@ -110,7 +110,7 @@ cross: out/gopogh-linux-amd64 out/gopogh-darwin-amd64 out/gopogh-darwin-arm64 ou
 
 .PHONY: lint
 lint:
-	golangci-lint run --enable gofmt,goimports,gocritic,revive,gocyclo,misspell,nakedret,stylecheck,unconvert,unparam,dogsled
+	golangci-lint run
 
 .PHONY: clean
 clean:

@@ -1,0 +1,17 @@
+run:
+  timeout: 5m
+
+linters:
+  disable-all: true
+  enable:
+    - dogsled
+    - gocritic
+    - gocyclo
+    - gofmt
+    - goimports
+    - misspell
+    - nakedret
+    - revive
+    - stylecheck
+    - unconvert
+    - unparam
