@@ -108,6 +108,10 @@ testpgdb: clean build
 .PHONY: cross
 cross: out/gopogh-linux-amd64 out/gopogh-darwin-amd64 out/gopogh-darwin-arm64 out/gopogh.exe out/gopogh-linux-arm64 out/gopogh-linux-arm
 
+.PHONY: fmt
+fmt:
+	go fmt ./...
+
 .PHONY: lint
 lint:
 	golangci-lint run
