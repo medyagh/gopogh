@@ -1,17 +1,20 @@
-run:
-  timeout: 5m
-
+version: "2"
 linters:
-  disable-all: true
   enable:
     - dogsled
+    - errcheck
     - gocritic
+    - govet
     - gocyclo
-    - gofmt
-    - goimports
+    - ineffassign
     - misspell
     - nakedret
     - revive
-    - stylecheck
+    - staticcheck
     - unconvert
     - unparam
+    - unused
+formatters:
+  enable:
+    - gofmt
+    - goimports
