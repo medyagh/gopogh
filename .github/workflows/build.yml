@@ -23,7 +23,7 @@ jobs:
         run: | 
           echo "::set-output name=sha8::$(echo ${{github.event.pull_request.head.sha}} | cut -c1-8)"
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.23'
       - name: Cross Platform Build
