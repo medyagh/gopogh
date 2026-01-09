@@ -1,3 +1,4 @@
+// Package report provides functions for generating gopogh reports
 package report
 
 import (
