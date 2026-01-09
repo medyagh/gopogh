@@ -46,7 +46,7 @@ type sqlite struct {
 
 // Set adds/updates rows to the database
 func (m *sqlite) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTestCase) error {
-	tx, err := m.db.DB.Begin()
+	tx, err := m.db.Begin()
 	if err != nil {
 		return fmt.Errorf("failed to create SQL transaction: %v", err)
 	}
@@ -63,7 +63,9 @@ func (m *sqlite) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTestC
 	if err != nil {
 		return fmt.Errorf("failed to prepare SQL insert statement: %v", err)
 	}
-	defer stmt.Close()
+	defer func() {
+		_ = stmt.Close()
+	}()
 
 	for _, r := range dbRows {
 		_, err := stmt.Exec(r.PR, r.CommitID, r.TestName, r.Result, r.Duration, r.EnvName, r.TestOrder, r.TestTime.String())

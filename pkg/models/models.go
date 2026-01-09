@@ -1,3 +1,4 @@
+// Package models defines the data models used by the gopogh project
 package models
 
 import "time"
@@ -9,6 +10,8 @@ type ReportDetail struct {
 	PR       string // pull request number
 	RepoName string // for example github repo
 }
+
+// TestEvent represents a single event in a test execution
 type TestEvent struct {
 	Time    time.Time // encodes as an RFC3339-format string
 	Action  string
@@ -20,6 +23,7 @@ type TestEvent struct {
 	EmbeddedLog []string
 }
 
+// TestGroup clusters TestEvents by their test name
 type TestGroup struct {
 	TestName  string
 	TestOrder int

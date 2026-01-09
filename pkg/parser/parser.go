@@ -1,3 +1,4 @@
+// Package parser provides functions for parsing Go test JSON output
 package parser
 
 import (
@@ -17,7 +18,9 @@ func ParseJSON(path string) ([]models.TestEvent, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 
 	events := []models.TestEvent{}
 	scanner := bufio.NewScanner(f)

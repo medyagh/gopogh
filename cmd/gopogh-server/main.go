@@ -1,3 +1,4 @@
+// Package main provides the gopogh-server command
 package main
 
 import (

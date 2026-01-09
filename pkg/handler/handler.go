@@ -1,3 +1,4 @@
+// Package handler provides HTTP handlers for gopogh
 package handler
 
 import (
@@ -11,6 +12,7 @@ import (
 	"github.com/medyagh/gopogh/pkg/report"
 )
 
+// DB is a handler that holds a database instance
 type DB struct {
 	Database db.Datab
 }
@@ -18,6 +20,7 @@ type DB struct {
 //go:embed flake_chart.html
 var flakeChartHTML string
 
+// ServeEnvironmentTestsAndTestCases writes the environment tests and test cases to a JSON HTTP response
 func (m *DB) ServeEnvironmentTestsAndTestCases(w http.ResponseWriter, _ *http.Request) {
 	data, err := m.Database.GetEnvironmentTestsAndTestCases()
 	if err != nil {
@@ -25,7 +28,7 @@ func (m *DB) ServeEnvironmentTestsAndTestCases(w http.ResponseWriter, _ *http.Re
 		return
 	}
 	if data == nil {
-		http.Error(w, err.Error(), http.StatusNotImplemented)
+		http.Error(w, "data not found", http.StatusNotImplemented)
 		return
 	}
 	jsonData, err := json.Marshal(data)
@@ -62,7 +65,7 @@ func (m *DB) ServeTestCharts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if data == nil {
-		http.Error(w, err.Error(), http.StatusNotImplemented)
+		http.Error(w, "data not found", http.StatusNotImplemented)
 		return
 	}
 	jsonData, err := json.Marshal(data)
@@ -102,7 +105,7 @@ func (m *DB) ServeEnvCharts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if data == nil {
-		http.Error(w, err.Error(), http.StatusNotImplemented)
+		http.Error(w, "data not found", http.StatusNotImplemented)
 		return
 	}
 	jsonData, err := json.Marshal(data)
@@ -132,7 +135,7 @@ func (m *DB) ServeOverview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if data == nil {
-		http.Error(w, err.Error(), http.StatusNotImplemented)
+		http.Error(w, "data not found", http.StatusNotImplemented)
 		return
 	}
 	jsonData, err := json.Marshal(data)
@@ -168,8 +171,9 @@ func ServeGopoghVersion(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
+// ServeHTML writes the flake chart HTML to a HTTP response
 func ServeHTML(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	fmt.Fprint(w, flakeChartHTML)
+	_, _ = fmt.Fprint(w, flakeChartHTML)
 }
