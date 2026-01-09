@@ -1,3 +1,4 @@
+// Package main provides the gopogh command
 package main
 
 import (
