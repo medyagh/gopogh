@@ -1,3 +1,4 @@
+// Package db provides database integration for gopogh
 package db
 
 import (

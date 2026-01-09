@@ -1,3 +1,4 @@
+// Package main provides a tool for aligning timestamps in the database
 package main
 
 import (
