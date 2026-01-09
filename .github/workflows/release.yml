@@ -29,32 +29,32 @@ jobs:
           export PATH=$PATH:$(go env GOPATH)/bin
           make cross
       - name: Upload Linux amd64 
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: "gopogh-linux-amd64"
           path: ./out/gopogh-linux-amd64
       - name: Upload Linux arm64
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: "gopogh-linux-arm64"
           path: ./out/gopogh-linux-arm64
       - name: Upload Linux arm
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: "gopogh-linux-arm"
           path: ./out/gopogh-linux-arm
       - name: Upload Darwin
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: "gopogh-darwin-amd64"
           path: ./out/gopogh-darwin-amd64
       - name: Upload Darwin M1
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: "gopogh-darwin-arm64"
           path: ./out/gopogh-darwin-arm64
       - name: Upload windows
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: "gopogh.exe"
           path: ./out/gopogh.exe
