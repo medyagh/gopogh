@@ -29,6 +29,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if err := datab.Initialize(); err != nil {
+		log.Fatalf("failed to initialize database: %v", err)
+	}
 	db := handler.DB{
 		Database: datab,
 	}
