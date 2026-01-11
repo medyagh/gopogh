@@ -96,6 +96,10 @@ const testGopoghLink = (commitID, jobId, environment, testName, status) => {
   });
 }
 
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
 function sortByID(a, b) {
   return a.id - b.id;
 }
@@ -224,7 +228,7 @@ function createRecentFlakePercentageTable(recentFlakePercentTable, query) {
 function displayTestAndEnvironmentChart(data, query) {
   const chartsContainer = document.getElementById('chart_div');
 
-  const dayData = data.flakeByDay
+  const dayData = asArray(data.flakeByDay)
   const dayChart = new google.visualization.DataTable();
   dayChart.addColumn('date', 'Date');
   dayChart.addColumn('number', 'Flake Percentage');
@@ -314,7 +318,7 @@ function displayTestAndEnvironmentChart(data, query) {
   const dChart = new google.visualization.LineChart(flakeRateDayContainer);
   dChart.draw(dayChart, dayOptions);
 
-  const weekData = data.flakeByWeek
+  const weekData = asArray(data.flakeByWeek)
   const weekChart = new google.visualization.DataTable();
   weekChart.addColumn('date', 'Date');
   weekChart.addColumn('number', 'Flake Percentage');
@@ -405,7 +409,7 @@ function displayTestAndEnvironmentChart(data, query) {
   const wChart = new google.visualization.LineChart(flakeRateWeekContainer);
   wChart.draw(weekChart, weekOptions);
 
-  const monthData = data.flakeByMonth
+  const monthData = asArray(data.flakeByMonth)
   const monthChart = new google.visualization.DataTable();
   monthChart.addColumn('date', 'Date');
   monthChart.addColumn('number', 'Flake Percentage');
@@ -499,7 +503,16 @@ function displayTestAndEnvironmentChart(data, query) {
 
 function displaySummaryChart(data) {
   const chartsContainer = document.getElementById('chart_div');
-  const summaryData = data.summaryAvgFail
+  const summaryData = asArray(data.summaryAvgFail)
+  const summaryTableData = asArray(data.summaryTable)
+  if (summaryData.length === 0 && summaryTableData.length === 0) {
+      const emptyMessage = document.createElement("p");
+      emptyMessage.innerText = "No data available yet. Load TestGrid to populate charts.";
+      emptyMessage.style.fontFamily = "Arial";
+      emptyMessage.style.margin = "2rem";
+      chartsContainer.appendChild(emptyMessage);
+      return;
+  }
 
   const uniqueDayDates = new Set();
   const summaryEnvDateMap = {};
@@ -634,7 +647,7 @@ function displaySummaryChart(data) {
   const durationChart = new google.visualization.LineChart(summaryDurContainer);
   durationChart.draw(durChart, durOptions);
 
-  const table=createRecentNumberOfFailTable(data.summaryTable)
+  const table=createRecentNumberOfFailTable(summaryTableData)
   const select=createDateRangeSelectForFailTable(table)
   chartsContainer.appendChild(select)
   chartsContainer.appendChild(table)
@@ -645,7 +658,7 @@ function displayEnvironmentChart(data, query) {
 
   //By Day Chart
 
-  const dayData = data.flakeRateByDay
+  const dayData = asArray(data.flakeRateByDay)
   const uniqueDayTestNames = new Set();
   const uniqueDayDates = new Set();
   for (const flakeDay of dayData) {
@@ -742,7 +755,7 @@ function displayEnvironmentChart(data, query) {
 
   // Weekly Chart
 
-  const weekData = data.flakeRateByWeek
+  const weekData = asArray(data.flakeRateByWeek)
   const uniqueWeekTestNames = new Set();
   const uniqueWeekDates = new Set();
   for (const flakeWeek of weekData) {
@@ -845,7 +858,7 @@ function displayEnvironmentChart(data, query) {
 
   {
       const durationChart = new google.visualization.DataTable();
-      const durationData = data.countsAndDurations
+      const durationData = asArray(data.countsAndDurations)
       durationChart.addColumn('date', 'Date');
       durationChart.addColumn('number', 'Test Count');
       durationChart.addColumn({
@@ -938,7 +951,7 @@ function displayEnvironmentChart(data, query) {
       durChart.draw(durationChart, durOptions);
   }
 
-  chartsContainer.appendChild(createRecentFlakePercentageTable(data.recentFlakePercentTable, query))
+  chartsContainer.appendChild(createRecentFlakePercentageTable(asArray(data.recentFlakePercentTable), query))
 }
 
 function createTopnDropdown(currentTopn) {
