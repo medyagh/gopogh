@@ -14,7 +14,8 @@ import (
 
 // DB is a handler that holds a database instance
 type DB struct {
-	Database db.Datab
+	Database    db.Datab
+	TestGridCfg TestGridConfig
 }
 
 //go:embed flake_chart.html

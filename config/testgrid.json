@@ -1,0 +1,20 @@
+{
+  "dashboards": [
+    {
+      "id": "minikube-periodics#ci-minikube-integration",
+      "min_duration": "5m",
+      "max_pages": 20,
+      "skip_statuses": [
+        "ABORT"
+      ]
+    },
+        {
+      "id": "minikube-presubmits#integration-kvm-containerd-linux-x86",
+      "min_duration": "5m",
+      "max_pages": 20,
+      "skip_statuses": [
+        "ABORT"
+      ]
+    }    
+  ]
+}

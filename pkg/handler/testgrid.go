@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"net/url"
@@ -18,17 +20,18 @@ import (
 )
 
 const (
-	testgridDashboard    = "minikube-periodics#ci-minikube-integration"
-	testgridJobName      = "ci-minikube-integration"
-	defaultMaxPages      = 20
-	defaultConcurrency   = 6
-	maxErrorSampleCount  = 10
-	summaryFetchTimeout  = 20 * time.Second
+	defaultMaxPages     = 20
+	// defaultConcurrency limits the number of parallel summary fetches when loading TestGrid.
+	defaultConcurrency  = 6
+	maxErrorSampleCount = 10
+	summaryFetchTimeout = 20 * time.Second
 )
 
 var errSummaryNotFound = errors.New("summary not found")
 
-const testgridLoaderHTML = `<!DOCTYPE html>
+var testgridLoaderTemplate = template.Must(template.New("load-testgrid").Funcs(template.FuncMap{
+	"eq": func(a, b string) bool { return a == b },
+}).Parse(`<!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8">
@@ -37,52 +40,66 @@ const testgridLoaderHTML = `<!DOCTYPE html>
       body { font-family: Arial, sans-serif; margin: 2rem; }
       button { padding: 0.5rem 1rem; }
       #status { margin-left: 1rem; }
+      select { margin-right: 0.5rem; }
     </style>
   </head>
   <body>
     <h2>Load TestGrid Data</h2>
-    <p>Dashboard: minikube-periodics#ci-minikube-integration</p>
+    {{if .HasDashboards}}
+    <label for="dashboardSelect">Dashboard:</label>
+    <select id="dashboardSelect">
+      {{range .Dashboards}}
+      <option value="{{.ID}}"{{if eq .ID $.SelectedID}} selected{{end}}>{{.Label}}</option>
+      {{end}}
+    </select>
     <button id="loadBtn">Load TestGrid</button>
     <span id="status"></span>
+    {{else}}
+    <p>No dashboards configured.</p>
+    {{end}}
     <p><a href="/">Back to charts</a></p>
     <script>
       const button = document.getElementById("loadBtn");
       const status = document.getElementById("status");
-      button.addEventListener("click", async () => {
-        button.disabled = true;
-        status.textContent = "Loading...";
-        try {
-          const response = await fetch("/load-testgrid", { method: "POST" });
-          if (!response.ok) {
-            throw new Error("Server returned " + response.status);
+      const select = document.getElementById("dashboardSelect");
+      if (button && select) {
+        button.addEventListener("click", async () => {
+          button.disabled = true;
+          status.textContent = "Loading...";
+          try {
+            const dashboard = select.value;
+            const response = await fetch("/load-testgrid?dashboard=" + encodeURIComponent(dashboard), { method: "POST" });
+            if (!response.ok) {
+              throw new Error("Server returned " + response.status);
+            }
+            const data = await response.json();
+            const errorSample = data.errorSamples && data.errorSamples.length ? " Sample error: " + data.errorSamples[0] : "";
+            status.textContent = "Loaded " + data.inserted + " jobs. Missing: " + data.missingSummary +
+              ", Invalid: " + data.invalidSummary + ", Errors: " + data.errors + ". Took " + data.duration + "." + errorSample;
+          } catch (err) {
+            status.textContent = "Load failed: " + err;
+          } finally {
+            button.disabled = false;
           }
-          const data = await response.json();
-          const errorSample = data.errorSamples && data.errorSamples.length ? " Sample error: " + data.errorSamples[0] : "";
-          status.textContent = "Loaded " + data.inserted + " jobs. Missing: " + data.missingSummary +
-            ", Invalid: " + data.invalidSummary + ", Errors: " + data.errors + ". Took " + data.duration + "." + errorSample;
-        } catch (err) {
-          status.textContent = "Load failed: " + err;
-        } finally {
-          button.disabled = false;
-        }
-      });
+        });
+      }
     </script>
   </body>
 </html>
-`
+`))
 
 type testgridLoadResponse struct {
-	Dashboard       string   `json:"dashboard"`
-	JobName         string   `json:"jobName"`
-	TotalJobs       int      `json:"totalJobs"`
-	Inserted        int      `json:"inserted"`
-	MissingSummary  int      `json:"missingSummary"`
-	InvalidSummary  int      `json:"invalidSummary"`
-	Errors          int      `json:"errors"`
-	ErrorSamples    []string `json:"errorSamples,omitempty"`
-	Duration        string   `json:"duration"`
-	MaxPages        int      `json:"maxPages"`
-	Concurrency     int      `json:"concurrency"`
+	Dashboard      string   `json:"dashboard"`
+	JobName        string   `json:"jobName"`
+	TotalJobs      int      `json:"totalJobs"`
+	Inserted       int      `json:"inserted"`
+	MissingSummary int      `json:"missingSummary"`
+	InvalidSummary int      `json:"invalidSummary"`
+	Errors         int      `json:"errors"`
+	ErrorSamples   []string `json:"errorSamples,omitempty"`
+	Duration       string   `json:"duration"`
+	MaxPages       int      `json:"maxPages"`
+	Concurrency    int      `json:"concurrency"`
 }
 
 type testgridLoadStats struct {
@@ -128,12 +145,12 @@ func (s *testgridLoadStats) addErrorSampleLocked(err error) {
 	s.errorSamples = append(s.errorSamples, err.Error())
 }
 
-func (s *testgridLoadStats) response(duration time.Duration, maxPages, concurrency int) testgridLoadResponse {
+func (s *testgridLoadStats) response(dashboardID, jobName string, duration time.Duration, maxPages, concurrency int) testgridLoadResponse {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return testgridLoadResponse{
-		Dashboard:      testgridDashboard,
-		JobName:        testgridJobName,
+		Dashboard:      dashboardID,
+		JobName:        jobName,
 		TotalJobs:      s.totalJobs,
 		Inserted:       s.inserted,
 		MissingSummary: s.missingSummary,
@@ -148,14 +165,27 @@ func (s *testgridLoadStats) response(duration time.Duration, maxPages, concurren
 
 // LoadTestGrid crawls TestGrid job history and loads gopogh summaries into the DB.
 func (m *DB) LoadTestGrid(w http.ResponseWriter, r *http.Request) {
+	cfg := m.TestGridCfg
+	if len(cfg.Dashboards) == 0 {
+		cfg = DefaultTestGridConfig()
+	}
 	if r.Method == http.MethodGet {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = w.Write([]byte(testgridLoaderHTML))
+		body, err := renderTestGridLoaderHTML(cfg, r.URL.Query().Get("dashboard"))
+		if err != nil {
+			http.Error(w, fmt.Sprintf("failed to render page: %v", err), http.StatusInternalServerError)
+			return
+		}
+		_, _ = w.Write([]byte(body))
 		return
 	}
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", fmt.Sprintf("%s, %s", http.MethodGet, http.MethodPost))
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if len(cfg.Dashboards) == 0 {
+		http.Error(w, "no testgrid dashboards configured", http.StatusInternalServerError)
 		return
 	}
 
@@ -166,19 +196,45 @@ func (m *DB) LoadTestGrid(w http.ResponseWriter, r *http.Request) {
 
 	maxPages := parsePositiveInt(r.URL.Query().Get("max_pages"), defaultMaxPages)
 	concurrency := parsePositiveInt(r.URL.Query().Get("concurrency"), defaultConcurrency)
-	log.Printf("load-testgrid start dashboard=%s job=%s max_pages=%d concurrency=%d", testgridDashboard, testgridJobName, maxPages, concurrency)
+	dashboardKey := r.URL.Query().Get("dashboard")
+	dashboard, ok := cfg.FindDashboard(dashboardKey)
+	if !ok {
+		dashboard = cfg.Dashboards[0]
+		if dashboardKey != "" {
+			http.Error(w, fmt.Sprintf("unknown dashboard %q", dashboardKey), http.StatusBadRequest)
+			return
+		}
+	}
+	if dashboard.JobName == "" {
+		http.Error(w, "selected dashboard missing job_name", http.StatusBadRequest)
+		return
+	}
+	skipStatuses := dashboard.SkipStatuses
+	if len(skipStatuses) == 0 {
+		skipStatuses = []string{crawler.StatusAborted}
+	}
+	minDuration, err := dashboard.ParseMinDuration()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("invalid min_duration for %s: %v", dashboard.ID, err), http.StatusBadRequest)
+		return
+	}
+	if r.URL.Query().Get("max_pages") == "" && dashboard.MaxPages > 0 {
+		maxPages = dashboard.MaxPages
+	}
+	log.Printf("load-testgrid start dashboard=%s job=%s max_pages=%d concurrency=%d min_duration=%s skip_statuses=%v", dashboard.ID, dashboard.JobName, maxPages, concurrency, minDuration.String(), skipStatuses)
 
 	c := crawler.New(crawler.Config{
-		JobName:      testgridJobName,
+		JobName:      dashboard.JobName,
 		MaxPages:     maxPages,
-		SkipStatuses: []string{crawler.StatusAborted},
+		SkipStatuses: skipStatuses,
+		MinDuration:  minDuration,
 	})
 	jobs, err := c.Run()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to crawl testgrid: %v", err), http.StatusInternalServerError)
 		return
 	}
-	log.Printf("load-testgrid fetched %d jobs", len(jobs))
+	log.Printf("load-testgrid fetched %d jobs for dashboard=%s", len(jobs), dashboard.ID)
 
 	stats := &testgridLoadStats{totalJobs: len(jobs)}
 	client := &http.Client{Timeout: summaryFetchTimeout}
@@ -199,7 +255,7 @@ func (m *DB) LoadTestGrid(w http.ResponseWriter, r *http.Request) {
 			if ctx.Err() != nil {
 				return
 			}
-			if err := m.processTestGridJob(ctx, client, job, stats); err != nil {
+			if err := m.processTestGridJob(ctx, client, job, dashboard.JobName, stats); err != nil {
 				stats.addError(err)
 			}
 		}()
@@ -208,7 +264,7 @@ func (m *DB) LoadTestGrid(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	resp := stats.response(time.Since(start), maxPages, concurrency)
+	resp := stats.response(dashboard.ID, dashboard.JobName, time.Since(start), maxPages, concurrency)
 	log.Printf("load-testgrid finished inserted=%d missing=%d invalid=%d errors=%d duration=%s", resp.Inserted, resp.MissingSummary, resp.InvalidSummary, resp.Errors, resp.Duration)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		http.Error(w, "failed to write JSON response", http.StatusInternalServerError)
@@ -216,7 +272,7 @@ func (m *DB) LoadTestGrid(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (m *DB) processTestGridJob(ctx context.Context, client *http.Client, job crawler.ProwJob, stats *testgridLoadStats) error {
+func (m *DB) processTestGridJob(ctx context.Context, client *http.Client, job crawler.ProwJob, jobName string, stats *testgridLoadStats) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -236,7 +292,7 @@ func (m *DB) processTestGridJob(ctx context.Context, client *http.Client, job cr
 		}
 		return fmt.Errorf("job %s: failed to fetch summary: %v", job.ID, err)
 	}
-	summary.Detail.Details = ensureTestGridDetails(summary.Detail.Details, job.ID)
+	summary.Detail.Details = ensureTestGridDetails(summary.Detail.Details, jobName, job.ID)
 	if err := summary.Validate(); err != nil {
 		stats.addInvalidSummary(fmt.Errorf("job %s: invalid summary: %v", job.ID, err))
 		return nil
@@ -253,13 +309,13 @@ func (m *DB) processTestGridJob(ctx context.Context, client *http.Client, job cr
 	return nil
 }
 
-func ensureTestGridDetails(details, jobID string) string {
+func ensureTestGridDetails(details, jobName, jobID string) string {
 	details = strings.TrimSpace(details)
 	if !strings.HasPrefix(details, "testgrid:") {
 		if details == "" {
-			details = fmt.Sprintf("testgrid:%s", testgridJobName)
+			details = fmt.Sprintf("testgrid:%s", jobName)
 		} else {
-			details = fmt.Sprintf("testgrid:%s:%s", testgridJobName, details)
+			details = fmt.Sprintf("testgrid:%s:%s", jobName, details)
 		}
 	}
 	if jobID == "" {
@@ -269,6 +325,31 @@ func ensureTestGridDetails(details, jobID string) string {
 		details = details + ":" + jobID
 	}
 	return details
+}
+
+type testgridLoaderPageData struct {
+	Dashboards    []TestGridDashboard
+	SelectedID    string
+	HasDashboards bool
+}
+
+func renderTestGridLoaderHTML(cfg TestGridConfig, selectedID string) (string, error) {
+	if len(cfg.Dashboards) == 0 {
+		return "", fmt.Errorf("no dashboards configured")
+	}
+	if selectedID == "" {
+		selectedID = cfg.Dashboards[0].ID
+	}
+	data := testgridLoaderPageData{
+		Dashboards:    cfg.Dashboards,
+		SelectedID:    selectedID,
+		HasDashboards: len(cfg.Dashboards) > 0,
+	}
+	var buf bytes.Buffer
+	if err := testgridLoaderTemplate.Execute(&buf, data); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }
 
 func spyglassToSummaryURL(spyglassLink string) (string, error) {
