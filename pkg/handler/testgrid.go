@@ -183,6 +183,7 @@ func (m *DB) processTestGridJob(ctx context.Context, client *http.Client, job cr
 		}
 		return fmt.Errorf("job %s: failed to fetch summary: %v", job.ID, err)
 	}
+	summary.Detail.Details = ensureTestGridDetails(summary.Detail.Details, job.ID)
 	if err := summary.Validate(); err != nil {
 		stats.addInvalidSummary(fmt.Errorf("job %s: invalid summary: %v", job.ID, err))
 		return nil
@@ -197,6 +198,24 @@ func (m *DB) processTestGridJob(ctx context.Context, client *http.Client, job cr
 	}
 	stats.addInserted()
 	return nil
+}
+
+func ensureTestGridDetails(details, jobID string) string {
+	details = strings.TrimSpace(details)
+	if !strings.HasPrefix(details, "testgrid:") {
+		if details == "" {
+			details = fmt.Sprintf("testgrid:%s", testgridJobName)
+		} else {
+			details = fmt.Sprintf("testgrid:%s:%s", testgridJobName, details)
+		}
+	}
+	if jobID == "" {
+		return details
+	}
+	if !strings.HasSuffix(details, jobID) {
+		details = details + ":" + jobID
+	}
+	return details
 }
 
 func spyglassToSummaryURL(spyglassLink string) (string, error) {

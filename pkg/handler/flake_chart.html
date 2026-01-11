@@ -24,8 +24,60 @@ function displayError(message) {
   document.body.appendChild(element);
 }
 
-const testGopoghLink = (jobId, environment, testName, status) => {
-  return `https://storage.googleapis.com/minikube-builds/logs/master/${jobId}/${environment}.html${testName ? `#${status}_${testName}` : ``}`;
+const testGridJobFallback = "ci-minikube-integration";
+
+function parseCommitSource(commitID) {
+  if (!commitID) {
+      return {
+          type: "legacy",
+          jobName: ""
+      };
+  }
+  const parts = commitID.split(":").map((part) => part.trim()).filter(Boolean);
+  if (parts.length >= 2 && parts[0].toLowerCase() === "testgrid") {
+      return {
+          type: "testgrid",
+          jobName: parts[1] || testGridJobFallback
+      };
+  }
+  return {
+      type: "legacy",
+      jobName: ""
+  };
+}
+
+function splitCommit(raw, tailFields) {
+  const parts = raw.split(":").map((part) => part.trim());
+  if (parts.length <= tailFields) {
+      const commitID = raw.trim();
+      const commitParts = commitID.split(":").map((part) => part.trim()).filter(Boolean);
+      const jobID = commitParts.length ? commitParts[commitParts.length - 1] : "";
+      return {
+          commitID,
+          jobID,
+          tail: []
+      };
+  }
+  const tail = parts.slice(parts.length - tailFields);
+  const commitID = parts.slice(0, parts.length - tailFields).join(":").trim();
+  const commitParts = commitID.split(":").map((part) => part.trim()).filter(Boolean);
+  const jobID = commitParts.length ? commitParts[commitParts.length - 1] : "";
+  return {
+      commitID,
+      jobID,
+      tail
+  };
+}
+
+const testGopoghLink = (commitID, jobId, environment, testName, status) => {
+  const anchor = testName ? `#${status}_${testName}` : ``;
+  const source = parseCommitSource(commitID);
+  const resolvedJobId = jobId || commitID;
+  if (source.type === "testgrid") {
+      const jobName = source.jobName || testGridJobFallback;
+      return `https://storage.googleapis.com/kubernetes-ci-logs/logs/${jobName}/${resolvedJobId}/artifacts/test.html${anchor}`;
+  }
+  return `https://storage.googleapis.com/minikube-builds/logs/master/${resolvedJobId}/${environment}.html${anchor}`;
 }
 
 function sortByID(a, b) {
@@ -180,16 +232,15 @@ function displayTestAndEnvironmentChart(data, query) {
       dayData
       .map(groupData => {
           let dataArr = groupData.commitResultsAndDurations.split(',')
-          dataArr = dataArr.map((commit) => commit.split(":"))
-          const resultArr = dataArr.map((commit) => ({
-              id: commit[commit.length - 3],
-              status: (commit[commit.length - 2]).trim()
-          }))
-          const durationArr = dataArr.map((commit) => ({
-              id: commit[commit.length - 3],
-              status: (commit[commit.length - 2]).trim(),
-              duration: (commit[commit.length - 1]).trim()
-          }))
+          const parsedArr = dataArr.map((commit) => {
+              const parsed = splitCommit(commit, 2);
+              return {
+                  id: parsed.jobID,
+                  commitID: parsed.commitID,
+                  status: parsed.tail[0] || "",
+                  duration: parsed.tail[1] || ""
+              };
+          });
 
           return [
               new Date(groupData.startOfDate),
@@ -198,14 +249,14 @@ function displayTestAndEnvironmentChart(data, query) {
           <b>Date:</b> ${groupData.startOfDate.toLocaleString([], {dateStyle: 'medium'})}<br>
           <b>Flake Percentage:</b> ${groupData.flakePercentage.toFixed(2)}%<br>
           <b>Jobs:</b><br>
-          ${resultArr.sort(sortByID).map(({ id, status }) => `  - <a href="${testGopoghLink(id, query.env, query.test, status)}">${id}</a> (${status})`).join("<br>")}
+          ${parsedArr.slice().sort(sortByID).map(({ id, commitID, status }) => `  - <a href="${testGopoghLink(commitID, id, query.env, query.test, status)}">${id}</a> (${status})`).join("<br>")}
           </div>`,
               groupData.avgDuration,
               `<div style="padding: 1rem; font-family: 'Arial'; font-size: 14">
           <b>Date:</b> ${groupData.startOfDate.toLocaleString([], {dateStyle: 'medium'})}<br>
           <b>Average Duration:</b> ${groupData.avgDuration.toFixed(2)}s<br>
           <b>Jobs:</b><br>
-          ${durationArr.sort(sortByID).map(({ id, duration, status }) => `  - <a href="${testGopoghLink(id, query.env, query.test, status)}">${id}</a> (${duration}s)`).join("<br>")}
+          ${parsedArr.slice().sort(sortByID).map(({ id, commitID, duration, status }) => `  - <a href="${testGopoghLink(commitID, id, query.env, query.test, status)}">${id}</a> (${duration}s)`).join("<br>")}
           </div>`,
           ]
       })
@@ -272,16 +323,15 @@ function displayTestAndEnvironmentChart(data, query) {
       weekData
       .map(groupData => {
           let dataArr = groupData.commitResultsAndDurations.split(',')
-          dataArr = dataArr.map((commit) => commit.split(":"))
-          const resultArr = dataArr.map((commit) => ({
-              id: commit[commit.length - 3],
-              status: (commit[commit.length - 2]).trim()
-          }))
-          const durationArr = dataArr.map((commit) => ({
-              id: commit[commit.length - 3],
-              status: (commit[commit.length - 2]).trim(),
-              duration: (commit[commit.length - 1]).trim()
-          }))
+          const parsedArr = dataArr.map((commit) => {
+              const parsed = splitCommit(commit, 2);
+              return {
+                  id: parsed.jobID,
+                  commitID: parsed.commitID,
+                  status: parsed.tail[0] || "",
+                  duration: parsed.tail[1] || ""
+              };
+          });
 
           return [
               new Date(groupData.startOfDate),
@@ -290,14 +340,14 @@ function displayTestAndEnvironmentChart(data, query) {
           <b>Date:</b> ${groupData.startOfDate.toLocaleString([], {dateStyle: 'medium'})}<br>
           <b>Flake Percentage:</b> ${groupData.flakePercentage.toFixed(2)}%<br>
           <b>Jobs:</b><br>
-          ${resultArr.sort(sortByID).map(({ id, status }) => `  - <a href="${testGopoghLink(id, query.env, query.test, status)}">${id}</a> (${status})`).join("<br>")}
+          ${parsedArr.slice().sort(sortByID).map(({ id, commitID, status }) => `  - <a href="${testGopoghLink(commitID, id, query.env, query.test, status)}">${id}</a> (${status})`).join("<br>")}
           </div>`,
               groupData.avgDuration,
               `<div style="padding: 1rem; font-family: 'Arial'; font-size: 14">
           <b>Date:</b> ${groupData.startOfDate.toLocaleString([], {dateStyle: 'medium'})}<br>
           <b>Average Duration:</b> ${groupData.avgDuration.toFixed(2)}s<br>
           <b>Jobs:</b><br>
-          ${durationArr.sort(sortByID).map(({ id, duration, status }) => `  - <a href="${testGopoghLink(id, query.env, query.test, status)}">${id}</a> (${duration}s)`).join("<br>")}
+          ${parsedArr.slice().sort(sortByID).map(({ id, commitID, duration, status }) => `  - <a href="${testGopoghLink(commitID, id, query.env, query.test, status)}">${id}</a> (${duration}s)`).join("<br>")}
           </div>`,
           ]
       })
@@ -364,16 +414,15 @@ function displayTestAndEnvironmentChart(data, query) {
       monthData
       .map(groupData => {
           let dataArr = groupData.commitResultsAndDurations.split(',')
-          dataArr = dataArr.map((commit) => commit.split(":"))
-          const resultArr = dataArr.map((commit) => ({
-              id: commit[commit.length - 3],
-              status: (commit[commit.length - 2]).trim()
-          }))
-          const durationArr = dataArr.map((commit) => ({
-              id: commit[commit.length - 3],
-              status: (commit[commit.length - 2]).trim(),
-              duration: (commit[commit.length - 1]).trim()
-          }))
+          const parsedArr = dataArr.map((commit) => {
+              const parsed = splitCommit(commit, 2);
+              return {
+                  id: parsed.jobID,
+                  commitID: parsed.commitID,
+                  status: parsed.tail[0] || "",
+                  duration: parsed.tail[1] || ""
+              };
+          });
 
           return [
               new Date(groupData.startOfDate),
@@ -382,14 +431,14 @@ function displayTestAndEnvironmentChart(data, query) {
           <b>Date:</b> ${groupData.startOfDate.toLocaleString([], {dateStyle: 'medium'})}<br>
           <b>Flake Percentage:</b> ${groupData.flakePercentage.toFixed(2)}%<br>
           <b>Jobs:</b><br>
-          ${resultArr.sort(sortByID).map(({ id, status }) => `  - <a href="${testGopoghLink(id, query.env, query.test, status)}">${id}</a> (${status})`).join("<br>")}
+          ${parsedArr.slice().sort(sortByID).map(({ id, commitID, status }) => `  - <a href="${testGopoghLink(commitID, id, query.env, query.test, status)}">${id}</a> (${status})`).join("<br>")}
           </div>`,
               groupData.avgDuration,
               `<div style="padding: 1rem; font-family: 'Arial'; font-size: 14">
           <b>Date:</b> ${groupData.startOfDate.toLocaleString([], {dateStyle: 'medium'})}<br>
           <b>Average Duration:</b> ${groupData.avgDuration.toFixed(2)}s<br>
           <b>Jobs:</b><br>
-          ${durationArr.sort(sortByID).map(({ id, duration, status }) => `  - <a href="${testGopoghLink(id, query.env, query.test, status)}">${id}</a> (${duration}s)`).join("<br>")}
+          ${parsedArr.slice().sort(sortByID).map(({ id, commitID, duration, status }) => `  - <a href="${testGopoghLink(commitID, id, query.env, query.test, status)}">${id}</a> (${duration}s)`).join("<br>")}
           </div>`,
           ]
       })
@@ -627,11 +676,14 @@ function displayEnvironmentChart(data, query) {
               cr
           } = fpAndCr
           let commitArr = cr.split(",")
-          commitArr = commitArr.map((commit) => commit.split(":"))
-          commitArr = commitArr.map((commit) => ({
-              id: commit[commit.length - 2],
-              status: (commit[commit.length - 1]).trim()
-          }))
+          commitArr = commitArr.map((commit) => {
+              const parsed = splitCommit(commit, 1);
+              return {
+                  id: parsed.jobID,
+                  commitID: parsed.commitID,
+                  status: parsed.tail[0] || ""
+              };
+          })
           return [
               fp,
               `<div style="padding: 1rem; font-family: 'Arial'; font-size: 14">
@@ -639,7 +691,7 @@ function displayEnvironmentChart(data, query) {
           <b>Date:</b> ${dateTime.toLocaleString([], {dateStyle: 'medium'})}<br>
           <b>Flake Percentage:</b> ${+fp.toFixed(2)}%<br>
           <b>Jobs:</b><br>
-          ${commitArr.sort(sortByID).map(({ id, status }) => `  - <a href="${testGopoghLink(id, query.env, name, status)}">${id}</a> (${status})`).join("<br>")}
+          ${commitArr.sort(sortByID).map(({ id, commitID, status }) => `  - <a href="${testGopoghLink(commitID, id, query.env, name, status)}">${id}</a> (${status})`).join("<br>")}
           </div>`
           ]
       }
@@ -724,11 +776,14 @@ function displayEnvironmentChart(data, query) {
                   cr
               } = fpAndcr
               let commitArr = cr.split(",")
-              commitArr = commitArr.map((commit) => commit.split(":"))
-              commitArr = commitArr.map((commit) => ({
-                  id: commit[commit.length - 2],
-                  status: (commit[commit.length - 1]).trim()
-              }))
+              commitArr = commitArr.map((commit) => {
+                  const parsed = splitCommit(commit, 1);
+                  return {
+                      id: parsed.jobID,
+                      commitID: parsed.commitID,
+                      status: parsed.tail[0] || ""
+                  };
+              })
               return [
                   fp,
                   `<div style="padding: 1rem; font-family: 'Arial'; font-size: 14">
@@ -736,7 +791,7 @@ function displayEnvironmentChart(data, query) {
           <b>Date:</b> ${dateTime.toLocaleString([], {dateStyle: 'medium'})}<br>
           <b>Flake Percentage:</b> ${+fp.toFixed(2)}%<br>
           <b>Jobs:</b><br>
-          ${commitArr.sort(sortByID).map(({ id, status }) => `  - <a href="${testGopoghLink(id, query.env, name, status)}">${id}</a> (${status})`).join("<br>")}
+          ${commitArr.sort(sortByID).map(({ id, commitID, status }) => `  - <a href="${testGopoghLink(commitID, id, query.env, name, status)}">${id}</a> (${status})`).join("<br>")}
           </div>`
               ];
           }
@@ -795,17 +850,23 @@ function displayEnvironmentChart(data, query) {
       durationChart.addRows(
           durationData.map(dateInfo => {
               let countArr = dateInfo.commitCounts.split(",")
-              countArr = countArr.map((commit) => commit.split(":"))
-              countArr = countArr.map((commit) => ({
-                  rootJob: commit[commit.length - 2],
-                  testCount: +(commit[commit.length - 1]).trim()
-              }))
+              countArr = countArr.map((commit) => {
+                  const parsed = splitCommit(commit, 1);
+                  return {
+                      rootJob: parsed.jobID,
+                      commitID: parsed.commitID,
+                      testCount: +(parsed.tail[0] || 0)
+                  };
+              })
               let durationArr = dateInfo.commitDurations.split(",")
-              durationArr = durationArr.map((commit) => commit.split(":"))
-              durationArr = durationArr.map((commit) => ({
-                  rootJob: commit[commit.length - 2],
-                  totalDuration: +(commit[commit.length - 1]).trim()
-              }))
+              durationArr = durationArr.map((commit) => {
+                  const parsed = splitCommit(commit, 1);
+                  return {
+                      rootJob: parsed.jobID,
+                      commitID: parsed.commitID,
+                      totalDuration: +(parsed.tail[0] || 0)
+                  };
+              })
               return [
                   new Date(dateInfo.startOfDate),
                   dateInfo.testCount,
@@ -813,14 +874,14 @@ function displayEnvironmentChart(data, query) {
         <b>Date:</b> ${dateInfo.startOfDate.toLocaleString([], {dateStyle: 'medium'})}<br>
         <b>Test Count (averaged): </b> ${+dateInfo.testCount.toFixed(2)}<br>
         <b>Jobs:</b><br>
-        ${countArr.sort(sortByRootJob).map(job => `  - <a href="${testGopoghLink(job.rootJob, query.env)}">${job.rootJob}</a> Test count: ${job.testCount}`).join("<br>")}
+        ${countArr.sort(sortByRootJob).map(job => `  - <a href="${testGopoghLink(job.commitID, job.rootJob, query.env)}">${job.rootJob}</a> Test count: ${job.testCount}`).join("<br>")}
       </div>`,
                   dateInfo.duration,
                   `<div style="padding: 1rem; font-family: 'Arial'; font-size: 14">
         <b>Date:</b> ${dateInfo.startOfDate.toLocaleString([], {dateStyle: 'medium'})}<br>
         <b>Total Duration (averaged): </b> ${+dateInfo.duration.toFixed(2)}<br>
         <b>Jobs:</b><br>
-        ${durationArr.sort(sortByRootJob).map(job => `  - <a href="${testGopoghLink(job.rootJob, query.env)}">${job.rootJob}</a> Total Duration: ${+job.totalDuration.toFixed(2)}s`).join("<br>")}
+        ${durationArr.sort(sortByRootJob).map(job => `  - <a href="${testGopoghLink(job.commitID, job.rootJob, query.env)}">${job.rootJob}</a> Total Duration: ${+job.totalDuration.toFixed(2)}s`).join("<br>")}
       </div>`,
               ]
           }));
