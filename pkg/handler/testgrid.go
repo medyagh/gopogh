@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -165,6 +166,7 @@ func (m *DB) LoadTestGrid(w http.ResponseWriter, r *http.Request) {
 
 	maxPages := parsePositiveInt(r.URL.Query().Get("max_pages"), defaultMaxPages)
 	concurrency := parsePositiveInt(r.URL.Query().Get("concurrency"), defaultConcurrency)
+	log.Printf("load-testgrid start dashboard=%s job=%s max_pages=%d concurrency=%d", testgridDashboard, testgridJobName, maxPages, concurrency)
 
 	c := crawler.New(crawler.Config{
 		JobName:      testgridJobName,
@@ -176,6 +178,7 @@ func (m *DB) LoadTestGrid(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("failed to crawl testgrid: %v", err), http.StatusInternalServerError)
 		return
 	}
+	log.Printf("load-testgrid fetched %d jobs", len(jobs))
 
 	stats := &testgridLoadStats{totalJobs: len(jobs)}
 	client := &http.Client{Timeout: summaryFetchTimeout}
@@ -205,7 +208,9 @@ func (m *DB) LoadTestGrid(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	if err := json.NewEncoder(w).Encode(stats.response(time.Since(start), maxPages, concurrency)); err != nil {
+	resp := stats.response(time.Since(start), maxPages, concurrency)
+	log.Printf("load-testgrid finished inserted=%d missing=%d invalid=%d errors=%d duration=%s", resp.Inserted, resp.MissingSummary, resp.InvalidSummary, resp.Errors, resp.Duration)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		http.Error(w, "failed to write JSON response", http.StatusInternalServerError)
 		return
 	}
