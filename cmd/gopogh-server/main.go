@@ -44,6 +44,8 @@ func main() {
 
 	http.HandleFunc("/version", handler.ServeGopoghVersion)
 
+	http.HandleFunc("/load-testgrid", db.LoadTestGrid)
+
 	http.HandleFunc("/", handler.ServeHTML)
 
 	// Start the HTTP server
