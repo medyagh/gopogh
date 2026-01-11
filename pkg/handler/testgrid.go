@@ -1,0 +1,262 @@
+package handler
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/medyagh/gopogh/pkg/report"
+	"github.com/medyagh/testgrid-crawler/pkg/crawler"
+)
+
+const (
+	testgridDashboard    = "minikube-periodics#ci-minikube-integration"
+	testgridJobName      = "ci-minikube-integration"
+	defaultMaxPages      = 20
+	defaultConcurrency   = 6
+	maxErrorSampleCount  = 10
+	summaryFetchTimeout  = 20 * time.Second
+)
+
+var errSummaryNotFound = errors.New("summary not found")
+
+type testgridLoadResponse struct {
+	Dashboard       string   `json:"dashboard"`
+	JobName         string   `json:"jobName"`
+	TotalJobs       int      `json:"totalJobs"`
+	Inserted        int      `json:"inserted"`
+	MissingSummary  int      `json:"missingSummary"`
+	InvalidSummary  int      `json:"invalidSummary"`
+	Errors          int      `json:"errors"`
+	ErrorSamples    []string `json:"errorSamples,omitempty"`
+	Duration        string   `json:"duration"`
+	MaxPages        int      `json:"maxPages"`
+	Concurrency     int      `json:"concurrency"`
+}
+
+type testgridLoadStats struct {
+	mu             sync.Mutex
+	totalJobs      int
+	inserted       int
+	missingSummary int
+	invalidSummary int
+	errors         int
+	errorSamples   []string
+}
+
+func (s *testgridLoadStats) addInserted() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.inserted++
+}
+
+func (s *testgridLoadStats) addMissingSummary() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.missingSummary++
+}
+
+func (s *testgridLoadStats) addInvalidSummary(err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.invalidSummary++
+	s.addErrorSampleLocked(err)
+}
+
+func (s *testgridLoadStats) addError(err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.errors++
+	s.addErrorSampleLocked(err)
+}
+
+func (s *testgridLoadStats) addErrorSampleLocked(err error) {
+	if len(s.errorSamples) >= maxErrorSampleCount {
+		return
+	}
+	s.errorSamples = append(s.errorSamples, err.Error())
+}
+
+func (s *testgridLoadStats) response(duration time.Duration, maxPages, concurrency int) testgridLoadResponse {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return testgridLoadResponse{
+		Dashboard:      testgridDashboard,
+		JobName:        testgridJobName,
+		TotalJobs:      s.totalJobs,
+		Inserted:       s.inserted,
+		MissingSummary: s.missingSummary,
+		InvalidSummary: s.invalidSummary,
+		Errors:         s.errors,
+		ErrorSamples:   append([]string(nil), s.errorSamples...),
+		Duration:       duration.String(),
+		MaxPages:       maxPages,
+		Concurrency:    concurrency,
+	}
+}
+
+// LoadTestGrid crawls TestGrid job history and loads gopogh summaries into the DB.
+func (m *DB) LoadTestGrid(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", http.MethodPost)
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	if err := m.Database.Initialize(); err != nil {
+		http.Error(w, fmt.Sprintf("failed to initialize database: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	maxPages := parsePositiveInt(r.URL.Query().Get("max_pages"), defaultMaxPages)
+	concurrency := parsePositiveInt(r.URL.Query().Get("concurrency"), defaultConcurrency)
+
+	c := crawler.New(crawler.Config{
+		JobName:      testgridJobName,
+		MaxPages:     maxPages,
+		SkipStatuses: []string{crawler.StatusAborted},
+	})
+	jobs, err := c.Run()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to crawl testgrid: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	stats := &testgridLoadStats{totalJobs: len(jobs)}
+	client := &http.Client{Timeout: summaryFetchTimeout}
+	start := time.Now()
+	ctx := r.Context()
+
+	sem := make(chan struct{}, concurrency)
+	var wg sync.WaitGroup
+	for _, job := range jobs {
+		job := job
+		wg.Add(1)
+		sem <- struct{}{}
+		go func() {
+			defer func() {
+				<-sem
+				wg.Done()
+			}()
+			if ctx.Err() != nil {
+				return
+			}
+			if err := m.processTestGridJob(ctx, client, job, stats); err != nil {
+				stats.addError(err)
+			}
+		}()
+	}
+	wg.Wait()
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	if err := json.NewEncoder(w).Encode(stats.response(time.Since(start), maxPages, concurrency)); err != nil {
+		http.Error(w, "failed to write JSON response", http.StatusInternalServerError)
+		return
+	}
+}
+
+func (m *DB) processTestGridJob(ctx context.Context, client *http.Client, job crawler.ProwJob, stats *testgridLoadStats) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	summaryURL, err := spyglassToSummaryURL(job.SpyglassLink)
+	if err != nil {
+		return fmt.Errorf("job %s: %v", job.ID, err)
+	}
+	startedAt, err := time.Parse(time.RFC3339, job.Started)
+	if err != nil {
+		return fmt.Errorf("job %s: failed to parse start time %q: %v", job.ID, job.Started, err)
+	}
+	summary, err := fetchSummary(ctx, client, summaryURL)
+	if err != nil {
+		if errors.Is(err, errSummaryNotFound) {
+			stats.addMissingSummary()
+			return nil
+		}
+		return fmt.Errorf("job %s: failed to fetch summary: %v", job.ID, err)
+	}
+	if err := summary.Validate(); err != nil {
+		stats.addInvalidSummary(fmt.Errorf("job %s: invalid summary: %v", job.ID, err))
+		return nil
+	}
+	dbEnv, dbTests, err := summary.ToDBRows(startedAt)
+	if err != nil {
+		stats.addInvalidSummary(fmt.Errorf("job %s: invalid summary conversion: %v", job.ID, err))
+		return nil
+	}
+	if err := m.Database.Set(dbEnv, dbTests); err != nil {
+		return fmt.Errorf("job %s: failed to insert: %v", job.ID, err)
+	}
+	stats.addInserted()
+	return nil
+}
+
+func spyglassToSummaryURL(spyglassLink string) (string, error) {
+	if spyglassLink == "" {
+		return "", fmt.Errorf("missing spyglass link")
+	}
+	if strings.HasPrefix(spyglassLink, "/") {
+		spyglassLink = "https://prow.k8s.io" + spyglassLink
+	}
+	if strings.HasPrefix(spyglassLink, "https://storage.googleapis.com/") {
+		spyglassLink = strings.TrimSuffix(spyglassLink, "/")
+		return spyglassLink + "/artifacts/test_summary.json", nil
+	}
+	parsed, err := url.Parse(spyglassLink)
+	if err != nil {
+		return "", fmt.Errorf("invalid spyglass link: %v", err)
+	}
+	path := strings.TrimPrefix(parsed.Path, "/view/gs/")
+	if path == parsed.Path {
+		return "", fmt.Errorf("unsupported spyglass path: %s", parsed.Path)
+	}
+	path = strings.TrimSuffix(path, "/")
+	if path == "" {
+		return "", fmt.Errorf("empty spyglass path")
+	}
+	return "https://storage.googleapis.com/" + path + "/artifacts/test_summary.json", nil
+}
+
+func fetchSummary(ctx context.Context, client *http.Client, summaryURL string) (report.Summary, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, summaryURL, nil)
+	if err != nil {
+		return report.Summary{}, err
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return report.Summary{}, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return report.Summary{}, errSummaryNotFound
+	}
+	if resp.StatusCode != http.StatusOK {
+		return report.Summary{}, fmt.Errorf("unexpected status %d for %s", resp.StatusCode, summaryURL)
+	}
+
+	var summary report.Summary
+	if err := json.NewDecoder(resp.Body).Decode(&summary); err != nil {
+		return report.Summary{}, err
+	}
+	return summary, nil
+}
+
+func parsePositiveInt(value string, fallback int) int {
+	if value == "" {
+		return fallback
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil || parsed < 1 {
+		return fallback
+	}
+	return parsed
+}
