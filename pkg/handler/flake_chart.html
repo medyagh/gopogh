@@ -26,22 +26,33 @@ function displayError(message) {
 
 const testGridJobFallback = "ci-minikube-integration";
 
-function parseCommitSource(commitID) {
+const linkProviders = {
+  legacy: (data) => {
+      return `https://storage.googleapis.com/minikube-builds/logs/master/${data.jobId}/${data.environment}.html${data.anchor}`;
+  },
+  testgrid: (data) => {
+      const jobName = data.jobName || testGridJobFallback;
+      return `https://storage.googleapis.com/kubernetes-ci-logs/logs/${jobName}/${data.jobId}/artifacts/test.html${data.anchor}`;
+  },
+};
+
+function parseProviderInfo(commitID) {
+  // TestGrid loads tag CommitID with "testgrid:<job>" prefix; we key off that tag here.
   if (!commitID) {
       return {
-          type: "legacy",
+          provider: "legacy",
           jobName: ""
       };
   }
   const parts = commitID.split(":").map((part) => part.trim()).filter(Boolean);
   if (parts.length >= 2 && parts[0].toLowerCase() === "testgrid") {
       return {
-          type: "testgrid",
+          provider: "testgrid",
           jobName: parts[1] || testGridJobFallback
       };
   }
   return {
-      type: "legacy",
+      provider: "legacy",
       jobName: ""
   };
 }
@@ -69,15 +80,20 @@ function splitCommit(raw, tailFields) {
   };
 }
 
+function buildAnchor(testName, status) {
+  return testName ? `#${status}_${testName}` : ``;
+}
+
 const testGopoghLink = (commitID, jobId, environment, testName, status) => {
-  const anchor = testName ? `#${status}_${testName}` : ``;
-  const source = parseCommitSource(commitID);
   const resolvedJobId = jobId || commitID;
-  if (source.type === "testgrid") {
-      const jobName = source.jobName || testGridJobFallback;
-      return `https://storage.googleapis.com/kubernetes-ci-logs/logs/${jobName}/${resolvedJobId}/artifacts/test.html${anchor}`;
-  }
-  return `https://storage.googleapis.com/minikube-builds/logs/master/${resolvedJobId}/${environment}.html${anchor}`;
+  const providerInfo = parseProviderInfo(commitID);
+  const provider = linkProviders[providerInfo.provider] || linkProviders.legacy;
+  return provider({
+      jobId: resolvedJobId,
+      jobName: providerInfo.jobName,
+      environment,
+      anchor: buildAnchor(testName, status),
+  });
 }
 
 function sortByID(a, b) {
