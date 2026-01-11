@@ -9,6 +9,7 @@ import (
 
 	"github.com/medyagh/gopogh/pkg/db"
 	"github.com/medyagh/gopogh/pkg/handler"
+	"github.com/medyagh/gopogh/pkg/report"
 )
 
 var dbPath = flag.String("db_path", "", "path to postgres db in the form of 'user=DB_USER dbname=DB_NAME password=DB_PASS'")
@@ -18,6 +19,7 @@ var useIAMAuth = flag.Bool("use_iam_auth", false, "whether to use IAM to authent
 
 func main() {
 	flag.Parse()
+	log.Printf("gopogh-server starting (version=%s build=%s)", report.Version(), report.Build)
 	flagValues := db.FlagValues{
 		Backend:     "postgres",
 		Host:        *dbHost,
@@ -52,6 +54,7 @@ func main() {
 	http.HandleFunc("/", handler.ServeHTML)
 
 	// Start the HTTP server
+	log.Printf("listening on :8080")
 	err = http.ListenAndServe(":8080", nil)
 	if err != nil {
 		log.Fatalf("failed to start HTTP server: %v", err)
