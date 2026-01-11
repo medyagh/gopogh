@@ -27,6 +27,49 @@ const (
 
 var errSummaryNotFound = errors.New("summary not found")
 
+const testgridLoaderHTML = `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Load TestGrid</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 2rem; }
+      button { padding: 0.5rem 1rem; }
+      #status { margin-left: 1rem; }
+    </style>
+  </head>
+  <body>
+    <h2>Load TestGrid Data</h2>
+    <p>Dashboard: minikube-periodics#ci-minikube-integration</p>
+    <button id="loadBtn">Load TestGrid</button>
+    <span id="status"></span>
+    <p><a href="/">Back to charts</a></p>
+    <script>
+      const button = document.getElementById("loadBtn");
+      const status = document.getElementById("status");
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        status.textContent = "Loading...";
+        try {
+          const response = await fetch("/load-testgrid", { method: "POST" });
+          if (!response.ok) {
+            throw new Error("Server returned " + response.status);
+          }
+          const data = await response.json();
+          const errorSample = data.errorSamples && data.errorSamples.length ? " Sample error: " + data.errorSamples[0] : "";
+          status.textContent = "Loaded " + data.inserted + " jobs. Missing: " + data.missingSummary +
+            ", Invalid: " + data.invalidSummary + ", Errors: " + data.errors + ". Took " + data.duration + "." + errorSample;
+        } catch (err) {
+          status.textContent = "Load failed: " + err;
+        } finally {
+          button.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>
+`
+
 type testgridLoadResponse struct {
 	Dashboard       string   `json:"dashboard"`
 	JobName         string   `json:"jobName"`
@@ -104,8 +147,13 @@ func (s *testgridLoadStats) response(duration time.Duration, maxPages, concurren
 
 // LoadTestGrid crawls TestGrid job history and loads gopogh summaries into the DB.
 func (m *DB) LoadTestGrid(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write([]byte(testgridLoaderHTML))
+		return
+	}
 	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", http.MethodPost)
+		w.Header().Set("Allow", fmt.Sprintf("%s, %s", http.MethodGet, http.MethodPost))
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
