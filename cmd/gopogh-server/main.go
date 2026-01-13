@@ -19,6 +19,7 @@ var useIAMAuth = flag.Bool("use_iam_auth", false, "whether to use IAM to authent
 var testgridConfigPath = flag.String("testgrid_config", "", "path to testgrid dashboard config")
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	flag.Parse()
 	log.Printf("gopogh-server starting (version=%s build=%s)", report.Version(), report.Build)
 	flagValues := db.FlagValues{
