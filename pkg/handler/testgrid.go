@@ -165,6 +165,10 @@ func (s *testgridLoadStats) response(dashboardID, jobName string, duration time.
 
 // LoadTestGrid crawls TestGrid job history and loads gopogh summaries into the DB.
 func (m *DB) LoadTestGrid(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+	defer func() {
+		log.Printf("duration metric: took %f seconds to initialize Postgres tables\n", time.Since(start).Seconds())
+	}()
 	cfg := m.TestGridCfg
 	if len(cfg.Dashboards) == 0 {
 		cfg = DefaultTestGridConfig()
@@ -237,7 +241,7 @@ func (m *DB) LoadTestGrid(w http.ResponseWriter, r *http.Request) {
 
 	stats := &testgridLoadStats{totalJobs: len(jobs)}
 	client := &http.Client{Timeout: summaryFetchTimeout}
-	start := time.Now()
+	start2 := time.Now()
 	ctx := r.Context()
 
 	sem := make(chan struct{}, concurrency)
@@ -263,7 +267,7 @@ func (m *DB) LoadTestGrid(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	resp := stats.response(dashboard.ID, dashboard.JobName, time.Since(start), maxPages, concurrency)
+	resp := stats.response(dashboard.ID, dashboard.JobName, time.Since(start2), maxPages, concurrency)
 	log.Printf("load-testgrid finished inserted=%d missing=%d invalid=%d errors=%d duration=%s", resp.Inserted, resp.MissingSummary, resp.InvalidSummary, resp.Errors, resp.Duration)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		http.Error(w, "failed to write JSON response", http.StatusInternalServerError)
