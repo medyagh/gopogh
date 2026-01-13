@@ -37,7 +37,7 @@ const linkProviders = {
 };
 
 function parseProviderInfo(commitID) {
-  // TestGrid loads tag CommitID with "testgrid:<job>" prefix; we key off that tag here.
+  // TestGrid links should prefer artifact paths; commit IDs may omit any testgrid prefix.
   if (!commitID) {
       return {
           provider: "legacy",

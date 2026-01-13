@@ -45,7 +45,6 @@ type DBTestCase struct {
 	Duration     float64
 	EnvName      string
 	TestOrder    int
-	ArtifactPath string
 }
 
 // DBEnvironmentTest represents a row in db table that has finished tests in each environment

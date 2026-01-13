@@ -35,7 +35,6 @@ var pgTestCasesTableSchema = `
 		Result TEXT,
 		TestTime TIMESTAMP,
 		Duration FLOAT,
-		ArtifactPath TEXT NOT NULL DEFAULT '',
 		PRIMARY KEY (CommitID, EnvName, TestName)
 	);
 `
@@ -61,10 +60,10 @@ func (m *Postgres) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTes
 	}()
 
 	sqlInsert := `
-		INSERT INTO db_test_cases (PR, CommitId, EnvName, TestName, Result, TestTime, Duration, ArtifactPath)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO db_test_cases (PR, CommitId, EnvName, TestName, Result, TestTime, Duration)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		ON CONFLICT (CommitId, EnvName, TestName)
-		DO UPDATE SET (PR, Result, TestTime, Duration, ArtifactPath) = (EXCLUDED.PR, EXCLUDED.Result, EXCLUDED.TestTime, EXCLUDED.Duration, EXCLUDED.ArtifactPath)
+		DO UPDATE SET (PR, Result, TestTime, Duration) = (EXCLUDED.PR, EXCLUDED.Result, EXCLUDED.TestTime, EXCLUDED.Duration)
 	`
 	stmt, err := tx.Prepare(sqlInsert)
 	if err != nil {
@@ -75,7 +74,7 @@ func (m *Postgres) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTes
 	}()
 
 	for _, r := range dbRows {
-		_, err := stmt.Exec(r.PR, r.CommitID, r.EnvName, r.TestName, r.Result, r.TestTime, r.Duration, r.ArtifactPath)
+		_, err := stmt.Exec(r.PR, r.CommitID, r.EnvName, r.TestName, r.Result, r.TestTime, r.Duration)
 		if err != nil {
 			return fmt.Errorf("failed to execute SQL insert: %v", err)
 		}
@@ -131,17 +130,11 @@ func (m *Postgres) Initialize() error {
 	if _, err := m.db.Exec(`ALTER TABLE db_environment_tests ADD COLUMN IF NOT EXISTS ArtifactPath TEXT NOT NULL DEFAULT '';`); err != nil {
 		return fmt.Errorf("failed to ensure ArtifactPath on environment tests table: %v", err)
 	}
-	if _, err := m.db.Exec(`ALTER TABLE db_test_cases ADD COLUMN IF NOT EXISTS ArtifactPath TEXT NOT NULL DEFAULT '';`); err != nil {
-		return fmt.Errorf("failed to ensure ArtifactPath on test cases table: %v", err)
-	}
 	if _, err := m.db.Exec(`UPDATE db_environment_tests SET ArtifactPath = '' WHERE ArtifactPath IS NULL;`); err != nil {
 		return fmt.Errorf("failed to backfill ArtifactPath on environment tests table: %v", err)
 	}
 	if _, err := m.db.Exec(`UPDATE db_environment_tests SET EnvGroup = 'Legacy' WHERE EnvGroup IS NULL OR EnvGroup = '';`); err != nil {
 		return fmt.Errorf("failed to backfill EnvGroup on environment tests table: %v", err)
-	}
-	if _, err := m.db.Exec(`UPDATE db_test_cases SET ArtifactPath = '' WHERE ArtifactPath IS NULL;`); err != nil {
-		return fmt.Errorf("failed to backfill ArtifactPath on test cases table: %v", err)
 	}
 	return nil
 }
@@ -153,12 +146,22 @@ func (m *Postgres) GetEnvironmentTestsAndTestCases() (map[string]interface{}, er
 	var environmentTests []models.DBEnvironmentTest
 	var testCases []models.DBTestCase
 
-	err := m.db.Select(&environmentTests, "SELECT * FROM db_environment_tests ORDER BY TestTime DESC LIMIT 100")
+	err := m.db.Select(&environmentTests, `
+		SELECT CommitID, EnvName, EnvGroup, GopoghTime, TestTime, NumberOfFail, NumberOfPass, NumberOfSkip, TotalDuration, ArtifactPath
+		FROM db_environment_tests
+		ORDER BY TestTime DESC
+		LIMIT 100
+	`)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute SQL query for environment tests: %v", err)
 	}
 
-	err = m.db.Select(&testCases, "SELECT * FROM db_test_cases ORDER BY TestTime DESC LIMIT 100")
+	err = m.db.Select(&testCases, `
+		SELECT PR, CommitID, EnvName, TestName, Result, TestTime, Duration
+		FROM db_test_cases
+		ORDER BY TestTime DESC
+		LIMIT 100
+	`)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute SQL query for test cases: %v", err)
 
@@ -174,30 +177,13 @@ func (m *Postgres) GetEnvironmentTestsAndTestCases() (map[string]interface{}, er
 func (m *Postgres) createMaterializedView(env string, viewName string) error {
 	createView := fmt.Sprintf(`
 	CREATE MATERIALIZED VIEW IF NOT EXISTS %s AS 
-		SELECT * FROM db_test_cases
+		SELECT CommitID, EnvName, TestName, Result, Duration, TestTime FROM db_test_cases
 		WHERE Result != 'skip' AND EnvName = '%s' AND TestTime >= NOW() - INTERVAL '90 days'
 	`, viewName, env)
 
 	if _, err := m.db.Exec(createView); err != nil {
 		return err
 	}
-	viewBaseName := strings.Trim(viewName, "\"")
-	var hasArtifactPath bool
-	if err := m.db.Get(&hasArtifactPath, `SELECT EXISTS (
-		SELECT 1 FROM information_schema.columns WHERE table_name = $1 AND column_name = 'artifactpath'
-	)`, viewBaseName); err != nil {
-		return err
-	}
-	if !hasArtifactPath {
-		dropView := fmt.Sprintf("DROP MATERIALIZED VIEW IF EXISTS %s", viewName)
-		if _, err := m.db.Exec(dropView); err != nil {
-			return err
-		}
-		if _, err := m.db.Exec(createView); err != nil {
-			return err
-		}
-	}
-
 	// if we add a new test environment the service account will be the owner of the newly created materalized view above
 	// but we require postgres to be the owner for the cron that refreshes the materialized view to run
 	alterOwner := fmt.Sprintf("ALTER MATERIALIZED VIEW %s OWNER TO postgres;", viewName)
@@ -237,12 +223,14 @@ func (m *Postgres) GetTestCharts(env string, test string) (map[string]interface{
 	// Groups the datetimes together by date, calculating flake percentage and aggregating the individual results/durations for each date
 	sqlQuery := fmt.Sprintf(`
 	SELECT
-	DATE_TRUNC('day', TestTime) AS StartOfDate,
-	AVG(Duration) AS AvgDuration,
-	ROUND(COALESCE(AVG(CASE WHEN Result = 'fail' THEN 1 ELSE 0 END) * 100, 0), 2) AS FlakePercentage,
-	STRING_AGG(CommitID || ': ' || Result || ': ' || Duration || ': ' || COALESCE(ArtifactPath, ''), ', ') AS CommitResultsAndDurations
-	FROM %s 
-	WHERE TestName = $1
+	DATE_TRUNC('day', tc.TestTime) AS StartOfDate,
+	AVG(tc.Duration) AS AvgDuration,
+	ROUND(COALESCE(AVG(CASE WHEN tc.Result = 'fail' THEN 1 ELSE 0 END) * 100, 0), 2) AS FlakePercentage,
+	STRING_AGG(tc.CommitID || ': ' || tc.Result || ': ' || tc.Duration || ': ' || COALESCE(env.ArtifactPath, ''), ', ') AS CommitResultsAndDurations
+	FROM %s AS tc
+	LEFT JOIN db_environment_tests env
+	ON env.CommitID = tc.CommitID AND env.EnvName = tc.EnvName
+	WHERE tc.TestName = $1
 	GROUP BY StartOfDate
 	ORDER BY StartOfDate DESC
 	`, viewName)
@@ -258,12 +246,14 @@ func (m *Postgres) GetTestCharts(env string, test string) (map[string]interface{
 	// Groups the datetimes together by week, calculating flake percentage and aggregating the individual results/durations for each date
 	sqlQuery = fmt.Sprintf(`
 	SELECT
-	DATE_TRUNC('week', TestTime) AS StartOfDate,
-	AVG(Duration) AS AvgDuration,
-	ROUND(COALESCE(AVG(CASE WHEN Result = 'fail' THEN 1 ELSE 0 END) * 100, 0), 2) AS FlakePercentage,
-	STRING_AGG(CommitID || ': ' || Result || ': ' || Duration || ': ' || COALESCE(ArtifactPath, ''), ', ') AS CommitResultsAndDurations
-	FROM %s 
-	WHERE TestName = $1
+	DATE_TRUNC('week', tc.TestTime) AS StartOfDate,
+	AVG(tc.Duration) AS AvgDuration,
+	ROUND(COALESCE(AVG(CASE WHEN tc.Result = 'fail' THEN 1 ELSE 0 END) * 100, 0), 2) AS FlakePercentage,
+	STRING_AGG(tc.CommitID || ': ' || tc.Result || ': ' || tc.Duration || ': ' || COALESCE(env.ArtifactPath, ''), ', ') AS CommitResultsAndDurations
+	FROM %s AS tc
+	LEFT JOIN db_environment_tests env
+	ON env.CommitID = tc.CommitID AND env.EnvName = tc.EnvName
+	WHERE tc.TestName = $1
 	GROUP BY StartOfDate
 	ORDER BY StartOfDate DESC
 	`, viewName)
@@ -277,12 +267,14 @@ func (m *Postgres) GetTestCharts(env string, test string) (map[string]interface{
 	// Groups the datetimes together by month, calculating flake percentage and aggregating the individual results/durations for each date
 	sqlQuery = fmt.Sprintf(`
 	SELECT
-	DATE_TRUNC('month', TestTime) AS StartOfDate,
-	AVG(Duration) AS AvgDuration,
-	ROUND(COALESCE(AVG(CASE WHEN Result = 'fail' THEN 1 ELSE 0 END) * 100, 0), 2) AS FlakePercentage,
-	STRING_AGG(CommitID || ': ' || Result || ': ' || Duration || ': ' || COALESCE(ArtifactPath, ''), ', ') AS CommitResultsAndDurations
-	FROM %s 
-	WHERE TestName = $1
+	DATE_TRUNC('month', tc.TestTime) AS StartOfDate,
+	AVG(tc.Duration) AS AvgDuration,
+	ROUND(COALESCE(AVG(CASE WHEN tc.Result = 'fail' THEN 1 ELSE 0 END) * 100, 0), 2) AS FlakePercentage,
+	STRING_AGG(tc.CommitID || ': ' || tc.Result || ': ' || tc.Duration || ': ' || COALESCE(env.ArtifactPath, ''), ', ') AS CommitResultsAndDurations
+	FROM %s AS tc
+	LEFT JOIN db_environment_tests env
+	ON env.CommitID = tc.CommitID AND env.EnvName = tc.EnvName
+	WHERE tc.TestName = $1
 	GROUP BY StartOfDate
 	ORDER BY StartOfDate DESC
 	`, viewName)
@@ -390,12 +382,14 @@ func (m *Postgres) GetEnvCharts(env string, testsInTop int) (map[string]interfac
 		FROM %s
 		WHERE TestName IN ('%s')
 	)
-	SELECT TestName, 
-	DATE_TRUNC('day', TestTime) AS StartOfDate,
-	COALESCE(AVG(CASE WHEN Result = 'fail' THEN 1 ELSE 0 END) * 100, 0) AS FlakePercentage,
-	STRING_AGG(CommitID || ': ' || Result || ': ' || COALESCE(ArtifactPath, ''), ', ') AS CommitResults
-	FROM lastn_data_top
-	GROUP BY TestName, StartOfDate
+	SELECT tc.TestName, 
+	DATE_TRUNC('day', tc.TestTime) AS StartOfDate,
+	COALESCE(AVG(CASE WHEN tc.Result = 'fail' THEN 1 ELSE 0 END) * 100, 0) AS FlakePercentage,
+	STRING_AGG(tc.CommitID || ': ' || tc.Result || ': ' || COALESCE(env.ArtifactPath, ''), ', ') AS CommitResults
+	FROM lastn_data_top AS tc
+	LEFT JOIN db_environment_tests env
+	ON env.CommitID = tc.CommitID AND env.EnvName = tc.EnvName
+	GROUP BY tc.TestName, StartOfDate
 	ORDER BY StartOfDate DESC
 	`, viewName,
 		strings.Join(topTestNames, "', '"))
@@ -428,12 +422,14 @@ func (m *Postgres) GetEnvCharts(env string, testsInTop int) (map[string]interfac
 		SELECT * FROM %s 
 		WHERE TestName IN (SELECT TestName FROM top_flakiest)
 	)
-	SELECT TestName,
-	DATE_TRUNC('week', TestTime) AS StartOfDate,
-	ROUND(COALESCE(AVG(CASE WHEN Result = 'fail' THEN 1 ELSE 0 END) * 100, 0), 2) AS FlakePercentage,
-	STRING_AGG(CommitID || ': ' || Result || ': ' || COALESCE(ArtifactPath, ''), ', ') AS CommitResults
-	FROM top_flakiest_data
-	GROUP BY TestName, StartOfDate
+	SELECT tc.TestName,
+	DATE_TRUNC('week', tc.TestTime) AS StartOfDate,
+	ROUND(COALESCE(AVG(CASE WHEN tc.Result = 'fail' THEN 1 ELSE 0 END) * 100, 0), 2) AS FlakePercentage,
+	STRING_AGG(tc.CommitID || ': ' || tc.Result || ': ' || COALESCE(env.ArtifactPath, ''), ', ') AS CommitResults
+	FROM top_flakiest_data AS tc
+	LEFT JOIN db_environment_tests env
+	ON env.CommitID = tc.CommitID AND env.EnvName = tc.EnvName
+	GROUP BY tc.TestName, StartOfDate
 	ORDER BY StartOfDate DESC;
 	`, viewName, viewName, viewName)
 	var flakeRateByWeek []models.DBFlakeBy

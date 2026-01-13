@@ -313,9 +313,6 @@ func (m *DB) processTestGridJob(ctx context.Context, client *http.Client, job cr
 	dbEnv.EnvGroup = envGroup
 	if artifactPath != "" {
 		dbEnv.ArtifactPath = artifactPath
-		for i := range dbTests {
-			dbTests[i].ArtifactPath = artifactPath
-		}
 	}
 	if err := m.Database.Set(dbEnv, dbTests); err != nil {
 		return fmt.Errorf("job %s: failed to insert: %v", job.ID, err)
@@ -326,20 +323,27 @@ func (m *DB) processTestGridJob(ctx context.Context, client *http.Client, job cr
 
 func ensureTestGridDetails(details, jobName, jobID string) string {
 	details = strings.TrimSpace(details)
-	if !strings.HasPrefix(details, "testgrid:") {
-		if details == "" {
-			details = fmt.Sprintf("testgrid:%s", jobName)
-		} else {
-			details = fmt.Sprintf("testgrid:%s:%s", jobName, details)
+	if strings.HasPrefix(strings.ToLower(details), "testgrid:") {
+		details = strings.TrimSpace(details[len("testgrid:"):])
+	}
+	if jobName != "" {
+		prefix := jobName + ":"
+		if strings.HasPrefix(details, prefix) {
+			details = strings.TrimSpace(details[len(prefix):])
 		}
+	}
+	if details == "" {
+		return jobID
 	}
 	if jobID == "" {
 		return details
 	}
-	if !strings.HasSuffix(details, jobID) {
-		details = details + ":" + jobID
+	for _, token := range strings.Split(details, ":") {
+		if strings.TrimSpace(token) == jobID {
+			return details
+		}
 	}
-	return details
+	return details + ":" + jobID
 }
 
 type testgridLoaderPageData struct {

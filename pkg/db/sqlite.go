@@ -38,7 +38,6 @@ var createTestCasesTableSQL = `
 		EnvName TEXT,
 		TestOrder INTEGER,
 		TestTime TEXT,
-		ArtifactPath TEXT NOT NULL DEFAULT '',
 		PRIMARY KEY (CommitId, EnvName, TestName)
 	);
 `
@@ -62,7 +61,7 @@ func (m *sqlite) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTestC
 		}
 	}()
 
-	sqlInsert := `INSERT OR REPLACE INTO db_test_cases (PR, CommitId, TestName, Result, Duration, EnvName, TestOrder, TestTime, ArtifactPath) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	sqlInsert := `INSERT OR REPLACE INTO db_test_cases (PR, CommitId, TestName, Result, Duration, EnvName, TestOrder, TestTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 	stmt, err := tx.Prepare(sqlInsert)
 	if err != nil {
 		return fmt.Errorf("failed to prepare SQL insert statement: %v", err)
@@ -72,7 +71,7 @@ func (m *sqlite) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTestC
 	}()
 
 	for _, r := range dbRows {
-		_, err := stmt.Exec(r.PR, r.CommitID, r.TestName, r.Result, r.Duration, r.EnvName, r.TestOrder, r.TestTime.String(), r.ArtifactPath)
+		_, err := stmt.Exec(r.PR, r.CommitID, r.TestName, r.Result, r.Duration, r.EnvName, r.TestOrder, r.TestTime.String())
 		if err != nil {
 			return fmt.Errorf("failed to execute SQL insert: %v", err)
 		}
@@ -126,17 +125,11 @@ func (m *sqlite) Initialize() error {
 	if err := ensureSQLiteColumn(m.db, "db_environment_tests", "ArtifactPath", "TEXT NOT NULL DEFAULT ''"); err != nil {
 		return fmt.Errorf("failed to ensure ArtifactPath on environment tests table: %v", err)
 	}
-	if err := ensureSQLiteColumn(m.db, "db_test_cases", "ArtifactPath", "TEXT NOT NULL DEFAULT ''"); err != nil {
-		return fmt.Errorf("failed to ensure ArtifactPath on test cases table: %v", err)
-	}
 	if _, err := m.db.Exec(`UPDATE db_environment_tests SET ArtifactPath = '' WHERE ArtifactPath IS NULL;`); err != nil {
 		return fmt.Errorf("failed to backfill ArtifactPath on environment tests table: %v", err)
 	}
 	if _, err := m.db.Exec(`UPDATE db_environment_tests SET EnvGroup = 'Legacy' WHERE EnvGroup IS NULL OR EnvGroup = '';`); err != nil {
 		return fmt.Errorf("failed to backfill EnvGroup on environment tests table: %v", err)
-	}
-	if _, err := m.db.Exec(`UPDATE db_test_cases SET ArtifactPath = '' WHERE ArtifactPath IS NULL;`); err != nil {
-		return fmt.Errorf("failed to backfill ArtifactPath on test cases table: %v", err)
 	}
 	return nil
 }
