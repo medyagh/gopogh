@@ -54,13 +54,17 @@ func (m *DB) ServeTestCharts(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "missing environment name", http.StatusUnprocessableEntity)
 		return
 	}
+	envGroup := queryValues.Get("env_group")
+	if envGroup == "" {
+		envGroup = queryValues.Get("envGroup")
+	}
 	test := queryValues.Get("test")
 	if test == "" {
 		http.Error(w, "missing test name", http.StatusUnprocessableEntity)
 		return
 	}
 
-	data, err := m.Database.GetTestCharts(env, test)
+	data, err := m.Database.GetTestCharts(env, envGroup, test)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -91,6 +95,10 @@ func (m *DB) ServeEnvCharts(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "missing environment name", http.StatusUnprocessableEntity)
 		return
 	}
+	envGroup := queryValues.Get("env_group")
+	if envGroup == "" {
+		envGroup = queryValues.Get("envGroup")
+	}
 	testsInTopStr := queryValues.Get("tests_in_top")
 	if testsInTopStr == "" {
 		testsInTopStr = "10"
@@ -100,7 +108,7 @@ func (m *DB) ServeEnvCharts(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("invalid number of top tests to use: %v", err), http.StatusUnprocessableEntity)
 		return
 	}
-	data, err := m.Database.GetEnvCharts(env, testsInTop)
+	data, err := m.Database.GetEnvCharts(env, envGroup, testsInTop)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

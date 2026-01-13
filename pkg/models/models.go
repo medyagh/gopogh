@@ -44,6 +44,7 @@ type DBTestCase struct {
 	Result       string
 	Duration     float64
 	EnvName      string
+	EnvGroup     string
 	TestOrder    int
 }
 
@@ -100,6 +101,7 @@ type DBTestRateAndDuration struct {
 type DBSummaryAvgFail struct {
 	StartOfDate    time.Time `json:"startOfDate"`
 	EnvName        string    `json:"envName"`
+	EnvGroup       string    `json:"envGroup"`
 	AvgFailedTests float32   `json:"avgFailedTests"`
 	AvgDuration    float32   `json:"avgDuration"`
 }

@@ -189,11 +189,6 @@ func (m *DB) LoadTestGrid(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := m.Database.Initialize(); err != nil {
-		http.Error(w, fmt.Sprintf("failed to initialize database: %v", err), http.StatusInternalServerError)
-		return
-	}
-
 	maxPages := parsePositiveInt(r.URL.Query().Get("max_pages"), defaultMaxPages)
 	concurrency := parsePositiveInt(r.URL.Query().Get("concurrency"), defaultConcurrency)
 	dashboardKey := r.URL.Query().Get("dashboard")

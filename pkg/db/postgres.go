@@ -23,7 +23,7 @@ var pgEnvTableSchema = `
 		NumberOfSkip INTEGER,
 		TotalDuration FLOAT,
 		ArtifactPath TEXT NOT NULL DEFAULT '',
-		PRIMARY KEY (CommitID, EnvName)
+		PRIMARY KEY (CommitID, EnvName, EnvGroup)
 	);
 `
 var pgTestCasesTableSchema = `
@@ -31,11 +31,12 @@ var pgTestCasesTableSchema = `
 		PR TEXT,
 		CommitID TEXT,
 		EnvName TEXT,
+		EnvGroup TEXT NOT NULL DEFAULT 'Legacy',
 		TestName TEXT,
 		Result TEXT,
 		TestTime TIMESTAMP,
 		Duration FLOAT,
-		PRIMARY KEY (CommitID, EnvName, TestName)
+		PRIMARY KEY (CommitID, EnvName, EnvGroup, TestName)
 	);
 `
 
@@ -52,6 +53,20 @@ func (m *Postgres) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTes
 		return fmt.Errorf("failed to create SQL transaction: %v", err)
 	}
 
+	envGroup := strings.TrimSpace(commitRow.EnvGroup)
+	if envGroup == "" {
+		for _, row := range dbRows {
+			rowEnvGroup := strings.TrimSpace(row.EnvGroup)
+			if rowEnvGroup != "" {
+				envGroup = rowEnvGroup
+				break
+			}
+		}
+	}
+	if envGroup == "" {
+		envGroup = "Legacy"
+	}
+
 	var rollbackError error
 	defer func() {
 		if rErr := tx.Rollback(); rErr != nil {
@@ -60,9 +75,9 @@ func (m *Postgres) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTes
 	}()
 
 	sqlInsert := `
-		INSERT INTO db_test_cases (PR, CommitId, EnvName, TestName, Result, TestTime, Duration)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-		ON CONFLICT (CommitId, EnvName, TestName)
+		INSERT INTO db_test_cases (PR, CommitId, EnvName, EnvGroup, TestName, Result, TestTime, Duration)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		ON CONFLICT (CommitId, EnvName, EnvGroup, TestName)
 		DO UPDATE SET (PR, Result, TestTime, Duration) = (EXCLUDED.PR, EXCLUDED.Result, EXCLUDED.TestTime, EXCLUDED.Duration)
 	`
 	stmt, err := tx.Prepare(sqlInsert)
@@ -74,20 +89,20 @@ func (m *Postgres) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTes
 	}()
 
 	for _, r := range dbRows {
-		_, err := stmt.Exec(r.PR, r.CommitID, r.EnvName, r.TestName, r.Result, r.TestTime, r.Duration)
+		rowEnvGroup := strings.TrimSpace(r.EnvGroup)
+		if rowEnvGroup == "" {
+			rowEnvGroup = envGroup
+		}
+		_, err := stmt.Exec(r.PR, r.CommitID, r.EnvName, rowEnvGroup, r.TestName, r.Result, r.TestTime, r.Duration)
 		if err != nil {
 			return fmt.Errorf("failed to execute SQL insert: %v", err)
 		}
 	}
 
-	envGroup := strings.TrimSpace(commitRow.EnvGroup)
-	if envGroup == "" {
-		envGroup = "Legacy"
-	}
 	sqlInsert = `
 		INSERT INTO db_environment_tests (CommitID, EnvName, EnvGroup, GopoghTime, TestTime, NumberOfFail, NumberOfPass, NumberOfSkip, TotalDuration, ArtifactPath) 
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-		ON CONFLICT (CommitId, EnvName)
+		ON CONFLICT (CommitId, EnvName, EnvGroup)
 		DO UPDATE SET (EnvGroup, GopoghTime, TestTime, NumberOfFail, NumberOfPass, NumberOfSkip, TotalDuration, ArtifactPath) = (EXCLUDED.EnvGroup, EXCLUDED.GopoghTime, EXCLUDED.TestTime, EXCLUDED.NumberOfFail, EXCLUDED.NumberOfPass, EXCLUDED.NumberOfSkip, EXCLUDED.TotalDuration, EXCLUDED.ArtifactPath)
 		`
 	_, err = tx.Exec(sqlInsert, commitRow.CommitID, commitRow.EnvName, envGroup, commitRow.GopoghTime, commitRow.TestTime, commitRow.NumberOfFail, commitRow.NumberOfPass, commitRow.NumberOfSkip, commitRow.TotalDuration, commitRow.ArtifactPath)
@@ -118,6 +133,9 @@ func newPostgres(cfg config) (*Postgres, error) {
 
 // Initialize creates the tables within the Postgres database
 func (m *Postgres) Initialize() error {
+	start := time.Now()
+	defer log.Printf("\nduration metric: took %f seconds to initialize Postgres tables\n", time.Since(start).Seconds())
+
 	if _, err := m.db.Exec(pgEnvTableSchema); err != nil {
 		return fmt.Errorf("failed to initialize environment tests table: %v", err)
 	}
@@ -130,11 +148,69 @@ func (m *Postgres) Initialize() error {
 	if _, err := m.db.Exec(`ALTER TABLE db_environment_tests ADD COLUMN IF NOT EXISTS ArtifactPath TEXT NOT NULL DEFAULT '';`); err != nil {
 		return fmt.Errorf("failed to ensure ArtifactPath on environment tests table: %v", err)
 	}
+	if _, err := m.db.Exec(`ALTER TABLE db_test_cases ADD COLUMN IF NOT EXISTS EnvGroup TEXT NOT NULL DEFAULT 'Legacy';`); err != nil {
+		return fmt.Errorf("failed to ensure EnvGroup on test cases table: %v", err)
+	}
 	if _, err := m.db.Exec(`UPDATE db_environment_tests SET ArtifactPath = '' WHERE ArtifactPath IS NULL;`); err != nil {
 		return fmt.Errorf("failed to backfill ArtifactPath on environment tests table: %v", err)
 	}
 	if _, err := m.db.Exec(`UPDATE db_environment_tests SET EnvGroup = 'Legacy' WHERE EnvGroup IS NULL OR EnvGroup = '';`); err != nil {
 		return fmt.Errorf("failed to backfill EnvGroup on environment tests table: %v", err)
+	}
+	if _, err := m.db.Exec(`UPDATE db_test_cases SET EnvGroup = 'Legacy' WHERE EnvGroup IS NULL OR EnvGroup = '';`); err != nil {
+		return fmt.Errorf("failed to backfill EnvGroup on test cases table: %v", err)
+	}
+	if _, err := m.db.Exec(`
+		WITH env_groups AS (
+			SELECT CommitID, EnvName, MIN(EnvGroup) AS EnvGroup
+			FROM db_environment_tests
+			WHERE EnvGroup IS NOT NULL AND EnvGroup <> ''
+			GROUP BY CommitID, EnvName
+			HAVING COUNT(DISTINCT EnvGroup) = 1
+		)
+		DELETE FROM db_test_cases tc
+		USING env_groups eg
+		WHERE tc.CommitID = eg.CommitID
+			AND tc.EnvName = eg.EnvName
+			AND (tc.EnvGroup IS NULL OR tc.EnvGroup = '' OR tc.EnvGroup = 'Legacy')
+			AND EXISTS (
+				SELECT 1 FROM db_test_cases existing
+				WHERE existing.CommitID = tc.CommitID
+					AND existing.EnvName = tc.EnvName
+					AND existing.TestName = tc.TestName
+					AND existing.EnvGroup = eg.EnvGroup
+			);
+	`); err != nil {
+		return fmt.Errorf("failed to remove duplicate test cases during EnvGroup backfill: %v", err)
+	}
+	if _, err := m.db.Exec(`
+		WITH env_groups AS (
+			SELECT CommitID, EnvName, MIN(EnvGroup) AS EnvGroup
+			FROM db_environment_tests
+			WHERE EnvGroup IS NOT NULL AND EnvGroup <> ''
+			GROUP BY CommitID, EnvName
+			HAVING COUNT(DISTINCT EnvGroup) = 1
+		)
+		UPDATE db_test_cases tc
+		SET EnvGroup = eg.EnvGroup
+		FROM env_groups eg
+		WHERE tc.CommitID = eg.CommitID
+			AND tc.EnvName = eg.EnvName
+			AND (tc.EnvGroup IS NULL OR tc.EnvGroup = '' OR tc.EnvGroup = 'Legacy');
+	`); err != nil {
+		return fmt.Errorf("failed to backfill EnvGroup on test cases table from environment tests: %v", err)
+	}
+	if _, err := m.db.Exec(`ALTER TABLE db_environment_tests DROP CONSTRAINT IF EXISTS db_environment_tests_pkey;`); err != nil {
+		return fmt.Errorf("failed to drop environment tests primary key: %v", err)
+	}
+	if _, err := m.db.Exec(`ALTER TABLE db_environment_tests ADD PRIMARY KEY (CommitID, EnvName, EnvGroup);`); err != nil {
+		return fmt.Errorf("failed to add environment tests primary key: %v", err)
+	}
+	if _, err := m.db.Exec(`ALTER TABLE db_test_cases DROP CONSTRAINT IF EXISTS db_test_cases_pkey;`); err != nil {
+		return fmt.Errorf("failed to drop test cases primary key: %v", err)
+	}
+	if _, err := m.db.Exec(`ALTER TABLE db_test_cases ADD PRIMARY KEY (CommitID, EnvName, EnvGroup, TestName);`); err != nil {
+		return fmt.Errorf("failed to add test cases primary key: %v", err)
 	}
 	return nil
 }
@@ -157,7 +233,7 @@ func (m *Postgres) GetEnvironmentTestsAndTestCases() (map[string]interface{}, er
 	}
 
 	err = m.db.Select(&testCases, `
-		SELECT PR, CommitID, EnvName, TestName, Result, TestTime, Duration
+		SELECT PR, CommitID, EnvName, EnvGroup, TestName, Result, TestTime, Duration
 		FROM db_test_cases
 		ORDER BY TestTime DESC
 		LIMIT 100
@@ -174,12 +250,76 @@ func (m *Postgres) GetEnvironmentTestsAndTestCases() (map[string]interface{}, er
 	return data, nil
 }
 
-func (m *Postgres) createMaterializedView(env string, viewName string) error {
+func sanitizeIdentifier(value string) string {
+	if value == "" {
+		return "unknown"
+	}
+	var b strings.Builder
+	b.Grow(len(value))
+	for _, r := range value {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_' {
+			b.WriteRune(r)
+		} else {
+			b.WriteRune('_')
+		}
+	}
+	result := b.String()
+	if result == "" {
+		return "unknown"
+	}
+	return result
+}
+
+func escapeSQLLiteral(value string) string {
+	return strings.ReplaceAll(value, "'", "''")
+}
+
+func materializedViewName(envName, envGroup string) string {
+	base := fmt.Sprintf("lastn_data_%s_%s", sanitizeIdentifier(envGroup), sanitizeIdentifier(envName))
+	return fmt.Sprintf("\"%s\"", base)
+}
+
+func (m *Postgres) resolveEnvGroup(envName, envGroup string) (string, error) {
+	envName = strings.TrimSpace(envName)
+	envGroup = strings.TrimSpace(envGroup)
+	if envName == "" {
+		return "", fmt.Errorf("missing environment name")
+	}
+	if envGroup != "" {
+		var exists bool
+		if err := m.db.Get(&exists, "SELECT EXISTS(SELECT 1 FROM db_environment_tests WHERE EnvName = $1 AND EnvGroup = $2)", envName, envGroup); err != nil {
+			return "", fmt.Errorf("failed to validate environment: %v", err)
+		}
+		if !exists {
+			return "", fmt.Errorf("invalid environment group for %s: %s", envName, envGroup)
+		}
+		return envGroup, nil
+	}
+	var groups []string
+	if err := m.db.Select(&groups, "SELECT DISTINCT EnvGroup FROM db_environment_tests WHERE EnvName = $1", envName); err != nil {
+		return "", fmt.Errorf("failed to execute SQL query for list of valid environment groups: %v", err)
+	}
+	if len(groups) == 0 {
+		return "", fmt.Errorf("invalid environment. Not found in database: %v", envName)
+	}
+	if len(groups) > 1 {
+		return "", fmt.Errorf("environment name %q exists in multiple env groups; specify env_group", envName)
+	}
+	group := strings.TrimSpace(groups[0])
+	if group == "" {
+		group = "Legacy"
+	}
+	return group, nil
+}
+
+func (m *Postgres) createMaterializedView(envName, envGroup, viewName string) error {
+	envName = escapeSQLLiteral(envName)
+	envGroup = escapeSQLLiteral(envGroup)
 	createView := fmt.Sprintf(`
 	CREATE MATERIALIZED VIEW IF NOT EXISTS %s AS 
-		SELECT CommitID, EnvName, TestName, Result, Duration, TestTime FROM db_test_cases
-		WHERE Result != 'skip' AND EnvName = '%s' AND TestTime >= NOW() - INTERVAL '90 days'
-	`, viewName, env)
+		SELECT CommitID, EnvName, EnvGroup, TestName, Result, Duration, TestTime FROM db_test_cases
+		WHERE Result != 'skip' AND EnvName = '%s' AND EnvGroup = '%s' AND TestTime >= NOW() - INTERVAL '90 days'
+	`, viewName, envName, envGroup)
 
 	if _, err := m.db.Exec(createView); err != nil {
 		return err
@@ -194,26 +334,16 @@ func (m *Postgres) createMaterializedView(env string, viewName string) error {
 }
 
 // GetTestCharts writes the individual test chart data to a map with the keys flakeByDay and flakeByWeek
-func (m *Postgres) GetTestCharts(env string, test string) (map[string]interface{}, error) {
+func (m *Postgres) GetTestCharts(envName string, envGroup string, test string) (map[string]interface{}, error) {
 	start := time.Now()
 
-	var validEnvs []string
-	err := m.db.Select(&validEnvs, "SELECT DISTINCT EnvName FROM db_environment_tests")
+	resolvedEnvGroup, err := m.resolveEnvGroup(envName, envGroup)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute SQL query for list of valid environments: %v", err)
-	}
-	isValidEnv := false
-	for _, e := range validEnvs {
-		if env == e {
-			isValidEnv = true
-		}
-	}
-	if !isValidEnv {
-		return nil, fmt.Errorf("invalid environment. Not found in database: %v", err)
+		return nil, err
 	}
 
-	viewName := fmt.Sprintf("\"lastn_data_%s\"", env)
-	err = m.createMaterializedView(env, viewName)
+	viewName := materializedViewName(envName, resolvedEnvGroup)
+	err = m.createMaterializedView(envName, resolvedEnvGroup, viewName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute SQL query for view creation: %v", err)
 	}
@@ -229,7 +359,7 @@ func (m *Postgres) GetTestCharts(env string, test string) (map[string]interface{
 	STRING_AGG(tc.CommitID || ': ' || tc.Result || ': ' || tc.Duration || ': ' || COALESCE(env.ArtifactPath, ''), ', ') AS CommitResultsAndDurations
 	FROM %s AS tc
 	LEFT JOIN db_environment_tests env
-	ON env.CommitID = tc.CommitID AND env.EnvName = tc.EnvName
+	ON env.CommitID = tc.CommitID AND env.EnvName = tc.EnvName AND env.EnvGroup = tc.EnvGroup
 	WHERE tc.TestName = $1
 	GROUP BY StartOfDate
 	ORDER BY StartOfDate DESC
@@ -252,7 +382,7 @@ func (m *Postgres) GetTestCharts(env string, test string) (map[string]interface{
 	STRING_AGG(tc.CommitID || ': ' || tc.Result || ': ' || tc.Duration || ': ' || COALESCE(env.ArtifactPath, ''), ', ') AS CommitResultsAndDurations
 	FROM %s AS tc
 	LEFT JOIN db_environment_tests env
-	ON env.CommitID = tc.CommitID AND env.EnvName = tc.EnvName
+	ON env.CommitID = tc.CommitID AND env.EnvName = tc.EnvName AND env.EnvGroup = tc.EnvGroup
 	WHERE tc.TestName = $1
 	GROUP BY StartOfDate
 	ORDER BY StartOfDate DESC
@@ -273,7 +403,7 @@ func (m *Postgres) GetTestCharts(env string, test string) (map[string]interface{
 	STRING_AGG(tc.CommitID || ': ' || tc.Result || ': ' || tc.Duration || ': ' || COALESCE(env.ArtifactPath, ''), ', ') AS CommitResultsAndDurations
 	FROM %s AS tc
 	LEFT JOIN db_environment_tests env
-	ON env.CommitID = tc.CommitID AND env.EnvName = tc.EnvName
+	ON env.CommitID = tc.CommitID AND env.EnvName = tc.EnvName AND env.EnvGroup = tc.EnvGroup
 	WHERE tc.TestName = $1
 	GROUP BY StartOfDate
 	ORDER BY StartOfDate DESC
@@ -295,26 +425,16 @@ func (m *Postgres) GetTestCharts(env string, test string) (map[string]interface{
 }
 
 // GetEnvCharts writes the overall environment charts to a map with the keys recentFlakePercentTable, flakeRateByWeek, flakeRateByDay, and countsAndDurations
-func (m *Postgres) GetEnvCharts(env string, testsInTop int) (map[string]interface{}, error) {
+func (m *Postgres) GetEnvCharts(envName string, envGroup string, testsInTop int) (map[string]interface{}, error) {
 	start := time.Now()
 
-	var validEnvs []string
-	err := m.db.Select(&validEnvs, "SELECT DISTINCT EnvName FROM db_environment_tests")
+	resolvedEnvGroup, err := m.resolveEnvGroup(envName, envGroup)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute SQL query for list of valid environments: %v", err)
-	}
-	isValidEnv := false
-	for _, e := range validEnvs {
-		if env == e {
-			isValidEnv = true
-		}
-	}
-	if !isValidEnv {
-		return nil, fmt.Errorf("invalid environment. Not found in database: %v", err)
+		return nil, err
 	}
 
-	viewName := fmt.Sprintf("\"lastn_data_%s\"", env)
-	err = m.createMaterializedView(env, viewName)
+	viewName := materializedViewName(envName, resolvedEnvGroup)
+	err = m.createMaterializedView(envName, resolvedEnvGroup, viewName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute SQL query for view creation: %v", err)
 	}
@@ -388,7 +508,7 @@ func (m *Postgres) GetEnvCharts(env string, testsInTop int) (map[string]interfac
 	STRING_AGG(tc.CommitID || ': ' || tc.Result || ': ' || COALESCE(env.ArtifactPath, ''), ', ') AS CommitResults
 	FROM lastn_data_top AS tc
 	LEFT JOIN db_environment_tests env
-	ON env.CommitID = tc.CommitID AND env.EnvName = tc.EnvName
+	ON env.CommitID = tc.CommitID AND env.EnvName = tc.EnvName AND env.EnvGroup = tc.EnvGroup
 	GROUP BY tc.TestName, StartOfDate
 	ORDER BY StartOfDate DESC
 	`, viewName,
@@ -428,7 +548,7 @@ func (m *Postgres) GetEnvCharts(env string, testsInTop int) (map[string]interfac
 	STRING_AGG(tc.CommitID || ': ' || tc.Result || ': ' || COALESCE(env.ArtifactPath, ''), ', ') AS CommitResults
 	FROM top_flakiest_data AS tc
 	LEFT JOIN db_environment_tests env
-	ON env.CommitID = tc.CommitID AND env.EnvName = tc.EnvName
+	ON env.CommitID = tc.CommitID AND env.EnvName = tc.EnvName AND env.EnvGroup = tc.EnvGroup
 	GROUP BY tc.TestName, StartOfDate
 	ORDER BY StartOfDate DESC;
 	`, viewName, viewName, viewName)
@@ -445,7 +565,7 @@ func (m *Postgres) GetEnvCharts(env string, testsInTop int) (map[string]interfac
 	WITH lastn_env_data AS (
 		SELECT *
 		FROM db_environment_tests
-		WHERE EnvName = $1 AND TestTime >= NOW() - INTERVAL '90 days'
+		WHERE EnvName = $1 AND EnvGroup = $2 AND TestTime >= NOW() - INTERVAL '90 days'
 	)
 	SELECT
 	DATE_TRUNC('day', TestTime) AS StartOfDate,
@@ -458,7 +578,7 @@ func (m *Postgres) GetEnvCharts(env string, testsInTop int) (map[string]interfac
 	ORDER BY StartOfDate DESC
 	`
 	var countsAndDurations []models.DBEnvDuration
-	err = m.db.Select(&countsAndDurations, sqlQuer, env)
+	err = m.db.Select(&countsAndDurations, sqlQuer, envName, resolvedEnvGroup)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute SQL query for environment test count and duration chart: %v", err)
 	}
@@ -480,11 +600,11 @@ func (m *Postgres) GetOverview(dateRange int) (map[string]interface{}, error) {
 	start := time.Now()
 	// Filters out old data and calculates the average number of failures and average duration per day per environment
 	sqlQuery := `
-	SELECT DATE_TRUNC('day', TestTime) AS StartOfDate, EnvName, AVG(NumberOfFail) AS AvgFailedTests, AVG(TotalDuration) AS AvgDuration
+	SELECT DATE_TRUNC('day', TestTime) AS StartOfDate, EnvName, EnvGroup, AVG(NumberOfFail) AS AvgFailedTests, AVG(TotalDuration) AS AvgDuration
 	FROM db_environment_tests
 	WHERE TestTime >= NOW() - INTERVAL '90 days'
-	GROUP BY StartOfDate, EnvName
-	ORDER BY StartOfDate, EnvName;
+	GROUP BY StartOfDate, EnvName, EnvGroup
+	ORDER BY StartOfDate, EnvName, EnvGroup;
 	`
 
 	var summaryAvgFail []models.DBSummaryAvgFail
@@ -521,13 +641,13 @@ func (m *Postgres) GetOverview(dateRange int) (map[string]interface{}, error) {
 		LIMIT 1
 	), temp AS (
 	SELECT data.EnvName,
+	data.EnvGroup,
 	ROUND(COALESCE(AVG(CASE WHEN TestTime > (SELECT Date FROM recentCutoff) THEN NumberOfFail END), 0), 2) AS RecentNumberOfFail,
 	ROUND(COALESCE(AVG(CASE WHEN TestTime <= (SELECT Date FROM recentCutoff) AND TestTime > (SELECT Date FROM prevCutoff) THEN NumberOfFail END), 0), 2) AS PrevNumberOfFail,
-	COALESCE((SELECT TotalDuration FROM data As B WHERE B.EnvName=data.EnvName ORDER BY TestTime DESC LIMIT 1),0)As TestDuration,
-	COALESCE((SELECT TotalDuration FROM data As B WHERE B.EnvName=data.EnvName ORDER BY TestTime DESC OFFSET 1 LIMIT 1),0)As PreviousTestDuration,
-	COALESCE(NULLIF((SELECT EnvGroup FROM data As B WHERE B.EnvName=data.EnvName ORDER BY TestTime DESC LIMIT 1), ''), 'Legacy')As EnvGroup
+	COALESCE((SELECT TotalDuration FROM data As B WHERE B.EnvName=data.EnvName AND B.EnvGroup=data.EnvGroup ORDER BY TestTime DESC LIMIT 1),0)As TestDuration,
+	COALESCE((SELECT TotalDuration FROM data As B WHERE B.EnvName=data.EnvName AND B.EnvGroup=data.EnvGroup ORDER BY TestTime DESC OFFSET 1 LIMIT 1),0)As PreviousTestDuration
 	FROM data
-	GROUP BY EnvName
+	GROUP BY data.EnvName, data.EnvGroup
 	ORDER BY RecentNumberOfFail DESC
 	)
 	SELECT EnvName, EnvGroup, RecentNumberOfFail, RecentNumberOfFail - PrevNumberOfFail AS Growth, TestDuration,PreviousTestDuration, TestDuration-PreviousTestDuration AS TestDurationGROWTH
