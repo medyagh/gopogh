@@ -134,7 +134,9 @@ func newPostgres(cfg config) (*Postgres, error) {
 // Initialize creates the tables within the Postgres database
 func (m *Postgres) Initialize() error {
 	start := time.Now()
-	defer log.Printf("\nduration metric: took %f seconds to initialize Postgres tables\n", time.Since(start).Seconds())
+	defer func() {
+		log.Printf("\nduration metric: took %f seconds to initialize Postgres tables\n", time.Since(start).Seconds())
+	}()
 
 	if _, err := m.db.Exec(pgEnvTableSchema); err != nil {
 		return fmt.Errorf("failed to initialize environment tests table: %v", err)
