@@ -133,6 +133,34 @@ test-in-docker:
 .PHONY: azure_blob_connection_string
 azure_blob_connection_string: ## set this env export AZURE_STORAGE_CONNECTION_STRING=$(az storage account show-connection-string -n $AZ_STORAGE -g $AZ_RG --query connectionString -o tsv)
 	az storage account show-connection-string -n ${AZ_STORAGE} -g ${AZ_RG} --query connectionString -o tsv
-
+# modifies the db with New Dates
 load-fake-db:
 	./hack/fakedb.sh $(RECORD_PATH)
+
+
+# ----- NEW LOCAL DB TESTING TARGETS -----
+_0postgres_in_docker_deubg:
+	docker run -d --name local-postgres -e POSTGRES_HOST_AUTH_METHOD=trust -p 5432:5432 postgres:alpine
+
+SQL_EXPORT_FILE ?= /Users/med/Downloads/Cloud_SQL_Export_2026-01-12.sql
+_1import_sql_to_local_postgres:
+	docker cp $(SQL_EXPORT_FILE) local-postgres:/tmp/export.sql
+	docker exec -it local-postgres psql -U postgres -f /tmp/export.sql
+	docker exec -it local-postgres rm /tmp/export.sql
+
+_2delete_extra_data_from_local_postgres:
+	docker exec -it local-postgres psql -U postgres -d postgres -c " \
+	DO \$$\$$ \
+	BEGIN \
+		SET session_replication_role = 'replica'; \
+		RAISE NOTICE 'Starting prune...'; \
+		DELETE FROM db_test_cases WHERE testtime < NOW() - INTERVAL '1 year'; \
+		DELETE FROM db_environment_tests WHERE testtime < NOW() - INTERVAL '1 year'; \
+		SET session_replication_role = 'origin'; \
+		RAISE NOTICE 'Prune complete.'; \
+	END \$$\$$; \
+	"
+
+# run after delete extra data
+_3vacum_ful_from_local_postgres:
+	docker exec -it local-postgres psql -U postgres -d postgres -c "VACUUM FULL;"

@@ -32,11 +32,11 @@ type Datab interface {
 
 	GetEnvironmentTestsAndTestCases() (map[string]interface{}, error)
 
-	GetEnvCharts(string, int) (map[string]interface{}, error)
+	GetEnvCharts(string, string, int) (map[string]interface{}, error)
 
 	GetOverview(dataRange int) (map[string]interface{}, error)
 
-	GetTestCharts(string, string) (map[string]interface{}, error)
+	GetTestCharts(string, string, string) (map[string]interface{}, error)
 }
 
 // newDB handles which database driver to use and initializes the db

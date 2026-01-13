@@ -9,15 +9,19 @@ import (
 
 	"github.com/medyagh/gopogh/pkg/db"
 	"github.com/medyagh/gopogh/pkg/handler"
+	"github.com/medyagh/gopogh/pkg/report"
 )
 
 var dbPath = flag.String("db_path", "", "path to postgres db in the form of 'user=DB_USER dbname=DB_NAME password=DB_PASS'")
 var dbHost = flag.String("db_host", "", "host of the db")
 var useCloudSQL = flag.Bool("use_cloudsql", false, "whether the database is a cloudsql db")
 var useIAMAuth = flag.Bool("use_iam_auth", false, "whether to use IAM to authenticate with the cloudsql db")
+var testgridConfigPath = flag.String("testgrid_config", "", "path to testgrid dashboard config")
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	flag.Parse()
+	log.Printf("gopogh-server starting (version=%s build=%s)", report.Version(), report.Build)
 	flagValues := db.FlagValues{
 		Backend:     "postgres",
 		Host:        *dbHost,
@@ -29,8 +33,19 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if err := datab.Initialize(); err != nil {
+		log.Fatalf("failed to initialize database: %v", err)
+	}
+
+	testgridCfg, err := handler.LoadTestGridConfig(*testgridConfigPath)
+	if err != nil {
+		log.Printf("failed to load testgrid config %s: %v", *testgridConfigPath, err)
+	}
+	log.Printf("testgrid dashboards loaded: %d", len(testgridCfg.Dashboards))
+
 	db := handler.DB{
-		Database: datab,
+		Database:    datab,
+		TestGridCfg: testgridCfg,
 	}
 	// Create an HTTP server and register the handlers
 
@@ -44,9 +59,12 @@ func main() {
 
 	http.HandleFunc("/version", handler.ServeGopoghVersion)
 
+	http.HandleFunc("/load-testgrid", db.LoadTestGrid)
+
 	http.HandleFunc("/", handler.ServeHTML)
 
 	// Start the HTTP server
+	log.Printf("listening on :8080")
 	err = http.ListenAndServe(":8080", nil)
 	if err != nil {
 		log.Fatalf("failed to start HTTP server: %v", err)

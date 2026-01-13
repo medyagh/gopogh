@@ -37,20 +37,22 @@ type TestGroup struct {
 
 // DBTestCase represents a row in db table that holds each individual subtest
 type DBTestCase struct {
-	PR        string
-	CommitID  string
-	TestName  string
-	TestTime  time.Time
-	Result    string
-	Duration  float64
-	EnvName   string
-	TestOrder int
+	PR           string
+	CommitID     string
+	TestName     string
+	TestTime     time.Time
+	Result       string
+	Duration     float64
+	EnvName      string
+	EnvGroup     string
+	TestOrder    int
 }
 
 // DBEnvironmentTest represents a row in db table that has finished tests in each environment
 type DBEnvironmentTest struct {
 	CommitID      string
 	EnvName       string
+	EnvGroup      string
 	GopoghTime    time.Time
 	TestTime      time.Time
 	NumberOfFail  int
@@ -58,6 +60,7 @@ type DBEnvironmentTest struct {
 	NumberOfSkip  int
 	TotalDuration float64
 	GopoghVersion string
+	ArtifactPath  string
 }
 
 // DBFlakeRow represents a row in the basic flake rate table
@@ -98,6 +101,7 @@ type DBTestRateAndDuration struct {
 type DBSummaryAvgFail struct {
 	StartOfDate    time.Time `json:"startOfDate"`
 	EnvName        string    `json:"envName"`
+	EnvGroup       string    `json:"envGroup"`
 	AvgFailedTests float32   `json:"avgFailedTests"`
 	AvgDuration    float32   `json:"avgDuration"`
 }
@@ -105,6 +109,7 @@ type DBSummaryAvgFail struct {
 // DBSummaryTable represents a row in the summary number of fail table
 type DBSummaryTable struct {
 	EnvName              string  `json:"envName"`
+	EnvGroup             string  `json:"envGroup"`
 	RecentNumberOfFail   float32 `json:"recentNumberOfFail"`
 	Growth               float32 `json:"growth"`
 	TestDuration         float32 `json:"testDuration"`
