@@ -15,12 +15,14 @@ var pgEnvTableSchema = `
 	CREATE TABLE IF NOT EXISTS db_environment_tests (
 		CommitID TEXT,
 		EnvName TEXT,
+		EnvGroup TEXT NOT NULL DEFAULT 'Legacy',
 		GopoghTime TIMESTAMP,
 		TestTime TIMESTAMP,
 		NumberOfFail INTEGER,
 		NumberOfPass INTEGER,
 		NumberOfSkip INTEGER,
 		TotalDuration FLOAT,
+		ArtifactPath TEXT NOT NULL DEFAULT '',
 		PRIMARY KEY (CommitID, EnvName)
 	);
 `
@@ -33,6 +35,7 @@ var pgTestCasesTableSchema = `
 		Result TEXT,
 		TestTime TIMESTAMP,
 		Duration FLOAT,
+		ArtifactPath TEXT NOT NULL DEFAULT '',
 		PRIMARY KEY (CommitID, EnvName, TestName)
 	);
 `
@@ -58,10 +61,10 @@ func (m *Postgres) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTes
 	}()
 
 	sqlInsert := `
-		INSERT INTO db_test_cases (PR, CommitId, EnvName, TestName, Result, TestTime, Duration)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO db_test_cases (PR, CommitId, EnvName, TestName, Result, TestTime, Duration, ArtifactPath)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		ON CONFLICT (CommitId, EnvName, TestName)
-		DO UPDATE SET (PR, Result, TestTime, Duration) = (EXCLUDED.PR, EXCLUDED.Result, EXCLUDED.TestTime, EXCLUDED.Duration)
+		DO UPDATE SET (PR, Result, TestTime, Duration, ArtifactPath) = (EXCLUDED.PR, EXCLUDED.Result, EXCLUDED.TestTime, EXCLUDED.Duration, EXCLUDED.ArtifactPath)
 	`
 	stmt, err := tx.Prepare(sqlInsert)
 	if err != nil {
@@ -72,19 +75,23 @@ func (m *Postgres) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTes
 	}()
 
 	for _, r := range dbRows {
-		_, err := stmt.Exec(r.PR, r.CommitID, r.EnvName, r.TestName, r.Result, r.TestTime, r.Duration)
+		_, err := stmt.Exec(r.PR, r.CommitID, r.EnvName, r.TestName, r.Result, r.TestTime, r.Duration, r.ArtifactPath)
 		if err != nil {
 			return fmt.Errorf("failed to execute SQL insert: %v", err)
 		}
 	}
 
+	envGroup := strings.TrimSpace(commitRow.EnvGroup)
+	if envGroup == "" {
+		envGroup = "Legacy"
+	}
 	sqlInsert = `
-		INSERT INTO db_environment_tests (CommitID, EnvName, GopoghTime, TestTime, NumberOfFail, NumberOfPass, NumberOfSkip, TotalDuration) 
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO db_environment_tests (CommitID, EnvName, EnvGroup, GopoghTime, TestTime, NumberOfFail, NumberOfPass, NumberOfSkip, TotalDuration, ArtifactPath) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		ON CONFLICT (CommitId, EnvName)
-		DO UPDATE SET (GopoghTime, TestTime, NumberOfFail, NumberOfPass, NumberOfSkip, TotalDuration) = (EXCLUDED.GopoghTime, EXCLUDED.TestTime, EXCLUDED.NumberOfFail, EXCLUDED.NumberOfPass, EXCLUDED.NumberOfSkip, EXCLUDED.TotalDuration)
+		DO UPDATE SET (EnvGroup, GopoghTime, TestTime, NumberOfFail, NumberOfPass, NumberOfSkip, TotalDuration, ArtifactPath) = (EXCLUDED.EnvGroup, EXCLUDED.GopoghTime, EXCLUDED.TestTime, EXCLUDED.NumberOfFail, EXCLUDED.NumberOfPass, EXCLUDED.NumberOfSkip, EXCLUDED.TotalDuration, EXCLUDED.ArtifactPath)
 		`
-	_, err = tx.Exec(sqlInsert, commitRow.CommitID, commitRow.EnvName, commitRow.GopoghTime, commitRow.TestTime, commitRow.NumberOfFail, commitRow.NumberOfPass, commitRow.NumberOfSkip, commitRow.TotalDuration)
+	_, err = tx.Exec(sqlInsert, commitRow.CommitID, commitRow.EnvName, envGroup, commitRow.GopoghTime, commitRow.TestTime, commitRow.NumberOfFail, commitRow.NumberOfPass, commitRow.NumberOfSkip, commitRow.TotalDuration, commitRow.ArtifactPath)
 	if err != nil {
 		return fmt.Errorf("failed to execute SQL insert: %v", err)
 	}
@@ -117,6 +124,24 @@ func (m *Postgres) Initialize() error {
 	}
 	if _, err := m.db.Exec(pgTestCasesTableSchema); err != nil {
 		return fmt.Errorf("failed to initialize test cases table: %v", err)
+	}
+	if _, err := m.db.Exec(`ALTER TABLE db_environment_tests ADD COLUMN IF NOT EXISTS EnvGroup TEXT NOT NULL DEFAULT 'Legacy';`); err != nil {
+		return fmt.Errorf("failed to ensure EnvGroup on environment tests table: %v", err)
+	}
+	if _, err := m.db.Exec(`ALTER TABLE db_environment_tests ADD COLUMN IF NOT EXISTS ArtifactPath TEXT NOT NULL DEFAULT '';`); err != nil {
+		return fmt.Errorf("failed to ensure ArtifactPath on environment tests table: %v", err)
+	}
+	if _, err := m.db.Exec(`ALTER TABLE db_test_cases ADD COLUMN IF NOT EXISTS ArtifactPath TEXT NOT NULL DEFAULT '';`); err != nil {
+		return fmt.Errorf("failed to ensure ArtifactPath on test cases table: %v", err)
+	}
+	if _, err := m.db.Exec(`UPDATE db_environment_tests SET ArtifactPath = '' WHERE ArtifactPath IS NULL;`); err != nil {
+		return fmt.Errorf("failed to backfill ArtifactPath on environment tests table: %v", err)
+	}
+	if _, err := m.db.Exec(`UPDATE db_environment_tests SET EnvGroup = 'Legacy' WHERE EnvGroup IS NULL OR EnvGroup = '';`); err != nil {
+		return fmt.Errorf("failed to backfill EnvGroup on environment tests table: %v", err)
+	}
+	if _, err := m.db.Exec(`UPDATE db_test_cases SET ArtifactPath = '' WHERE ArtifactPath IS NULL;`); err != nil {
+		return fmt.Errorf("failed to backfill ArtifactPath on test cases table: %v", err)
 	}
 	return nil
 }
@@ -155,6 +180,22 @@ func (m *Postgres) createMaterializedView(env string, viewName string) error {
 
 	if _, err := m.db.Exec(createView); err != nil {
 		return err
+	}
+	viewBaseName := strings.Trim(viewName, "\"")
+	var hasArtifactPath bool
+	if err := m.db.Get(&hasArtifactPath, `SELECT EXISTS (
+		SELECT 1 FROM information_schema.columns WHERE table_name = $1 AND column_name = 'artifactpath'
+	)`, viewBaseName); err != nil {
+		return err
+	}
+	if !hasArtifactPath {
+		dropView := fmt.Sprintf("DROP MATERIALIZED VIEW IF EXISTS %s", viewName)
+		if _, err := m.db.Exec(dropView); err != nil {
+			return err
+		}
+		if _, err := m.db.Exec(createView); err != nil {
+			return err
+		}
 	}
 
 	// if we add a new test environment the service account will be the owner of the newly created materalized view above
@@ -199,7 +240,7 @@ func (m *Postgres) GetTestCharts(env string, test string) (map[string]interface{
 	DATE_TRUNC('day', TestTime) AS StartOfDate,
 	AVG(Duration) AS AvgDuration,
 	ROUND(COALESCE(AVG(CASE WHEN Result = 'fail' THEN 1 ELSE 0 END) * 100, 0), 2) AS FlakePercentage,
-	STRING_AGG(CommitID || ': ' || Result || ': ' || Duration, ', ') AS CommitResultsAndDurations
+	STRING_AGG(CommitID || ': ' || Result || ': ' || Duration || ': ' || COALESCE(ArtifactPath, ''), ', ') AS CommitResultsAndDurations
 	FROM %s 
 	WHERE TestName = $1
 	GROUP BY StartOfDate
@@ -220,7 +261,7 @@ func (m *Postgres) GetTestCharts(env string, test string) (map[string]interface{
 	DATE_TRUNC('week', TestTime) AS StartOfDate,
 	AVG(Duration) AS AvgDuration,
 	ROUND(COALESCE(AVG(CASE WHEN Result = 'fail' THEN 1 ELSE 0 END) * 100, 0), 2) AS FlakePercentage,
-	STRING_AGG(CommitID || ': ' || Result || ': ' || Duration, ', ') AS CommitResultsAndDurations
+	STRING_AGG(CommitID || ': ' || Result || ': ' || Duration || ': ' || COALESCE(ArtifactPath, ''), ', ') AS CommitResultsAndDurations
 	FROM %s 
 	WHERE TestName = $1
 	GROUP BY StartOfDate
@@ -239,7 +280,7 @@ func (m *Postgres) GetTestCharts(env string, test string) (map[string]interface{
 	DATE_TRUNC('month', TestTime) AS StartOfDate,
 	AVG(Duration) AS AvgDuration,
 	ROUND(COALESCE(AVG(CASE WHEN Result = 'fail' THEN 1 ELSE 0 END) * 100, 0), 2) AS FlakePercentage,
-	STRING_AGG(CommitID || ': ' || Result || ': ' || Duration, ', ') AS CommitResultsAndDurations
+	STRING_AGG(CommitID || ': ' || Result || ': ' || Duration || ': ' || COALESCE(ArtifactPath, ''), ', ') AS CommitResultsAndDurations
 	FROM %s 
 	WHERE TestName = $1
 	GROUP BY StartOfDate
@@ -352,7 +393,7 @@ func (m *Postgres) GetEnvCharts(env string, testsInTop int) (map[string]interfac
 	SELECT TestName, 
 	DATE_TRUNC('day', TestTime) AS StartOfDate,
 	COALESCE(AVG(CASE WHEN Result = 'fail' THEN 1 ELSE 0 END) * 100, 0) AS FlakePercentage,
-	STRING_AGG(CommitID || ': ' || Result, ', ') AS CommitResults
+	STRING_AGG(CommitID || ': ' || Result || ': ' || COALESCE(ArtifactPath, ''), ', ') AS CommitResults
 	FROM lastn_data_top
 	GROUP BY TestName, StartOfDate
 	ORDER BY StartOfDate DESC
@@ -390,7 +431,7 @@ func (m *Postgres) GetEnvCharts(env string, testsInTop int) (map[string]interfac
 	SELECT TestName,
 	DATE_TRUNC('week', TestTime) AS StartOfDate,
 	ROUND(COALESCE(AVG(CASE WHEN Result = 'fail' THEN 1 ELSE 0 END) * 100, 0), 2) AS FlakePercentage,
-	STRING_AGG(CommitID || ': ' || Result, ', ') AS CommitResults
+	STRING_AGG(CommitID || ': ' || Result || ': ' || COALESCE(ArtifactPath, ''), ', ') AS CommitResults
 	FROM top_flakiest_data
 	GROUP BY TestName, StartOfDate
 	ORDER BY StartOfDate DESC;
@@ -414,8 +455,8 @@ func (m *Postgres) GetEnvCharts(env string, testsInTop int) (map[string]interfac
 	DATE_TRUNC('day', TestTime) AS StartOfDate,
 	AVG(NumberOfPass + NumberOfFail) AS TestCount,
 	AVG(TotalDuration) AS Duration,
-	STRING_AGG(CommitID || ': ' || (NumberOfPass + NumberOfFail), ', ') AS CommitCounts,
-	STRING_AGG(CommitID || ': ' || TotalDuration, ', ') AS CommitDurations
+	STRING_AGG(CommitID || ': ' || (NumberOfPass + NumberOfFail) || ': ' || COALESCE(ArtifactPath, ''), ', ') AS CommitCounts,
+	STRING_AGG(CommitID || ': ' || TotalDuration || ': ' || COALESCE(ArtifactPath, ''), ', ') AS CommitDurations
 	FROM lastn_env_data 
 	GROUP BY StartOfDate
 	ORDER BY StartOfDate DESC
@@ -487,12 +528,13 @@ func (m *Postgres) GetOverview(dateRange int) (map[string]interface{}, error) {
 	ROUND(COALESCE(AVG(CASE WHEN TestTime > (SELECT Date FROM recentCutoff) THEN NumberOfFail END), 0), 2) AS RecentNumberOfFail,
 	ROUND(COALESCE(AVG(CASE WHEN TestTime <= (SELECT Date FROM recentCutoff) AND TestTime > (SELECT Date FROM prevCutoff) THEN NumberOfFail END), 0), 2) AS PrevNumberOfFail,
 	COALESCE((SELECT TotalDuration FROM data As B WHERE B.EnvName=data.EnvName ORDER BY TestTime DESC LIMIT 1),0)As TestDuration,
-	COALESCE((SELECT TotalDuration FROM data As B WHERE B.EnvName=data.EnvName ORDER BY TestTime DESC OFFSET 1 LIMIT 1),0)As PreviousTestDuration
+	COALESCE((SELECT TotalDuration FROM data As B WHERE B.EnvName=data.EnvName ORDER BY TestTime DESC OFFSET 1 LIMIT 1),0)As PreviousTestDuration,
+	COALESCE(NULLIF((SELECT EnvGroup FROM data As B WHERE B.EnvName=data.EnvName ORDER BY TestTime DESC LIMIT 1), ''), 'Legacy')As EnvGroup
 	FROM data
 	GROUP BY EnvName
 	ORDER BY RecentNumberOfFail DESC
 	)
-	SELECT EnvName, RecentNumberOfFail, RecentNumberOfFail - PrevNumberOfFail AS Growth, TestDuration,PreviousTestDuration, TestDuration-PreviousTestDuration AS TestDurationGROWTH
+	SELECT EnvName, EnvGroup, RecentNumberOfFail, RecentNumberOfFail - PrevNumberOfFail AS Growth, TestDuration,PreviousTestDuration, TestDuration-PreviousTestDuration AS TestDurationGROWTH
 	FROM temp
 	ORDER BY RecentNumberOfFail DESC;
 	`

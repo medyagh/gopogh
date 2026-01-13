@@ -16,7 +16,7 @@ var dbPath = flag.String("db_path", "", "path to postgres db in the form of 'use
 var dbHost = flag.String("db_host", "", "host of the db")
 var useCloudSQL = flag.Bool("use_cloudsql", false, "whether the database is a cloudsql db")
 var useIAMAuth = flag.Bool("use_iam_auth", false, "whether to use IAM to authenticate with the cloudsql db")
-var testgridConfigPath = flag.String("testgrid_config", "config/testgrid.json", "path to testgrid dashboard config")
+var testgridConfigPath = flag.String("testgrid_config", "", "path to testgrid dashboard config")
 
 func main() {
 	flag.Parse()

@@ -2,19 +2,21 @@
   "dashboards": [
     {
       "id": "minikube-periodics#ci-minikube-integration",
+      "env_group": "Test Grid",
       "min_duration": "5m",
       "max_pages": 20,
       "skip_statuses": [
         "ABORT"
       ]
     },
-        {
+    {
       "id": "minikube-presubmits#integration-kvm-containerd-linux-x86",
+      "env_group": "Test Grid PRs",
       "min_duration": "5m",
       "max_pages": 20,
       "skip_statuses": [
         "ABORT"
       ]
-    }    
+    }
   ]
 }

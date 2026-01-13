@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 
@@ -15,6 +16,7 @@ var createEnvironmentTestsTableSQL = `
 	CREATE TABLE IF NOT EXISTS db_environment_tests (
 		CommitID TEXT,
 		EnvName TEXT,
+		EnvGroup TEXT NOT NULL DEFAULT 'Legacy',
 		GopoghTime TEXT,
 		TestTime TEXT,
 		NumberOfFail INTEGER,
@@ -22,6 +24,7 @@ var createEnvironmentTestsTableSQL = `
 		NumberOfSkip INTEGER,
 		TotalDuration REAL,
 		GopoghVersion TEXT,
+		ArtifactPath TEXT NOT NULL DEFAULT '',
 		PRIMARY KEY (CommitID, EnvName)
 	);
 `
@@ -35,6 +38,7 @@ var createTestCasesTableSQL = `
 		EnvName TEXT,
 		TestOrder INTEGER,
 		TestTime TEXT,
+		ArtifactPath TEXT NOT NULL DEFAULT '',
 		PRIMARY KEY (CommitId, EnvName, TestName)
 	);
 `
@@ -58,7 +62,7 @@ func (m *sqlite) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTestC
 		}
 	}()
 
-	sqlInsert := `INSERT OR REPLACE INTO db_test_cases (PR, CommitId, TestName, Result, Duration, EnvName, TestOrder, TestTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+	sqlInsert := `INSERT OR REPLACE INTO db_test_cases (PR, CommitId, TestName, Result, Duration, EnvName, TestOrder, TestTime, ArtifactPath) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	stmt, err := tx.Prepare(sqlInsert)
 	if err != nil {
 		return fmt.Errorf("failed to prepare SQL insert statement: %v", err)
@@ -68,14 +72,18 @@ func (m *sqlite) Set(commitRow models.DBEnvironmentTest, dbRows []models.DBTestC
 	}()
 
 	for _, r := range dbRows {
-		_, err := stmt.Exec(r.PR, r.CommitID, r.TestName, r.Result, r.Duration, r.EnvName, r.TestOrder, r.TestTime.String())
+		_, err := stmt.Exec(r.PR, r.CommitID, r.TestName, r.Result, r.Duration, r.EnvName, r.TestOrder, r.TestTime.String(), r.ArtifactPath)
 		if err != nil {
 			return fmt.Errorf("failed to execute SQL insert: %v", err)
 		}
 	}
 
-	sqlInsert = `INSERT OR REPLACE INTO db_environment_tests (CommitID, EnvName, GopoghTime, TestTime, NumberOfFail, NumberOfPass, NumberOfSkip, TotalDuration, GopoghVersion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	_, err = tx.Exec(sqlInsert, commitRow.CommitID, commitRow.EnvName, commitRow.GopoghTime, commitRow.TestTime.String(), commitRow.NumberOfFail, commitRow.NumberOfPass, commitRow.NumberOfSkip, commitRow.TotalDuration, commitRow.GopoghVersion)
+	envGroup := strings.TrimSpace(commitRow.EnvGroup)
+	if envGroup == "" {
+		envGroup = "Legacy"
+	}
+	sqlInsert = `INSERT OR REPLACE INTO db_environment_tests (CommitID, EnvName, EnvGroup, GopoghTime, TestTime, NumberOfFail, NumberOfPass, NumberOfSkip, TotalDuration, GopoghVersion, ArtifactPath) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	_, err = tx.Exec(sqlInsert, commitRow.CommitID, commitRow.EnvName, envGroup, commitRow.GopoghTime, commitRow.TestTime.String(), commitRow.NumberOfFail, commitRow.NumberOfPass, commitRow.NumberOfSkip, commitRow.TotalDuration, commitRow.GopoghVersion, commitRow.ArtifactPath)
 	if err != nil {
 		return fmt.Errorf("failed to execute SQL insert: %v", err)
 	}
@@ -112,7 +120,37 @@ func (m *sqlite) Initialize() error {
 	if _, err := m.db.Exec(createTestCasesTableSQL); err != nil {
 		return fmt.Errorf("failed to initialize test cases table: %v", err)
 	}
+	if err := ensureSQLiteColumn(m.db, "db_environment_tests", "EnvGroup", "TEXT NOT NULL DEFAULT 'Legacy'"); err != nil {
+		return fmt.Errorf("failed to ensure EnvGroup on environment tests table: %v", err)
+	}
+	if err := ensureSQLiteColumn(m.db, "db_environment_tests", "ArtifactPath", "TEXT NOT NULL DEFAULT ''"); err != nil {
+		return fmt.Errorf("failed to ensure ArtifactPath on environment tests table: %v", err)
+	}
+	if err := ensureSQLiteColumn(m.db, "db_test_cases", "ArtifactPath", "TEXT NOT NULL DEFAULT ''"); err != nil {
+		return fmt.Errorf("failed to ensure ArtifactPath on test cases table: %v", err)
+	}
+	if _, err := m.db.Exec(`UPDATE db_environment_tests SET ArtifactPath = '' WHERE ArtifactPath IS NULL;`); err != nil {
+		return fmt.Errorf("failed to backfill ArtifactPath on environment tests table: %v", err)
+	}
+	if _, err := m.db.Exec(`UPDATE db_environment_tests SET EnvGroup = 'Legacy' WHERE EnvGroup IS NULL OR EnvGroup = '';`); err != nil {
+		return fmt.Errorf("failed to backfill EnvGroup on environment tests table: %v", err)
+	}
+	if _, err := m.db.Exec(`UPDATE db_test_cases SET ArtifactPath = '' WHERE ArtifactPath IS NULL;`); err != nil {
+		return fmt.Errorf("failed to backfill ArtifactPath on test cases table: %v", err)
+	}
 	return nil
+}
+
+func ensureSQLiteColumn(db *sqlx.DB, table, column, columnType string) error {
+	query := fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s;", table, column, columnType)
+	_, err := db.Exec(query)
+	if err == nil {
+		return nil
+	}
+	if strings.Contains(err.Error(), "duplicate column name") {
+		return nil
+	}
+	return err
 }
 
 // GetEnvironmentTestsAndTestCases writes the database tables to a map with the keys environmentTests and testCases

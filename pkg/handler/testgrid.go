@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	defaultMaxPages     = 20
+	defaultMaxPages = 20
 	// defaultConcurrency limits the number of parallel summary fetches when loading TestGrid.
 	defaultConcurrency  = 6
 	maxErrorSampleCount = 10
@@ -209,6 +209,10 @@ func (m *DB) LoadTestGrid(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "selected dashboard missing job_name", http.StatusBadRequest)
 		return
 	}
+	envGroup := strings.TrimSpace(dashboard.EnvGroup)
+	if envGroup == "" {
+		envGroup = "Legacy"
+	}
 	skipStatuses := dashboard.SkipStatuses
 	if len(skipStatuses) == 0 {
 		skipStatuses = []string{crawler.StatusAborted}
@@ -255,7 +259,7 @@ func (m *DB) LoadTestGrid(w http.ResponseWriter, r *http.Request) {
 			if ctx.Err() != nil {
 				return
 			}
-			if err := m.processTestGridJob(ctx, client, job, dashboard.JobName, stats); err != nil {
+			if err := m.processTestGridJob(ctx, client, job, dashboard.JobName, envGroup, stats); err != nil {
 				stats.addError(err)
 			}
 		}()
@@ -272,7 +276,7 @@ func (m *DB) LoadTestGrid(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (m *DB) processTestGridJob(ctx context.Context, client *http.Client, job crawler.ProwJob, jobName string, stats *testgridLoadStats) error {
+func (m *DB) processTestGridJob(ctx context.Context, client *http.Client, job crawler.ProwJob, jobName, envGroup string, stats *testgridLoadStats) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -292,6 +296,10 @@ func (m *DB) processTestGridJob(ctx context.Context, client *http.Client, job cr
 		}
 		return fmt.Errorf("job %s: failed to fetch summary: %v", job.ID, err)
 	}
+	artifactPath, err := summaryURLToArtifactPath(summaryURL)
+	if err != nil {
+		log.Printf("job %s: failed to parse artifact path: %v", job.ID, err)
+	}
 	summary.Detail.Details = ensureTestGridDetails(summary.Detail.Details, jobName, job.ID)
 	if err := summary.Validate(); err != nil {
 		stats.addInvalidSummary(fmt.Errorf("job %s: invalid summary: %v", job.ID, err))
@@ -301,6 +309,13 @@ func (m *DB) processTestGridJob(ctx context.Context, client *http.Client, job cr
 	if err != nil {
 		stats.addInvalidSummary(fmt.Errorf("job %s: invalid summary conversion: %v", job.ID, err))
 		return nil
+	}
+	dbEnv.EnvGroup = envGroup
+	if artifactPath != "" {
+		dbEnv.ArtifactPath = artifactPath
+		for i := range dbTests {
+			dbTests[i].ArtifactPath = artifactPath
+		}
 	}
 	if err := m.Database.Set(dbEnv, dbTests); err != nil {
 		return fmt.Errorf("job %s: failed to insert: %v", job.ID, err)
@@ -376,6 +391,23 @@ func spyglassToSummaryURL(spyglassLink string) (string, error) {
 		return "", fmt.Errorf("empty spyglass path")
 	}
 	return "https://storage.googleapis.com/" + path + "/artifacts/test_summary.json", nil
+}
+
+func summaryURLToArtifactPath(summaryURL string) (string, error) {
+	parsed, err := url.Parse(summaryURL)
+	if err != nil {
+		return "", fmt.Errorf("invalid summary url: %v", err)
+	}
+	if !strings.HasSuffix(parsed.Path, "/artifacts/test_summary.json") {
+		return "", fmt.Errorf("unexpected summary url path: %s", parsed.Path)
+	}
+	path := strings.TrimPrefix(parsed.Path, "/")
+	path = strings.TrimSuffix(path, "/artifacts/test_summary.json")
+	path = strings.TrimPrefix(path, "gs/")
+	if path == "" {
+		return "", fmt.Errorf("unable to derive artifact path from %q", summaryURL)
+	}
+	return path, nil
 }
 
 func fetchSummary(ctx context.Context, client *http.Client, summaryURL string) (report.Summary, error) {

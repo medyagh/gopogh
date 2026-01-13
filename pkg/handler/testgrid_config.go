@@ -13,6 +13,7 @@ type TestGridDashboard struct {
 	ID           string   `json:"id"`
 	JobName      string   `json:"job_name"`
 	Label        string   `json:"label"`
+	EnvGroup     string   `json:"env_group"`
 	SkipStatuses []string `json:"skip_statuses"`
 	MinDuration  string   `json:"min_duration"`
 	MaxPages     int      `json:"max_pages"`
@@ -31,6 +32,7 @@ func DefaultTestGridConfig() TestGridConfig {
 				ID:           "minikube-periodics#ci-minikube-integration",
 				JobName:      "ci-minikube-integration",
 				Label:        "minikube-periodics#ci-minikube-integration",
+				EnvGroup:     "Test Grid",
 				SkipStatuses: []string{"ABORTED"},
 				MaxPages:     defaultMaxPages,
 			},
@@ -104,6 +106,7 @@ func normalizeDashboard(d TestGridDashboard) TestGridDashboard {
 	d.ID = strings.TrimSpace(d.ID)
 	d.JobName = strings.TrimSpace(d.JobName)
 	d.Label = strings.TrimSpace(d.Label)
+	d.EnvGroup = strings.TrimSpace(d.EnvGroup)
 	if len(d.SkipStatuses) > 0 {
 		d.SkipStatuses = normalizeStatuses(d.SkipStatuses)
 	}
