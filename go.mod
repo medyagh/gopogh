@@ -6,7 +6,7 @@ toolchain go1.24.1
 
 require (
 	cloud.google.com/go/cloudsqlconn v1.20.0
-	github.com/GoogleCloudPlatform/cloudsql-proxy v1.37.11
+	github.com/GoogleCloudPlatform/cloudsql-proxy v1.37.12
 	github.com/jackc/pgx/v4 v4.18.3
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.10.9
@@ -52,7 +52,7 @@ require (
 	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/text v0.33.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
-	google.golang.org/api v0.259.0 // indirect
+	google.golang.org/api v0.260.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251222181119-0a764e51fe1b // indirect
 	google.golang.org/grpc v1.78.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
