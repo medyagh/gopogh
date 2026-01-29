@@ -9,7 +9,7 @@ require (
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.37.11
 	github.com/jackc/pgx/v4 v4.18.3
 	github.com/jmoiron/sqlx v1.4.0
-	github.com/lib/pq v1.10.9
+	github.com/lib/pq v1.11.0
 	modernc.org/sqlite v1.43.0
 )
 
